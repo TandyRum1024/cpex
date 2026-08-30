@@ -16,7 +16,7 @@ Building on VSCode environment is as simple as... (on command palette, activated
 - CMake: Build (`F7`)
 - CMake: Debug (`SHIFT + F5`)
 
-Alternatively, you may generate, build and run manually. On CMake Tooks, I've set up the build path as `"<root>/out/build/CPEX_x64"`. Therefore you may manually build and run it like the snippet below.
+Alternatively, you may generate, build and run manually. On CMake Tools, I've set up the build path as `"<root>/out/build/CPEX_x64"`. Therefore you may manually build into the same directory and run it like the snippet below.
 ```powershell
 # (ASSUMING YOUR WORKING DIRECTORIES ARE AT THE PROEJCT ROOT)
 # cd <THIS DIRECTORY>
@@ -36,5 +36,5 @@ cmake --build ./out/build/CPEX_x64 --config Debug --target clean
 
 # (expected) Dependencies
 - OpenGL
-    - [GLFW](https://www.glfw.org/)
+    - [GLFW 3.5.1](https://www.glfw.org/)
 - [Dear ImGui](https://github.com/ocornut/imgui)

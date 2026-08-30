@@ -4,7 +4,7 @@ Small C++ programs, mainly featuring C++, OpenGL and UI powered by ImGui.
 
 # Preface
 For the longest time, I've been working with graphics programming and likes in GameMaker game engine; from GM:S 1.4, GM:S 2.X to (now renamed) GameMaker.
-GameMaker, being 2D-focused engine (as of writing), had not the most robust 3D features that can be used out-of-the-box. But on the other hand, it provided somewhat low-level graphics API, from vertex buffers and support basic (transform) matrices and shaders.
+GameMaker, being 2D-focused engine (as of writing), had not the most robust 3D features that can be used out-of-the-box. But on the other hand, it provided somewhat low-level graphics API, such as vertex buffers and submitting them to support for basic (transform) matrices and shaders.
 I had to re-invent many of the features myself, that are normally "activated" with a single click in the 3D-focused game engines such as Godot and Unity.
 
 While the low-level graphics API was just enough to create a functioning 3D renderer, I have faced a few limitations of GameMaker. For example, in context of shaders...
@@ -13,10 +13,10 @@ While the low-level graphics API was just enough to create a functioning 3D rend
 - Lack of runtime compilation of shader program.
 - Only vertex & fragment/pixel shaders are supported. That is, lack of geometry & compute shaders, etc.
 
-Those limitations have certainly prevented me from implementing some of the techniques. Such as using vertex texture fetching to implement an alternative method of vertex animation, GPU side animation mixing/calculations, etc.
+Those limitations have prevented me from implementing some of the techniques that I've found interesting. Such as using vertex texture fetching to implement an alternative method of vertex animation, GPU side animation mixing/calculations, etc.
 
-Eventually, from online tutorials and likes for implementing various graphics techniques made me aware of the elusive C++ / OpenGL duo. They are seemingly the de-facto standard when it comes to graphics programming.
-So it made me want to try them out aswell; I especially am hoping to not encounter such limitations, and to build up more general knowledge that can be used outside the context of GameMaker engine.
+Eventually, from online tutorials and likes for implementing various graphics techniques, I became aware of the elusive C++ / OpenGL duo. They are seemingly the de-facto standard when it comes to graphics programming.
+So I've been meaning to try them out one day; I especially am hoping to not encounter such limitations, and to build up more general knowledge that can be used outside the context of GameMaker engine.
 
 With that being said, this repository is a collection of my "exercises" / "experiments" working with C++.
 
