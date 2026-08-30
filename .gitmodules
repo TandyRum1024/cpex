@@ -1,0 +1,4 @@
+[submodule "cpex_t1/extern/glfw"]
+	path = cpex_t1/extern/glfw
+	url = git@github.com:glfw/glfw.git
+	branch = latest
