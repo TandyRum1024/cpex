@@ -19,9 +19,15 @@ set(
     SRC_MAIN
     ${CMAKE_CURRENT_SOURCE_DIR}/cpex_t1/main.cpp 
 )
+# (GLAD - https://gen.glad.sh/)
+set(
+    SRC_GLAD
+    ${CMAKE_CURRENT_SOURCE_DIR}/extern/glad
+)
+include_directories(${SRC_GLAD}/include)
 
 # For building `cpex_t1.exe` with source files `<root>/cpex_t1/main.cpp`
-add_executable(${PROJECT_NAME} ${SRC_MAIN})
+add_executable(${PROJECT_NAME} ${SRC_MAIN} ${SRC_GLAD}/src/gl.c)
 
 # External dependencies
 # -----------------------
