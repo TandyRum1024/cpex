@@ -45,9 +45,17 @@ namespace gfx {
     /** Contains all the neccessary informations to render a mesh. */
     template <typename V>
     class Vb {
+        enum VB_BUFF_OBJ {
+            VB_BUFF_VBO,
+            VB_BUFF_EBO,
+            _VB_BUFF_OBJ_SZ
+        };
+
         GLuint vao;
-        GLuint vbo;
+        /** Contains VBO, EBO. Indexed by `VB_BUFF_OBJ` */
+        GLuint objs[_VB_BUFF_OBJ_SZ];
         std::vector<V> verts;
+        std::vector<unsigned int> indices;
         
     public:
         VertFormat format;
@@ -56,49 +64,64 @@ namespace gfx {
         Vb();
         ~Vb();
 
-        void push_back(V vert);
-        void push_back(std::vector<V> appendVerts);
+        void push_back_verts(V vert);
+        void push_back_verts(std::vector<V> appendVerts);
+        void push_back_indices(unsigned int idx);
+        void push_back_indices(std::vector<unsigned int> appendIndices);
         void build();
         void submit(GLenum mode, GLint startOff = 0, GLsizei vertsNum = 0);
-        void submit(GLenum mode = GL_TRIANGLES);
+        void submit();
     };
 
-    // DEFINITIONS (INCLUSION MODEL FOR TEMPLATE CLASSES!)
+    // DEFINITIONS (INCLUSION MODEL FOR TEMPLATE CLASSES!) //
     template <typename V>
     Vb<V>::Vb() {}
 
     template <typename V>
     Vb<V>::~Vb() {
-        if (vao) {
-            glDeleteBuffers(1, &vao);
-            vao = 0;
-        }
-        if (vbo) {
-            glDeleteBuffers(1, &vbo);
-            vbo = 0;
+        for (auto &&obj: objs) {
+            if (obj) {
+                glDeleteBuffers(1, &obj);
+                obj = 0;
+            }
         }
     }
 
     template <typename V>
-    void Vb<V>::push_back(V vert) {
+    void Vb<V>::push_back_verts(V vert) {
         verts.push_back(vert);
     }
 
     template <typename V>
-    void Vb<V>::push_back(std::vector<V> appendVerts) {
+    void Vb<V>::push_back_verts(std::vector<V> appendVerts) {
         verts.insert(verts.end(), appendVerts.begin(), appendVerts.end());
     }
 
     template <typename V>
+    void Vb<V>::push_back_indices(unsigned int idx) {
+        indices.push_back(idx);
+    }
+
+    template <typename V>
+    void Vb<V>::push_back_indices(std::vector<unsigned int> appendIndices) {
+        indices.insert(indices.end(), appendIndices.begin(), appendIndices.end());
+    }
+
+    template <typename V>
     void Vb<V>::build() {
+        glGenBuffers(_VB_BUFF_OBJ_SZ, objs);
+        
         // Setup VAO
         glGenVertexArrays(1, &vao);
         glBindVertexArray(vao);
-
+        
         // Setup VBO, copy data
-        glGenBuffers(1, &vbo);
-        glBindBuffer(GL_ARRAY_BUFFER, vbo);
+        glBindBuffer(GL_ARRAY_BUFFER, objs[VB_BUFF_VBO]);
         glBufferData(GL_ARRAY_BUFFER, sizeof(V) * verts.size(), verts.data(), GL_STATIC_DRAW);
+
+        // Setup EBO, copy data
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, objs[VB_BUFF_EBO]);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int) * indices.size(), indices.data(), GL_STATIC_DRAW);
 
         // Link attributes to locations
         format.set_attribute_pointers();
@@ -107,12 +130,15 @@ namespace gfx {
     template <typename V>
     void Vb<V>::submit(GLenum mode, GLint startOff, GLsizei vertsNum) {
         glBindVertexArray(vao);
-        glDrawArrays(mode, startOff, vertsNum);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, objs[VB_BUFF_EBO]);
+        glDrawElements(mode, vertsNum, GL_UNSIGNED_INT, (const void *) startOff);
+        // glDrawArrays(mode, startOff, vertsNum);
     }
-
+    
     template <typename V>
-    void Vb<V>::submit(GLenum mode) {
-        submit(mode, 0, verts.size());
+    void Vb<V>::submit() {
+        submit(GL_TRIANGLES, 0, indices.size());
     }
+    // DEFINITIONS (INCLUSION MODEL FOR TEMPLATE CLASSES!) //
 }
 #endif

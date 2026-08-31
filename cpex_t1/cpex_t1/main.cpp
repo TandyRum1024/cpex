@@ -87,11 +87,15 @@ int main() {
         gfx::VertAttribute(0, 3, GL_DOUBLE, sizeof(double), 5, 0), // POS
         gfx::VertAttribute(1, 2, GL_DOUBLE, sizeof(double), 5, 3), // UV
     };
-    vb.push_back(std::vector<gfx::VertPosUv> {
+    vb.push_back_verts(std::vector<gfx::VertPosUv> {
         gfx::VertPosUv(-0.5, -0.5, 0.0, 0.0, 0.0),
         gfx::VertPosUv(0.5, -0.5, 0.0, 1.0, 0.0),
         gfx::VertPosUv(-0.5, 0.5, 0.0, 0.0, 1.0),
-        // gfx::VertPosUv(0.5, 0.5, 0.0, 1.0, 1.0),
+        gfx::VertPosUv(0.5, 0.5, 0.0, 1.0, 1.0),
+    });
+    vb.push_back_indices({
+        0, 1, 2,
+        1, 2, 3,
     });
     vb.build();
 
@@ -119,7 +123,7 @@ int main() {
 
         // Draw VAO
         shd.use_shader();
-        vb.submit(GL_TRIANGLES, 0, 3);
+        vb.submit();
 
         glfwSwapBuffers(window);
         glfwPollEvents();
