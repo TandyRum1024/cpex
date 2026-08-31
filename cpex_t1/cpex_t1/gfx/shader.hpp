@@ -1,7 +1,13 @@
-#ifndef __CPEX_GFX_GURD
-#define __CPEX_GFX_GURD
+/**
+ * gfx::shader - OpenGL Shader abstraction
+ * ZIK@MMXXVI
+ */
+
+#ifndef __CPEX_GFX_SHD_GUARD
+#define __CPEX_GFX_SHD_GUARD
 #include <string>
 #include <map>
+
 #include <glad/gl.h>
 #include <GLFW/glfw3.h>
 

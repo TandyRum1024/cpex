@@ -1,4 +1,5 @@
 #include <iostream>
+
 #include <zcl/zcl.hpp>
 
 std::string zcl::file::read_file_to_string(std::string filePath) {
@@ -19,6 +20,6 @@ std::string zcl::file::read_file_to_string(std::string filePath) {
     else {
         throw std::runtime_error(std::string("Could not open file `") + filePath + "`");
     }
-    
+
     return contentStr;
 }

@@ -7,7 +7,9 @@
 #include <string>
 
 // LIBRARIES //
-#include <gfx.hpp>
+#include <gfx/shader.hpp>
+#include <gfx/vb.hpp>
+#include <gfx/vert.hpp>
 #include <zcl/zcl.hpp>
 
 // EXTERNAL LIBRARIES //
@@ -80,44 +82,24 @@ int main() {
 
     // Setup scene
     // (model)
-    GLuint vao, vboPos, vboUv;
-    double positions[] = {
-        -0.5, -0.5, 0.0,
-        0.0, 0.5, 0.0,
-        0.5, -0.5, 0.0,
+    gfx::Vb<gfx::VertPosUv> vb;
+    vb.format = gfx::VertFormat {
+        gfx::VertAttribute(0, 3, GL_DOUBLE, sizeof(double), 5, 0), // POS
+        gfx::VertAttribute(1, 2, GL_DOUBLE, sizeof(double), 5, 3), // UV
     };
-    double uvs[] = {
-        0.0, 0.0,
-        0.0, 1.0,
-        1.0, 1.0,
-    };
-
-    // Setup VAO
-    glGenVertexArrays(1, &vao);
-    glBindVertexArray(vao);
-
-    // Setup positions VBO
-    glGenBuffers(1, &vboPos);
-    glBindBuffer(GL_ARRAY_BUFFER, vboPos);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(positions), positions, GL_STATIC_DRAW);
-    glVertexAttribPointer(0, 3, GL_DOUBLE, GL_FALSE, 3 * sizeof(double), (void*) 0); // (location = 0)
-    glEnableVertexAttribArray(0);
-    
-    // Setup uvs VBO
-    glGenBuffers(1, &vboUv);
-    glBindBuffer(GL_ARRAY_BUFFER, vboUv);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(uvs), uvs, GL_STATIC_DRAW);
-    glVertexAttribPointer(1, 2, GL_DOUBLE, GL_FALSE, 2 * sizeof(double), (void*) 0); // (location = 1)
-    glEnableVertexAttribArray(1);
+    vb.push_back(std::vector<gfx::VertPosUv> {
+        gfx::VertPosUv(-0.5, -0.5, 0.0, 0.0, 0.0),
+        gfx::VertPosUv(0.5, -0.5, 0.0, 1.0, 0.0),
+        gfx::VertPosUv(-0.5, 0.5, 0.0, 0.0, 1.0),
+        // gfx::VertPosUv(0.5, 0.5, 0.0, 1.0, 1.0),
+    });
+    vb.build();
 
     // (shaders)
     gfx::Shader shd("triangle");
     try {
         shd.load_shader_from("./data/triangle.vert", GL_VERTEX_SHADER);
         shd.load_shader_from("./data/triangle.frag", GL_FRAGMENT_SHADER);
-        shd.link_program();
-
-        shd.load_shader_from("./data/triangle_alt.frag", GL_FRAGMENT_SHADER);
         shd.link_program();
     }
     catch (std::runtime_error err) {
@@ -137,8 +119,7 @@ int main() {
 
         // Draw VAO
         shd.use_shader();
-        glBindVertexArray(vao);
-        glDrawArrays(GL_TRIANGLES, 0, sizeof(positions) / sizeof(positions[0]));
+        vb.submit(GL_TRIANGLES, 0, 3);
 
         glfwSwapBuffers(window);
         glfwPollEvents();

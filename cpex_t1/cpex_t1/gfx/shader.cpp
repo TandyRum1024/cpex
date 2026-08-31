@@ -1,7 +1,12 @@
+/**
+ * gfx::shader - OpenGL Shader abstraction
+ * ZIK@MMXXVI
+ */
+
 #include <string>
 #include <iostream>
 
-#include <gfx.hpp>
+#include <gfx/shader.hpp>
 #include <zcl/zcl.hpp>
 
 using namespace gfx;
@@ -15,7 +20,7 @@ const std::map<GLenum, std::string> Shader::TBL_SHADER_TYPE_TO_NAME = {
 Shader::Shader(std::string name): name(name) { }
 
 Shader::~Shader() {
-    for (auto &&shader : loadedShaders) {
+    for (auto &&shader: loadedShaders) {
         if (auto shaderIdx = shader.second) {
             if (shaderProgram) {
                 glDetachShader(shaderProgram, shaderIdx);
@@ -84,7 +89,7 @@ void Shader::link_program() {
     // Prepare shader program object
     if (shaderProgram) {
         // (detach all previous shaders from this program)
-        for (auto &&shader : loadedShaders) {
+        for (auto &&shader: loadedShaders) {
             if (auto shaderIdx = shader.second) {
                 glDetachShader(shaderProgram, shaderIdx);
             }
@@ -98,7 +103,7 @@ void Shader::link_program() {
     }
 
     // Attach all shader & link to program
-    for (auto &&shader : loadedShaders) {
+    for (auto &&shader: loadedShaders) {
         if (auto shaderIdx = shader.second) {
             glAttachShader(shaderProgram, shader.second);
         }
