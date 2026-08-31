@@ -1,7 +1,7 @@
 # CPEX - Build management madness
 # Written with duct tape, hope and dreams
 # ZIK@MMXXVI
-cmake_minimum_required(VERSION 3.11.0)
+cmake_minimum_required(VERSION 3.26.0)
 project(
     cpex_t1
     VERSION 0.1.0
@@ -9,7 +9,7 @@ project(
     LANGUAGES CXX
 )
 
-# Using FetchContent for better external library handling! wow...
+# Using `FetchContent` for better external library handling! wow...
 # https://www.foonathan.net/2022/06/cmake-fetchcontent/
 include(FetchContent)
 # set(FETCHCONTENT_BASE_DIR "${CMAKE_SOURCE_DIR}/extern/build")
@@ -17,17 +17,39 @@ include(FetchContent)
 # Alias for source files
 set(
     SRC_MAIN
-    ${CMAKE_CURRENT_SOURCE_DIR}/cpex_t1/main.cpp 
+    ${CMAKE_CURRENT_SOURCE_DIR}/cpex_t1/main.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/cpex_t1/gfx.cpp
+)
+set(
+    SRC_LIBS
+    ${CMAKE_CURRENT_SOURCE_DIR}/zcl
 )
 # (GLAD - https://gen.glad.sh/)
 set(
     SRC_GLAD
     ${CMAKE_CURRENT_SOURCE_DIR}/extern/glad
 )
-include_directories(${SRC_GLAD}/include)
+
+set(
+    SRC_INCL
+    ${SRC_LIBS}/include   
+    ${SRC_GLAD}/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/cpex_t1
+)
 
 # For building `cpex_t1.exe` with source files `<root>/cpex_t1/main.cpp`
-add_executable(${PROJECT_NAME} ${SRC_MAIN} ${SRC_GLAD}/src/gl.c)
+include_directories(${SRC_INCL})
+add_executable(${PROJECT_NAME} ${SRC_MAIN} ${SRC_LIBS}/zcl.cpp ${SRC_GLAD}/src/gl.c)
+
+# Shaders & misc. files using `copy_directory_if_different`
+# https://discourse.cmake.org/t/copying-files-with-destination-folder-depending-on-build-config/10686
+add_custom_target(
+    COPY_DATA
+    COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different
+        "${CMAKE_CURRENT_SOURCE_DIR}/cpex_t1/data"
+        "$<TARGET_FILE_DIR:${PROJECT_NAME}>/data"
+)
+add_dependencies(${PROJECT_NAME} COPY_DATA)
 
 # External dependencies
 # -----------------------
