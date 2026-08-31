@@ -50,20 +50,21 @@ namespace gfx {
             VB_BUFF_EBO,
             _VB_BUFF_OBJ_SZ
         };
-
+        
         GLuint vao;
+        VertFormat format;
+        bool isFormatSet;
         /** Contains VBO, EBO. Indexed by `VB_BUFF_OBJ` */
         GLuint objs[_VB_BUFF_OBJ_SZ];
         std::vector<V> verts;
         std::vector<unsigned int> indices;
         
     public:
-        VertFormat format;
-
         // `Vb() = default;` does not work since its template / generic class, it will give deleted constructor as a default one
         Vb();
         ~Vb();
 
+        void set_format(VertFormat format);
         void push_back_verts(V vert);
         void push_back_verts(std::vector<V> appendVerts);
         void push_back_indices(unsigned int idx);
@@ -75,7 +76,11 @@ namespace gfx {
 
     // DEFINITIONS (INCLUSION MODEL FOR TEMPLATE CLASSES!) //
     template <typename V>
-    Vb<V>::Vb() {}
+    Vb<V>::Vb():
+        vao(0),
+        objs{0, 0},
+        isFormatSet(false)
+         {}
 
     template <typename V>
     Vb<V>::~Vb() {
@@ -85,6 +90,12 @@ namespace gfx {
                 obj = 0;
             }
         }
+    }
+
+    template <typename V>
+    void Vb<V>::set_format(VertFormat format) {
+        this->format = format;
+        isFormatSet = true;
     }
 
     template <typename V>
@@ -109,6 +120,10 @@ namespace gfx {
 
     template <typename V>
     void Vb<V>::build() {
+        if (!isFormatSet) {
+            throw std::runtime_error("Vertex format not set!");
+        }
+
         glGenBuffers(_VB_BUFF_OBJ_SZ, objs);
         
         // Setup VAO

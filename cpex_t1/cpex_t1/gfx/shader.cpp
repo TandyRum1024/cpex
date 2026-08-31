@@ -17,7 +17,9 @@ const std::map<GLenum, std::string> Shader::TBL_SHADER_TYPE_TO_NAME = {
     { GL_FRAGMENT_SHADER, "GL_FRAGMENT_SHADER" },
 };
 
-Shader::Shader(std::string name): name(name) { }
+Shader::Shader(std::string name):
+    name(name),
+    shaderProgram(0) {}
 
 Shader::~Shader() {
     for (auto &&shader: loadedShaders) {
@@ -97,6 +99,7 @@ void Shader::link_program() {
         glDeleteProgram(shaderProgram);
         shaderProgram = 0;
     }
+
     shaderProgram = glCreateProgram();
     if (!shaderProgram) {
         throw std::runtime_error("Failed to glCreateProgram()!");
@@ -122,6 +125,8 @@ void Shader::link_program() {
         glGetProgramInfoLog(shaderProgram, 512, NULL, msg);
         throw std::runtime_error("Shader program not available!\n"s + msg);
     }
+
+    std::cout << "[GFX] Linking shader done!" << std::endl;
 }
 
 void Shader::use_shader() {
