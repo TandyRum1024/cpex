@@ -14,34 +14,55 @@ project(
 include(FetchContent)
 # set(FETCHCONTENT_BASE_DIR "${CMAKE_SOURCE_DIR}/extern/build")
 
+# Setup list of external libraries to be automatically used for `target_link_libraries()`
+set(EXT_LIBS)
+
+# Setup list of sources to be automatically used for `add_executable()`
+set(SRC_LIBS)
+set(SRC_LIBS_INCL)
+
 # Alias for source files
 set(
     SRC_MAIN
-    ${CMAKE_CURRENT_SOURCE_DIR}/cpex_t1/main.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/cpex_t1/gfx.cpp
+    cpex_t1/main.cpp
 )
-set(
+# (GFX)
+set(DIR_GFX ${CMAKE_CURRENT_SOURCE_DIR}/cpex_t1/gfx)
+list(
+    APPEND
     SRC_LIBS
-    ${CMAKE_CURRENT_SOURCE_DIR}/zcl
+    ${DIR_GFX}/shader.cpp
+    ${DIR_GFX}/vb.cpp
+    ${DIR_GFX}/vert.cpp
+)
+# (ZCL)
+set(DIR_ZCL ${CMAKE_CURRENT_SOURCE_DIR}/zcl)
+list(
+    APPEND
+    SRC_LIBS
+    ${DIR_ZCL}/zcl.cpp
 )
 # (GLAD - https://gen.glad.sh/)
-set(
-    SRC_GLAD
-    ${CMAKE_CURRENT_SOURCE_DIR}/extern/glad
+set(DIR_GLAD ${CMAKE_CURRENT_SOURCE_DIR}/extern/glad)
+list(
+    APPEND
+    SRC_LIBS
+    ${DIR_GLAD}/src/gl.c
 )
 
-set(
-    SRC_INCL
-    ${SRC_LIBS}/include   
-    ${SRC_GLAD}/include
-    ${CMAKE_CURRENT_SOURCE_DIR}/cpex_t1
+list(
+    APPEND
+    SRC_LIBS_INCL
+    ${CMAKE_CURRENT_SOURCE_DIR}/cpex_t1 # GFX, etc
+    ${DIR_ZCL}/include   
+    ${DIR_GLAD}/include
 )
 
 # For building `cpex_t1.exe` with source files `<root>/cpex_t1/main.cpp`
-include_directories(${SRC_INCL})
-add_executable(${PROJECT_NAME} ${SRC_MAIN} ${SRC_LIBS}/zcl.cpp ${SRC_GLAD}/src/gl.c)
+include_directories(${SRC_LIBS_INCL})
+add_executable(${PROJECT_NAME} ${SRC_MAIN} ${SRC_LIBS})
 
-# Shaders & misc. files using `copy_directory_if_different`
+# Shaders & misc. files copy, using `copy_directory_if_different`
 # https://discourse.cmake.org/t/copying-files-with-destination-folder-depending-on-build-config/10686
 add_custom_target(
     COPY_DATA
@@ -56,7 +77,8 @@ add_dependencies(${PROJECT_NAME} COPY_DATA)
 # OpenGL (https://cmake.org/cmake/help/latest/module/FindOpenGL.html)
 find_package(OpenGL REQUIRED)
 # (link program with OpenGL)
-target_link_libraries(${PROJECT_NAME} OpenGL::GL) # `${OPENGL_LIBRARIES}` == legacy
+# target_link_libraries(${PROJECT_NAME} OpenGL::GL) # `${OPENGL_LIBRARIES}` == legacy
+list(APPEND EXT_LIBS OpenGL::GL) # `${OPENGL_LIBRARIES}` == legacy
 
 # GLFW (https://www.glfw.org/docs/3.0/build.html#build_link_cmake_source)
 set(VER_GLFW "3.5.1")
@@ -71,11 +93,15 @@ set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
 set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(glfw)
 # (link program with GLFW)
-target_link_libraries(${PROJECT_NAME} glfw)
+list(APPEND EXT_LIBS glfw)
+
 # (LEGACY: USE SUBMODULES INSTEAD)
 # add_subdirectory(${SRC_GLFW})
 # -----------------------
 # External dependencies
+
+# Link external dependencies with list built above
+target_link_libraries(${PROJECT_NAME} ${EXT_LIBS})
 
 # Testing (maybe)
 include(CTest)
