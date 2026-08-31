@@ -6,14 +6,17 @@
 #include <GLFW/glfw3.h>
 
 namespace gfx {
+    /** Contains all the neccessary informations to compile & use shaders. */
     class Shader {
-        // (DEBUG) Table for converting OpenGL's shader type to human readable names
-        static const std::map<GLenum, std::string> TBL_SHADER_TYPE_TO_NAME;
-
         std::string name;
-        std::map<GLenum, GLuint> loadedShaders;
         GLuint shaderProgram;
-
+        
+        /** Indexed by shader type (`GL_VERTEX_SHADER`, etc), contains results of `glCreateShader()` */
+        std::map<GLenum, GLuint> loadedShaders;
+        
+        /** (DEBUG) Table for converting OpenGL's shader type to human readable names */
+        static const std::map<GLenum, std::string> TBL_SHADER_TYPE_TO_NAME;
+        /** Converts shader type (`GL_VERTEX_SHADER`, etc) into human readable names */
         std::string get_shader_type_name(GLenum type);
 
     public:
