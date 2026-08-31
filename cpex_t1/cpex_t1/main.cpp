@@ -111,9 +111,14 @@ int main() {
     glEnableVertexAttribArray(1);
 
     // (shaders)
-    gfx::Shader shd;
+    gfx::Shader shd("triangle");
     try {
-        shd.load_from("./data/triangle");
+        shd.load_shader_from("./data/triangle.vert", GL_VERTEX_SHADER);
+        shd.load_shader_from("./data/triangle.frag", GL_FRAGMENT_SHADER);
+        shd.link_program();
+
+        shd.load_shader_from("./data/triangle_alt.frag", GL_FRAGMENT_SHADER);
+        shd.link_program();
     }
     catch (std::runtime_error err) {
         std::cerr << "FAILED TO PREPARE SHADER!" << std::endl << err.what() << std::endl;
@@ -121,10 +126,8 @@ int main() {
         return -1;
     }
 
-    shd.set();
-
     // Begin loop
-    glClearColor(1.0, 0.8, 0.25, 1.0);
+    glClearColor(1.0f, 0.8f, 0.25f, 1.0f);
     while (!glfwWindowShouldClose(window)) {
         // Input
         process_input(window);
@@ -133,6 +136,7 @@ int main() {
         glClear(GL_COLOR_BUFFER_BIT);
 
         // Draw VAO
+        shd.use_shader();
         glBindVertexArray(vao);
         glDrawArrays(GL_TRIANGLES, 0, sizeof(positions) / sizeof(positions[0]));
 

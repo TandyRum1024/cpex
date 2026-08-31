@@ -5,111 +5,125 @@
 #include <zcl/zcl.hpp>
 
 using namespace gfx;
+using namespace std::string_literals; // ""s literal
 
-Shader::Shader(std::string vertFilePath, std::string fragFilePath)
-    : vertShaderFilePath(vertFilePath)
-    , fragShaderFilePath(fragFilePath) {
-    load();
-}
+const std::map<GLenum, std::string> Shader::TBL_SHADER_TYPE_TO_NAME = {
+    { GL_VERTEX_SHADER, "GL_VERTEX_SHADER" },
+    { GL_FRAGMENT_SHADER, "GL_FRAGMENT_SHADER" },
+};
+
+Shader::Shader(std::string name): name(name) { }
 
 Shader::~Shader() {
-    if (vertShader) {
-        glDeleteShader(vertShader);
-        vertShader = 0;
+    for (auto &&shader : loadedShaders) {
+        if (auto shaderIdx = shader.second) {
+            if (shaderProgram) {
+                glDetachShader(shaderProgram, shaderIdx);
+            }
+            glDeleteShader(shaderIdx);
+        }
     }
-    if (fragShader) {
-        glDeleteShader(fragShader);
-        fragShader = 0;
-    }
+    loadedShaders.clear();
+
     if (shaderProgram) {
         glDeleteProgram(shaderProgram);
         shaderProgram = 0;
     }
 }
 
-void Shader::load() {
-    if (vertShader) {
-        glDeleteShader(vertShader);
-        vertShader = 0;
+std::string Shader::get_shader_type_name(GLenum type) {
+    auto it = TBL_SHADER_TYPE_TO_NAME.find(type);
+    return (it != TBL_SHADER_TYPE_TO_NAME.end()) ? it->second : ("UNKNOWN_TYPE_"s + std::to_string(it->first));
+}
+
+void Shader::load_shader_from(std::string filePath, GLenum type) {
+    std::cout << "[GFX] Loading shader (" << get_shader_type_name(type) << ") from `" << filePath << "`..." << std::endl;
+    set_shader(zcl::file::read_file_to_string(filePath), type);
+}
+
+void Shader::set_shader(std::string src, GLenum type) {
+    auto cstr = src.c_str();
+    int compileRes;
+    GLuint shader;
+
+    std::cout << "[GFX] Set shader (" << get_shader_type_name(type) << ") for `" << name << "`..." << std::endl;
+
+    // Detach & unload previous shader if theres any
+    shader = loadedShaders[type];
+    if (shader) {
+        if (shaderProgram) {
+            glDetachShader(shaderProgram, shader);
+        }
+        glDeleteShader(shader);
+        std::cout << "[GFX] Detaching shader (" << get_shader_type_name(type) << ") from `" << name << "`..." << std::endl;
     }
-    if (fragShader) {
-        glDeleteShader(fragShader);
-        fragShader = 0;
+
+    // Prepare shader object
+    shader = glCreateShader(type);
+    if (!shader) {
+        throw std::runtime_error("Failed to glCreateShader()!");
     }
+    loadedShaders[type] = shader;
+
+    // Compile shader
+    glShaderSource(shader, 1, &cstr, NULL);
+    glCompileShader(shader);
+    glGetShaderiv(shader, GL_COMPILE_STATUS, &compileRes);
+    if (!compileRes) {
+        char msg[512];
+        glGetShaderInfoLog(shader, 512, NULL, msg);
+        throw std::runtime_error("Failed to compile vertex shader:\n"s + msg);
+    }
+}
+
+void Shader::link_program() {
+    int compileRes;
+
+    std::cout << "[GFX] Linking shader program for `" << name << "`..." << std::endl;
+
+    // Prepare shader program object
     if (shaderProgram) {
+        // (detach all previous shaders from this program)
+        for (auto &&shader : loadedShaders) {
+            if (auto shaderIdx = shader.second) {
+                glDetachShader(shaderProgram, shaderIdx);
+            }
+        }
         glDeleteProgram(shaderProgram);
         shaderProgram = 0;
     }
-
-    vertShader = glCreateShader(GL_VERTEX_SHADER);
-    fragShader = glCreateShader(GL_FRAGMENT_SHADER);
     shaderProgram = glCreateProgram();
-
-    if (!vertShader || !fragShader) {
-        throw std::runtime_error("Failed to glCreateShader()!");
-    }
-    
-    std::cout << "[GFX] Loading from (vert: " << vertShaderFilePath << ", frag: " << fragShaderFilePath << " )" << std::endl;
-
-    vertShaderSrc = zcl::file::read_file_to_string(vertShaderFilePath);
-    fragShaderSrc = zcl::file::read_file_to_string(fragShaderFilePath);
-
-    auto vertShaderCstr = vertShaderSrc.c_str();
-    auto fradShaderCstr = fragShaderSrc.c_str();
-    int compileRes;
-
-    glShaderSource(vertShader, 1, &vertShaderCstr, NULL);
-    glCompileShader(vertShader);
-    glGetShaderiv(vertShader, GL_COMPILE_STATUS, &compileRes);
-
-    if (!compileRes) {
-        char msg[512];
-        glGetShaderInfoLog(vertShader, 512, NULL, msg);
-        throw std::runtime_error(std::string("Failed to compile vertex shader:\n") + msg);
+    if (!shaderProgram) {
+        throw std::runtime_error("Failed to glCreateProgram()!");
     }
 
-    glShaderSource(fragShader, 1, &fradShaderCstr, NULL);
-    glCompileShader(fragShader);
-    glGetShaderiv(fragShader, GL_COMPILE_STATUS, &compileRes);
-
-    if (!compileRes) {
-        char msg[512];
-        glGetShaderInfoLog(fragShader, 512, NULL, msg);
-        throw std::runtime_error(std::string("Failed to compile fragment shader:\n") + msg);
+    // Attach all shader & link to program
+    for (auto &&shader : loadedShaders) {
+        if (auto shaderIdx = shader.second) {
+            glAttachShader(shaderProgram, shader.second);
+        }
     }
-
-    glAttachShader(shaderProgram, vertShader);
-    glAttachShader(shaderProgram, fragShader);
     glLinkProgram(shaderProgram);
+    // (sanity check)
     glGetProgramiv(shaderProgram, GL_LINK_STATUS, &compileRes);
-
     if (!compileRes) {
         char msg[512];
         glGetProgramInfoLog(shaderProgram, 512, NULL, msg);
-        throw std::runtime_error(std::string("Failed to link shader program:\n") + msg);
+        throw std::runtime_error("Failed to link shader program:\n"s + msg);
     }
-
-    glDeleteShader(vertShader);
-    glDeleteShader(fragShader);
-    vertShader = 0;
-    fragShader = 0;
+    glGetProgramiv(shaderProgram, GL_VALIDATE_STATUS, &compileRes);
+    if (!compileRes) {
+        char msg[512];
+        glGetProgramInfoLog(shaderProgram, 512, NULL, msg);
+        throw std::runtime_error("Shader program not available!\n"s + msg);
+    }
 }
 
-void Shader::load_from(std::string vertFilePath, std::string fragFilePath) {
-    fragShaderFilePath = fragFilePath;
-    vertShaderFilePath = vertFilePath;
-    load();
-}
-
-void Shader::load_from(std::string baseFilePath) {
-    load_from(baseFilePath + ".vert", baseFilePath + ".frag");
-}
-
-void Shader::set() {
+void Shader::use_shader() {
     if (shaderProgram) {
         glUseProgram(shaderProgram);
     }
     else {
-        std::cerr << "[GFX] Shader is not ready!" << std::endl;
+        std::cerr << "[GFX] Shader `" << name << "` is not ready!" << std::endl;
     }
 }
