@@ -139,6 +139,7 @@ int main() {
     // Setup scene
     // (model)
     gfx::Vb<gfx::VertPosUv> vb;
+    
     vb.set_format(gfx::VertFormat {
         gfx::VertAttribute(0, 3, GL_DOUBLE, sizeof(double), 5, 0), // POS
         gfx::VertAttribute(1, 2, GL_DOUBLE, sizeof(double), 5, 3), // UV
@@ -156,7 +157,9 @@ int main() {
     vb.build();
 
     // (shaders)
-    gfx::Shader shd("triangle");
+    gfx::Shader shd;
+    shd = gfx::Shader("triangle");
+    
     try {
         shd.load_shader_from("./data/triangle.vert", GL_VERTEX_SHADER);
         shd.load_shader_from("./data/triangle.frag", GL_FRAGMENT_SHADER);

@@ -17,11 +17,7 @@ const std::map<GLenum, std::string> Shader::TBL_SHADER_TYPE_TO_NAME = {
     { GL_FRAGMENT_SHADER, "GL_FRAGMENT_SHADER" },
 };
 
-Shader::Shader(std::string name):
-    name(name),
-    shaderProgram(0) {}
-
-Shader::~Shader() {
+void Shader::release_resources() {
     for (auto &&shader: loadedShaders) {
         if (auto shaderIdx = shader.second) {
             if (shaderProgram) {

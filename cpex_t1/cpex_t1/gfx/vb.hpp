@@ -51,18 +51,74 @@ namespace gfx {
             _VB_BUFF_OBJ_SZ
         };
         
-        GLuint vao;
+        GLuint vao = 0;
         VertFormat format;
         bool isFormatSet;
         /** Contains VBO, EBO. Indexed by `VB_BUFF_OBJ` */
-        GLuint objs[_VB_BUFF_OBJ_SZ];
+        GLuint objs[_VB_BUFF_OBJ_SZ] = { 0, 0 };
         std::vector<V> verts;
         std::vector<unsigned int> indices;
         
+        void release_resources() {
+            for (auto &&obj: objs) {
+                if (obj) {
+                    glDeleteBuffers(1, &obj);
+                    obj = 0;
+                }
+            }
+            
+            glDeleteVertexArrays(1, &vao);
+            vao = 0;
+
+            verts.clear();
+            indices.clear();
+        }
+        
     public:
         // `Vb() = default;` does not work since its template / generic class, it will give deleted constructor as a default one
-        Vb();
-        ~Vb();
+        Vb():
+            vao(0),
+            objs{0, 0},
+            isFormatSet(false) {
+            // std::cout << "[GFX] Vb@" << this << " created!" << std::endl;
+        }
+        
+        ~Vb() {
+            // std::cout << "[GFX] Vb@" << this << " destroyed!" << std::endl;
+            release_resources();
+        }
+
+        Vb(const Vb &other) = delete; // (RAII) Disable copy
+        Vb& operator=(const Vb &other) = delete; // (RAII) Disable copy
+
+        Vb(Vb &&other): // (RAII) Move
+            verts(std::move(other.verts)),
+            indices(std::move(other.indices)),
+            format(other.format),
+            isFormatSet(other.isFormatSet),
+            // (replace GL resources with dummy)
+            objs(std::exchange(other.objs, { 0, 0 })),
+            vao(std::exchange(other.vao, 0)) {
+            // std::cout << "[GFX] Vb@" << this << " <- Vb@" << &other << " moved!" << std::endl;
+        }
+        
+        Vb& operator=(Vb &&other) { // (RAII) Move
+            if (this == &other) {
+                // Self assignment, no need to move
+                return *this;
+            }
+            
+            // std::cout << "[GFX] Vb@" << this << " <- Vb@" << &other << " moved!" << std::endl;
+            release_resources();
+
+            std::swap(verts, other.verts);
+            std::swap(indices, other.indices);
+            std::swap(format, other.format);
+            std::swap(isFormatSet, other.isFormatSet);
+            std::swap(objs, other.objs);
+            std::swap(vao, other.vao);
+            return *this;
+        }
 
         void set_format(VertFormat format);
         void push_back_verts(V vert);
@@ -75,23 +131,6 @@ namespace gfx {
     };
 
     // DEFINITIONS (INCLUSION MODEL FOR TEMPLATE CLASSES!) //
-    template <typename V>
-    Vb<V>::Vb():
-        vao(0),
-        objs{0, 0},
-        isFormatSet(false)
-         {}
-
-    template <typename V>
-    Vb<V>::~Vb() {
-        for (auto &&obj: objs) {
-            if (obj) {
-                glDeleteBuffers(1, &obj);
-                obj = 0;
-            }
-        }
-    }
-
     template <typename V>
     void Vb<V>::set_format(VertFormat format) {
         this->format = format;
