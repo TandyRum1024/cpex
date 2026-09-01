@@ -7,8 +7,6 @@
 #include <fstream>
 #include <string>
 
-#include <app.hpp>
-
 // LIBRARIES //
 #include <zap/opengl/opengl.hpp>
 #include <gfx/shader.hpp>
@@ -25,20 +23,12 @@
 // ----------------------------
 // EXTERNAL LIBRARIES //
 
-int main() {
-    CpexApp app;
+/** App for CPEX - T1 */
+class CpexApp: public zap::OpenGlApp {
+    gfx::Vb<gfx::VertPosUv> vb;
+    gfx::Shader shd;
 
-    try {
-        app.boot();
-    }
-    catch (std::exception e) {
-        std::cerr << "[!!!] UNHANDLED EXCEPTION!" << std::endl << e.what() << std::endl;
-    }
-    catch (...) {
-        std::cerr << "[!!!] FATAL EXCEPTION HAS OCCURED! AND NOW THE APP WILL TERMINATE. BYE" << std::endl;
-    }    
-
-    std::cout << "[GLFW] TERMINATING!" << std::endl;
-    glfwTerminate();
-    return 0;
-}
+    void on_setup() override;
+    void on_loop_update(double dtMillis) override;
+    void on_loop_render(double dtMillis) override;
+};

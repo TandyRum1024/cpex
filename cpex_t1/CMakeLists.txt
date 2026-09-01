@@ -25,6 +25,7 @@ set(SRC_LIBS_INCL)
 set(
     SRC_MAIN
     cpex_t1/main.cpp
+    cpex_t1/app.cpp
 )
 # (GFX)
 set(DIR_GFX ${CMAKE_CURRENT_SOURCE_DIR}/cpex_t1/gfx)
@@ -34,6 +35,14 @@ list(
     ${DIR_GFX}/shader.cpp
     ${DIR_GFX}/vb.cpp
     ${DIR_GFX}/vert.cpp
+)
+# (ZAP)
+set(DIR_ZAP ${CMAKE_CURRENT_SOURCE_DIR}/cpex_t1/zap)
+list(
+    APPEND
+    SRC_LIBS
+    ${DIR_ZAP}/zap.cpp
+    ${DIR_ZAP}/opengl/opengl.cpp
 )
 # (ZCL)
 set(DIR_ZCL ${CMAKE_CURRENT_SOURCE_DIR}/zcl)
@@ -54,7 +63,7 @@ list(
     APPEND
     SRC_LIBS_INCL
     ${CMAKE_CURRENT_SOURCE_DIR}/cpex_t1 # GFX, etc
-    ${DIR_ZCL}/include   
+    ${DIR_ZCL}/include
     ${DIR_GLAD}/include
 )
 
