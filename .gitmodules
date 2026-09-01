@@ -1,0 +1,4 @@
+[submodule "common_extern/imgui"]
+	path = common_extern/imgui
+	url = git@github.com:ocornut/imgui.git
+	branch = docking

@@ -37,4 +37,5 @@ cmake --build ./out/build/CPEX_x64 --config Debug --target clean
 # (expected) Dependencies
 - OpenGL
     - [GLFW 3.5.1](https://www.glfw.org/)
+    - [GLAD2](https://gen.glad.sh/)
 - [Dear ImGui](https://github.com/ocornut/imgui)

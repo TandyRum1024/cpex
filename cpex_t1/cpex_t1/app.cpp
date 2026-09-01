@@ -19,11 +19,24 @@
 // EXTERNAL LIBRARIES //
 // ----------------------------
 // OpenGL: GLAD
-#include <glad/gl.h>
+// #include <glad/gl.h>
 // OpenGL: GLFW
-#include <GLFW/glfw3.h>
+// #include <GLFW/glfw3.h>
+// ImGui
+#include <imgui.h>
+#include <imgui_impl_glfw.h>
+#include <imgui_impl_opengl3.h>
 // ----------------------------
 // EXTERNAL LIBRARIES //
+
+void CpexApp::free_imgui() {
+    if (imGuiContext) {
+        ImGui_ImplOpenGL3_Shutdown();
+        ImGui_ImplGlfw_Shutdown();
+        ImGui::DestroyContext(imGuiContext);
+    }
+    imGuiContext = nullptr;
+}
 
 void CpexApp::on_setup() {
     // Setup scene
@@ -55,12 +68,34 @@ void CpexApp::on_setup() {
         throw std::runtime_error("FAILED TO PREPARE SHADER!\n" + std::string(err.what()));
     }
 
+    // Setup ImGui
+    imGuiContext = ImGui::CreateContext();
+    ImGui_ImplGlfw_InitForOpenGL(window, true);
+    ImGui_ImplOpenGL3_Init();
+
     // Misc.
     glClearColor(1.0f, 0.8f, 0.25f, 1.0f);
 }
 
+void CpexApp::on_free_resource() {
+    std::cout << "[APP] Freeing resources..." << std::endl;
+    free_imgui();
+}
+
+void CpexApp::on_shutdown() {
+    std::cout << "[APP] App shutdown..." << std::endl;
+}
+
 void CpexApp::on_loop_update(double dtMillis) {
     set_window_title(std::string("DT: ") + std::to_string(dtMillis) + "ms");
+}
+
+void CpexApp::on_loop_render_begin(double dtMillis) {
+    ImGui_ImplGlfw_NewFrame();
+    ImGui_ImplOpenGL3_NewFrame();
+    ImGui::NewFrame();
+
+    ImGui::ShowDemoWindow(); // Show demo window! :)
 }
 
 void CpexApp::on_loop_render(double dtMillis) {
@@ -69,4 +104,15 @@ void CpexApp::on_loop_render(double dtMillis) {
     // Draw VAO
     shd.use_shader();
     vb.submit();
+}
+
+void CpexApp::on_loop_render_end(double dtMillis) {
+    ImGui::Render();
+    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+}
+
+void CpexApp::on_window_key(GLFWwindow* win, int key, int scancode, int action, int mods) {
+    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
+        glfwSetWindowShouldClose(win, true);
+    }
 }

@@ -36,9 +36,8 @@ int main() {
     }
     catch (...) {
         std::cerr << "[!!!] FATAL EXCEPTION HAS OCCURED! AND NOW THE APP WILL TERMINATE. BYE" << std::endl;
-    }    
+    }
 
-    std::cout << "[GLFW] TERMINATING!" << std::endl;
-    glfwTerminate();
+    std::cout << "APP TERMINATING!" << std::endl;
     return 0;
 }

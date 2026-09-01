@@ -106,6 +106,32 @@ list(APPEND EXT_LIBS glfw)
 
 # (LEGACY: USE SUBMODULES INSTEAD)
 # add_subdirectory(${SRC_GLFW})
+
+# Dear ImGui (https://github.com/ocornut/imgui)
+set(DIR_IMGUI ${CMAKE_CURRENT_SOURCE_DIR}/../common_extern/imgui)
+target_sources(
+    ${PROJECT_NAME}
+    PUBLIC
+    # (CORE)
+    ${DIR_IMGUI}/imgui.cpp
+    ${DIR_IMGUI}/imgui_demo.cpp
+    ${DIR_IMGUI}/imgui_draw.cpp
+    ${DIR_IMGUI}/imgui_tables.cpp
+    ${DIR_IMGUI}/imgui_widgets.cpp
+    # (BACKEND)
+    ${DIR_IMGUI}/backends/imgui_impl_glfw.cpp
+    ${DIR_IMGUI}/backends/imgui_impl_opengl3.cpp
+    # (MISC)
+    ${DIR_IMGUI}/misc/cpp/imgui_stdlib.cpp
+)
+target_include_directories(
+    ${PROJECT_NAME}
+    PUBLIC
+    ${DIR_IMGUI}
+    ${DIR_IMGUI}/misc/cpp
+    ${DIR_IMGUI}/backends
+)
+
 # -----------------------
 # External dependencies
 

@@ -25,13 +25,13 @@ namespace zap {
     class OpenGlApp : public App {
     protected:
         std::string windowTitle;
-        GLFWwindow* window;
+        GLFWwindow* window = nullptr;
         std::chrono::steady_clock::time_point dtPrev;
 
         OpenGlApp(std::string windowTitle):
             windowTitle(windowTitle) {}
         OpenGlApp() {}
-        ~OpenGlApp() {
+        virtual ~OpenGlApp() {
             free_resources();
         }
 
@@ -58,6 +58,8 @@ namespace zap {
         }
 
         void free_resources() {
+            on_free_resource();
+
             if (window) {
                 glfwDestroyWindow(window);
             }
@@ -68,20 +70,31 @@ namespace zap {
             this->windowTitle = windowTitle;
             glfwSetWindowTitle(window, windowTitle.c_str());
         }
-
+        
+        /** Called on destructor, move, etc when the class is no longer being used. */
+        virtual void on_free_resource() {};
+        /** Called on program shutdown, before GLFW is terminated. */
+        virtual void on_shutdown() {};
+        
         /** Called on update in render loop. */
         virtual void on_loop_update(double dtMillis) = 0;
         /** Called on screen render in render loop. */
         virtual void on_loop_render(double dtMillis) = 0;
+        /** Called before render in render loop. */
+        virtual void on_loop_render_begin(double dtMillis) {};
+        /** Called after render in render loop. */
+        virtual void on_loop_render_end(double dtMillis) {};
+        /** Called after update & render in render loop. */
+        virtual void on_loop_update_end(double dtMillis) {};
 
     public:
         /** Called on window resize. */
-        void on_window_resize(GLFWwindow* win, int wid, int hei);
+        virtual void on_window_resize(GLFWwindow* win, int wid, int hei);
         /** Called on window resize. */
-        void on_window_key(GLFWwindow* win, int key, int scancode, int action, int mods);
-
-        void boot();
-        void shutdown();
+        virtual void on_window_key(GLFWwindow* win, int key, int scancode, int action, int mods) {};
+        
+        void boot() override;
+        void shutdown() override;
     };
 }
 #endif

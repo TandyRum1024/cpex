@@ -97,8 +97,13 @@ namespace gfx {
             format(other.format),
             isFormatSet(other.isFormatSet),
             // (replace GL resources with dummy)
-            objs(std::exchange(other.objs, { 0, 0 })),
+            // objs(std::exchange(other.objs, { 0, 0 })),
             vao(std::exchange(other.vao, 0)) {
+            
+            for (size_t i = 0; i < _VB_BUFF_OBJ_SZ; i++) {
+                objs[i] = other.objs[i];
+                other.objs[i] = 0;
+            }
             // std::cout << "[GFX] Vb@" << this << " <- Vb@" << &other << " moved!" << std::endl;
         }
         

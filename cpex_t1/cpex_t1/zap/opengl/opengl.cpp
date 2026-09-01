@@ -135,14 +135,22 @@ void OpenGlApp::boot() {
         dtNow = std::chrono::high_resolution_clock::now();
         std::chrono::duration<double, std::milli> dtMillis = dtNow - dtPrev;
 
+        glfwPollEvents();
+        
         // Logic
         on_loop_update(dtMillis.count());
-        glfwPollEvents();
 
         // Render
+        on_loop_render_begin(dtMillis.count());
         on_loop_render(dtMillis.count());
+        on_loop_render_end(dtMillis.count());
         glfwSwapBuffers(window);
+
+        // Finishing logic
+        on_loop_update_end(dtMillis.count());
     }
+    
+    on_shutdown();
 
     std::cout << "[GLFW] TERMINATING!" << std::endl;
     glfwTerminate();
@@ -158,11 +166,9 @@ void OpenGlApp::on_window_resize(GLFWwindow* win, int wid, int hei) {
     std::chrono::steady_clock::time_point dtNow = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double, std::milli> dtMillis = dtNow - dtPrev;
 
+    on_loop_render_begin(dtMillis.count());
     on_loop_render(dtMillis.count());
+    on_loop_render_end(dtMillis.count());
     glfwSwapBuffers(win);
     std::cout << "[GLFW] NEW WINDOW SIZE: (" << wid << ", " << hei << ")" << std::endl;
-}
-
-void OpenGlApp::on_window_key(GLFWwindow* win, int key, int scancode, int action, int mods) {
-    // glfwSetWindowShouldClose(win, true);
 }

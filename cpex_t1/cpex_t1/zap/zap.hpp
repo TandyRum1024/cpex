@@ -19,6 +19,8 @@ namespace zap {
         // Hooks for app lifecycle
         /** Called on app initialization phase. */
         virtual void on_setup() = 0;
+        /** Called on app shutdown phase. */
+        virtual void on_shutdown() = 0;
     };
 }
 #endif
