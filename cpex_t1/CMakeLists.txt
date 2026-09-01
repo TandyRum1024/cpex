@@ -132,6 +132,17 @@ target_include_directories(
     ${DIR_IMGUI}/backends
 )
 
+# spdlog (https://github.com/gabime/spdlog)
+set(VER_SPDLOG "v1.17.0")
+FetchContent_Declare(
+    spdlog
+    GIT_REPOSITORY https://github.com/gabime/spdlog
+    GIT_TAG ${VER_SPDLOG}
+    GIT_SHALLOW TRUE
+)
+FetchContent_MakeAvailable(spdlog)
+# (link program with spdlog)
+list(APPEND EXT_LIBS spdlog)
 # -----------------------
 # External dependencies
 

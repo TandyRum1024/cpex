@@ -78,16 +78,16 @@ void CpexApp::on_setup() {
 }
 
 void CpexApp::on_free_resource() {
-    std::cout << "[APP] Freeing resources..." << std::endl;
+    _logger->debug("Freeing resources...");
     free_imgui();
 }
 
 void CpexApp::on_shutdown() {
-    std::cout << "[APP] App shutdown..." << std::endl;
+    _logger->debug("App shutdown...");
 }
 
 void CpexApp::on_loop_update(double dtMillis) {
-    set_window_title(std::string("DT: ") + std::to_string(dtMillis) + "ms");
+    set_window_title(std::string("CPEX - T1 (DT: ") + std::to_string(dtMillis) + "ms)");
 }
 
 void CpexApp::on_loop_render_begin(double dtMillis) {

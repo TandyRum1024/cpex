@@ -15,6 +15,8 @@
 
 #include <glad/gl.h>
 #include <GLFW/glfw3.h>
+#include <spdlog/spdlog.h>
+#include <spdlog/sinks/stdout_color_sinks.h>
 
 namespace zap {
     void _common_window_resize(GLFWwindow* win, int wid, int hei);
@@ -24,13 +26,19 @@ namespace zap {
     /** OpenGL app lifecycle abstraction. */
     class OpenGlApp : public App {
     protected:
+        std::shared_ptr<spdlog::logger> _logger;
+
         std::string windowTitle;
         GLFWwindow* window = nullptr;
         std::chrono::steady_clock::time_point dtPrev;
 
         OpenGlApp(std::string windowTitle):
-            windowTitle(windowTitle) {}
-        OpenGlApp() {}
+            windowTitle(windowTitle) {
+            prepare_logger();
+        }
+        OpenGlApp() {
+            prepare_logger();
+        }
         virtual ~OpenGlApp() {
             free_resources();
         }
@@ -40,7 +48,8 @@ namespace zap {
 
         OpenGlApp(OpenGlApp &&other): // (RAII) Move
             windowTitle(std::move(other.windowTitle)),
-            window(other.window) {
+            window(other.window),
+            _logger(std::move(other._logger)) {
             other.window = nullptr;
         }
         OpenGlApp& operator=(OpenGlApp &&other) { // (RAII) Move
@@ -54,6 +63,7 @@ namespace zap {
 
             std::swap(windowTitle, other.windowTitle);
             std::swap(window, other.window);
+            std::swap(_logger, other._logger);
             return *this;
         }
 
@@ -66,11 +76,16 @@ namespace zap {
             window = nullptr;
         }
 
-        void set_window_title(std::string windowTitle) {
-            this->windowTitle = windowTitle;
-            glfwSetWindowTitle(window, windowTitle.c_str());
+        void prepare_logger() {
+            _logger = spdlog::get("APP");
+            if (!_logger) {
+                _logger = spdlog::stdout_color_mt("APP");
+                // _logger->set_level(spdlog::level::debug);
+            }
         }
-        
+
+        /** Updates current windows title. */
+        void set_window_title(std::string windowTitle);
         /** Called on destructor, move, etc when the class is no longer being used. */
         virtual void on_free_resource() {};
         /** Called on program shutdown, before GLFW is terminated. */

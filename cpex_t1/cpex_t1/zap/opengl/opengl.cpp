@@ -63,10 +63,10 @@ void OpenGlApp::boot() {
         throw std::runtime_error("[GLFW] GLFW INIT FAILED!");
     }
 
-    std::cout << "[GLFW] TRY ACTIVATING DEBUG CONTEXT..." << std::endl;
+    _logger->info("GLFW: Activating debug context...");
     glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, true);
 
-    std::cout << "[GLFW] CREATING WINDOW..." << std::endl;
+    _logger->info("GLFW: Creating window...");
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
@@ -92,7 +92,7 @@ void OpenGlApp::boot() {
         throw std::runtime_error("[GLAD] FAILED TO INIT OPENGL!");
     }
     else {
-        std::cout << "[GLAD] RETURNED VERSION: OpenGL " << GLAD_VERSION_MAJOR(version) << "." << GLAD_VERSION_MINOR(version) << std::endl;
+        _logger->info("GLAD: OpenGL {}.{}", GLAD_VERSION_MAJOR(version), GLAD_VERSION_MINOR(version));
     }
 
     // (setup callbacks)
@@ -104,7 +104,7 @@ void OpenGlApp::boot() {
     glGetIntegerv(GL_CONTEXT_FLAGS, &contextFlags);
 
     if (contextFlags & GL_CONTEXT_FLAG_DEBUG_BIT) {
-        std::cout << "[GLFW] DEBUG CONTEXT ACTIVATED!" << std::endl;
+        _logger->warn("GLFW: DEBUG CONTEXT ACTIVATED!");
         glEnable(GL_DEBUG_OUTPUT);
         glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
         glDebugMessageCallback(_common_debug_output, nullptr);
@@ -152,12 +152,17 @@ void OpenGlApp::boot() {
     
     on_shutdown();
 
-    std::cout << "[GLFW] TERMINATING!" << std::endl;
+    _logger->info("GLFW: Terminating GLFW!");
     glfwTerminate();
 }
 
 void OpenGlApp::shutdown() {
     glfwSetWindowShouldClose(window, true);
+}
+
+void OpenGlApp::set_window_title(std::string windowTitle) {
+    this->windowTitle = windowTitle;
+    glfwSetWindowTitle(window, windowTitle.c_str());
 }
 
 void OpenGlApp::on_window_resize(GLFWwindow* win, int wid, int hei) {
@@ -170,5 +175,6 @@ void OpenGlApp::on_window_resize(GLFWwindow* win, int wid, int hei) {
     on_loop_render(dtMillis.count());
     on_loop_render_end(dtMillis.count());
     glfwSwapBuffers(win);
-    std::cout << "[GLFW] NEW WINDOW SIZE: (" << wid << ", " << hei << ")" << std::endl;
+
+    _logger->debug("GLFW: New window size: ({}, {})", wid, hei);
 }

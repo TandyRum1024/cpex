@@ -40,7 +40,7 @@ std::string Shader::get_shader_type_name(GLenum type) {
 }
 
 void Shader::load_shader_from(std::string filePath, GLenum type) {
-    std::cout << "[GFX] Loading shader (" << get_shader_type_name(type) << ") from `" << filePath << "`..." << std::endl;
+    _logger->debug("Loading shader ({}) from file `{}`...", get_shader_type_name(type), filePath);
     set_shader(zcl::file::read_file_to_string(filePath), type);
 }
 
@@ -49,7 +49,7 @@ void Shader::set_shader(std::string src, GLenum type) {
     int compileRes;
     GLuint shader;
 
-    std::cout << "[GFX] Set shader (" << get_shader_type_name(type) << ") for `" << name << "`..." << std::endl;
+    _logger->debug("Set shader ({}) for `{}`...", get_shader_type_name(type), name);
 
     // Detach & unload previous shader if theres any
     shader = loadedShaders[type];
@@ -58,7 +58,8 @@ void Shader::set_shader(std::string src, GLenum type) {
             glDetachShader(shaderProgram, shader);
         }
         glDeleteShader(shader);
-        std::cout << "[GFX] Detaching shader (" << get_shader_type_name(type) << ") from `" << name << "`..." << std::endl;
+
+        _logger->debug("Detaching shader ({}) from `{}`...", get_shader_type_name(type), name);
     }
 
     // Prepare shader object
@@ -82,7 +83,7 @@ void Shader::set_shader(std::string src, GLenum type) {
 void Shader::link_program() {
     int compileRes;
 
-    std::cout << "[GFX] Linking shader program for `" << name << "`..." << std::endl;
+    _logger->debug("Linking shader program for `{}`...", name);
 
     // Prepare shader program object
     if (shaderProgram) {
@@ -122,7 +123,7 @@ void Shader::link_program() {
         throw std::runtime_error("Shader program not available!\n"s + msg);
     }
 
-    std::cout << "[GFX] Linking shader done!" << std::endl;
+    _logger->debug("...Linking shader program for `{}` done!", name);
 }
 
 void Shader::use_shader() {
@@ -130,6 +131,6 @@ void Shader::use_shader() {
         glUseProgram(shaderProgram);
     }
     else {
-        std::cerr << "[GFX] Shader `" << name << "` is not ready!" << std::endl;
+        _logger->error("Shader `{}` is not ready!", name);
     }
 }

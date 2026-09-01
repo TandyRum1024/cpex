@@ -10,10 +10,14 @@
 
 #include <glad/gl.h>
 #include <GLFW/glfw3.h>
+#include <spdlog/spdlog.h>
+#include <spdlog/sinks/stdout_color_sinks.h>
 
 namespace gfx {
     /** Contains all the neccessary informations to compile & use shaders. */
     class Shader {
+        std::shared_ptr<spdlog::logger> _logger;
+
         std::string name;
         GLuint shaderProgram = 0;
         
@@ -30,7 +34,13 @@ namespace gfx {
     public:
         Shader():
             name(""),
-            shaderProgram(0) {}
+            shaderProgram(0) {
+            _logger = spdlog::get("GFX::SHADER");
+            if (!_logger) {
+                _logger = spdlog::stdout_color_mt("GFX::SHADER");
+                // _logger->set_level(spdlog::level::debug);
+            }
+        }
         Shader(std::string name):
             name(name),
             shaderProgram(0) {

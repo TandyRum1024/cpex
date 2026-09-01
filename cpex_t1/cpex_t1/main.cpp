@@ -22,22 +22,29 @@
 #include <glad/gl.h>
 // OpenGL: GLFW
 #include <GLFW/glfw3.h>
+// spdlog
+#include <spdlog/spdlog.h>
+#include <spdlog/sinks/stdout_color_sinks.h>
 // ----------------------------
 // EXTERNAL LIBRARIES //
 
 int main() {
-    CpexApp app;
+    CpexApp app("CPEX - T1");
+
+    spdlog::stdout_color_mt("PRG");
+    auto logger = spdlog::get("PRG");
 
     try {
+        logger->info("Booting app...");
         app.boot();
     }
     catch (std::exception e) {
-        std::cerr << "[!!!] UNHANDLED EXCEPTION!" << std::endl << e.what() << std::endl;
+        logger->error("UNHANDLED EXCEPTION!:\n{}", e.what());
     }
     catch (...) {
-        std::cerr << "[!!!] FATAL EXCEPTION HAS OCCURED! AND NOW THE APP WILL TERMINATE. BYE" << std::endl;
+        logger->error("FATAL EXCEPTION HAS OCCURED! AND NOW THE APP WILL TERMINATE. BYE");
     }
 
-    std::cout << "APP TERMINATING!" << std::endl;
+    logger->info("Terminating app!");
     return 0;
 }
