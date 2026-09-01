@@ -75,7 +75,7 @@ void OpenGlApp::boot() {
         glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
     #endif
 
-    window = glfwCreateWindow(1280, 720, windowTitle.c_str(), NULL, NULL);
+    window = glfwCreateWindow(windowWid, windowHei, windowTitle.c_str(), NULL, NULL);
     if (!window) {
         glfwTerminate();
         throw std::runtime_error("[GLFW] CREATING WINDOW FAILED!");
@@ -115,7 +115,8 @@ void OpenGlApp::boot() {
     int winWid = -1, winHei = -1;
     glfwGetWindowSize(window, &winWid, &winHei);
     if (winWid > 0 && winHei > 0) {
-        glViewport(0, 0, winWid, winHei);
+        // glViewport(0, 0, winWid, winHei);
+        _common_window_resize(window, winWid, winHei);
     }
     else {
         glfwTerminate();
@@ -136,6 +137,9 @@ void OpenGlApp::boot() {
         std::chrono::duration<double, std::milli> dtMillis = dtNow - dtPrev;
 
         glfwPollEvents();
+        if (!isRenderReady) {
+            isRenderReady = true;
+        }
         
         // Logic
         on_loop_update(dtMillis.count());
@@ -166,15 +170,19 @@ void OpenGlApp::set_window_title(std::string windowTitle) {
 }
 
 void OpenGlApp::on_window_resize(GLFWwindow* win, int wid, int hei) {
+    _logger->debug("GLFW: New window size: ({}, {})", wid, hei);
+    
+    windowWid = wid;
+    windowHei = hei;
     glViewport(0, 0, wid, hei);
 
-    std::chrono::steady_clock::time_point dtNow = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double, std::milli> dtMillis = dtNow - dtPrev;
+    if (isRenderReady) {
+        std::chrono::steady_clock::time_point dtNow = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<double, std::milli> dtMillis = dtNow - dtPrev;
 
-    on_loop_render_begin(dtMillis.count());
-    on_loop_render(dtMillis.count());
-    on_loop_render_end(dtMillis.count());
-    glfwSwapBuffers(win);
-
-    _logger->debug("GLFW: New window size: ({}, {})", wid, hei);
+        on_loop_render_begin(dtMillis.count());
+        on_loop_render(dtMillis.count());
+        on_loop_render_end(dtMillis.count());
+        glfwSwapBuffers(win);
+    }
 }

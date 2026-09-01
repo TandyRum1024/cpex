@@ -5,13 +5,23 @@
 
 #ifndef __CPEX_GFX_SHD_GUARD
 #define __CPEX_GFX_SHD_GUARD
+
+#include <memory>
+#include <algorithm>
 #include <string>
 #include <map>
 
+// LIBRARIES //
+#include <zcl/zcl.hpp>
+
+// EXTERNAL LIBRARIES //
+// ----------------------------
 #include <glad/gl.h>
 #include <GLFW/glfw3.h>
 #include <spdlog/spdlog.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
+// ----------------------------
+// EXTERNAL LIBRARIES //
 
 namespace gfx {
     /** Contains all the neccessary informations to compile & use shaders. */
@@ -24,26 +34,25 @@ namespace gfx {
         /** Indexed by shader type (`GL_VERTEX_SHADER`, etc), contains results of `glCreateShader()` */
         std::map<GLenum, GLuint> loadedShaders;
         
+        /** Release aquired resources. */
+        void release_resources();
+        
         /** (DEBUG) Table for converting OpenGL's shader type to human readable names. */
         static const std::map<GLenum, std::string> TBL_SHADER_TYPE_TO_NAME;
         /** Converts shader type (`GL_VERTEX_SHADER`, etc) into human readable names. */
         std::string get_shader_type_name(GLenum type);
-        /** Release aquired resources. */
-        void release_resources();
 
     public:
         Shader():
             name(""),
-            shaderProgram(0) {
-            _logger = spdlog::get("GFX::SHADER");
-            if (!_logger) {
-                _logger = spdlog::stdout_color_mt("GFX::SHADER");
-                // _logger->set_level(spdlog::level::debug);
-            }
-        }
+            shaderProgram(0),
+            _logger(zcl::logger("GFX::SHADER"))
+            {}
         Shader(std::string name):
             name(name),
-            shaderProgram(0) {
+            shaderProgram(0),
+            _logger(zcl::logger("GFX::SHADER"))
+            {
             // std::cout << "[GFX] Shader `" << name << "` created!" << std::endl;
         }
         ~Shader() {
@@ -57,9 +66,10 @@ namespace gfx {
         Shader(Shader &&other): // (RAII) Move
             loadedShaders(std::move(other.loadedShaders)),
             name(std::exchange(other.name, "_MOVED")),
+            _logger(std::move(other._logger)),
             // (replace GL resources with dummy)
             shaderProgram(std::exchange(other.shaderProgram, 0))
-        {
+            {
             // std::cout << "[GFX] Shader `" << name << "` moved!" << std::endl;
         }
         Shader& operator=(Shader &&other) { // (RAII) Move
@@ -74,6 +84,7 @@ namespace gfx {
             std::swap(loadedShaders, other.loadedShaders);
             std::swap(shaderProgram, other.shaderProgram);
             std::swap(name, other.name);
+            std::swap(_logger, other._logger);
             return *this;
         }
 
@@ -84,7 +95,9 @@ namespace gfx {
         /** Links currently set shaders into a new program. */
         void link_program();
         /** Uses shader for next rendering. */
-        void use_shader();
+        void apply_shader();
+        /** Returns uniform location. */
+        GLint get_uniform_location(std::string name);
     };
 }
 #endif

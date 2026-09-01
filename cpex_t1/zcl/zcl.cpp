@@ -1,6 +1,16 @@
+/**
+ * zcl - Common helper library
+ * ZIK@MMXXVI
+ */
+
 #include <iostream>
 
+// LIBRARY
 #include <zcl/zcl.hpp>
+
+// EXTERNAL LIBRARIES //
+#include <spdlog/spdlog.h>
+#include <spdlog/sinks/stdout_color_sinks.h>
 
 std::string zcl::file::read_file_to_string(std::string filePath) {
     std::string contentStr;
@@ -22,4 +32,14 @@ std::string zcl::file::read_file_to_string(std::string filePath) {
     }
 
     return contentStr;
+}
+
+std::shared_ptr<spdlog::logger> zcl::logger(const std::string &name) {
+    auto logger = spdlog::get(name);
+    if (!logger) {
+        logger = spdlog::stdout_color_mt(name);
+        // _logger->set_level(spdlog::level::debug);
+    }
+
+    return logger;
 }

@@ -11,12 +11,21 @@
 #include <memory>
 #include <string>
 
+// LIBRARIES //
 #include <zap/zap.hpp>
+#include <zcl/zcl.hpp>
 
+// EXTERNAL LIBRARIES //
+// ----------------------------
+// OpenGL: GLAD
 #include <glad/gl.h>
+// OpenGL: GLFW
 #include <GLFW/glfw3.h>
+// spdlog
 #include <spdlog/spdlog.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
+// ----------------------------
+// EXTERNAL LIBRARIES //
 
 namespace zap {
     void _common_window_resize(GLFWwindow* win, int wid, int hei);
@@ -28,17 +37,30 @@ namespace zap {
     protected:
         std::shared_ptr<spdlog::logger> _logger;
 
+        bool isRenderReady;
         std::string windowTitle;
         GLFWwindow* window = nullptr;
+        int windowWid;
+        int windowHei;
+
         std::chrono::steady_clock::time_point dtPrev;
 
         OpenGlApp(std::string windowTitle):
-            windowTitle(windowTitle) {
-            prepare_logger();
-        }
-        OpenGlApp() {
-            prepare_logger();
-        }
+            isRenderReady(false),
+            windowTitle(windowTitle),
+            windowWid(1280),
+            windowHei(720),
+            dtPrev(std::chrono::high_resolution_clock::now()),
+            _logger(zcl::logger("APP"))
+            {}
+        OpenGlApp():
+            isRenderReady(false),
+            windowTitle("HELLO WINDOW TITLE"),
+            windowWid(1280),
+            windowHei(720),
+            dtPrev(std::chrono::high_resolution_clock::now()),
+            _logger(zcl::logger("APP"))
+            {}
         virtual ~OpenGlApp() {
             free_resources();
         }
@@ -47,7 +69,11 @@ namespace zap {
         OpenGlApp& operator=(const OpenGlApp &other) = delete; // (RAII) Disable copy
 
         OpenGlApp(OpenGlApp &&other): // (RAII) Move
+            isRenderReady(std::exchange(other.isRenderReady, false)),
             windowTitle(std::move(other.windowTitle)),
+            windowWid(std::exchange(other.windowWid, 0)),
+            windowHei(std::exchange(other.windowHei, 0)),
+            dtPrev(other.dtPrev),
             window(other.window),
             _logger(std::move(other._logger)) {
             other.window = nullptr;
@@ -61,7 +87,11 @@ namespace zap {
             free_resources();
             windowTitle = "MOVED";
 
+            std::swap(isRenderReady, other.isRenderReady);
             std::swap(windowTitle, other.windowTitle);
+            std::swap(windowWid, other.windowWid);
+            std::swap(windowHei, other.windowHei);
+            std::swap(dtPrev, other.dtPrev);
             std::swap(window, other.window);
             std::swap(_logger, other._logger);
             return *this;
@@ -74,14 +104,6 @@ namespace zap {
                 glfwDestroyWindow(window);
             }
             window = nullptr;
-        }
-
-        void prepare_logger() {
-            _logger = spdlog::get("APP");
-            if (!_logger) {
-                _logger = spdlog::stdout_color_mt("APP");
-                // _logger->set_level(spdlog::level::debug);
-            }
         }
 
         /** Updates current windows title. */

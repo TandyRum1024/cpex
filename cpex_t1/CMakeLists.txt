@@ -32,7 +32,9 @@ set(DIR_GFX ${CMAKE_CURRENT_SOURCE_DIR}/cpex_t1/gfx)
 list(
     APPEND
     SRC_LIBS
+    ${DIR_GFX}/material.cpp
     ${DIR_GFX}/shader.cpp
+    ${DIR_GFX}/uniform.cpp
     ${DIR_GFX}/vb.cpp
     ${DIR_GFX}/vert.cpp
 )

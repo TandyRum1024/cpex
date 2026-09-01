@@ -7,6 +7,8 @@
 #include <iostream>
 
 #include <gfx/shader.hpp>
+
+// LIBRARIES //
 #include <zcl/zcl.hpp>
 
 using namespace gfx;
@@ -126,11 +128,20 @@ void Shader::link_program() {
     _logger->debug("...Linking shader program for `{}` done!", name);
 }
 
-void Shader::use_shader() {
+void Shader::apply_shader() {
     if (shaderProgram) {
         glUseProgram(shaderProgram);
     }
     else {
         _logger->error("Shader `{}` is not ready!", name);
+    }
+}
+
+GLint Shader::get_uniform_location(std::string name) {
+    if (shaderProgram) {
+        return glGetUniformLocation(shaderProgram, name.c_str());
+    }
+    else {
+        return 0;
     }
 }

@@ -9,6 +9,7 @@
 
 // LIBRARIES //
 #include <zap/opengl/opengl.hpp>
+#include <gfx/material.hpp>
 #include <gfx/shader.hpp>
 #include <gfx/vb.hpp>
 #include <gfx/vert.hpp>
@@ -28,8 +29,12 @@
 
 /** App for CPEX - T1 */
 class CpexApp: public zap::OpenGlApp {
-    gfx::Vb<gfx::VertPosUv> vb;
-    gfx::Shader shd;
+    // Scene
+    std::shared_ptr<gfx::Vb<gfx::VertPosUv>> vb;
+    std::shared_ptr<gfx::Shader> shd;
+    std::shared_ptr<gfx::Material> mat;
+
+    double time = 0.0;
 
     // ImGui
     ImGuiContext* imGuiContext = nullptr;
@@ -48,8 +53,10 @@ class CpexApp: public zap::OpenGlApp {
 
 public:
     CpexApp(std::string windowTitle):
-        zap::OpenGlApp(windowTitle) {}
-    CpexApp() {}
+        zap::OpenGlApp(windowTitle),
+        time(0) {}
+    CpexApp():
+        time(0) {}
     ~CpexApp() {
         free_resources();
     }
@@ -58,9 +65,15 @@ public:
     CpexApp& operator=(const CpexApp &other) = delete; // (RAII) Disable copy
 
     CpexApp(CpexApp &&other): // (RAII) Move
+        time(std::exchange(other.time, 0.0)),
         vb(std::move(other.vb)),
         shd(std::move(other.shd)),
-        imGuiContext(other.imGuiContext) {
+        mat(std::move(other.mat)),
+        imGuiContext(other.imGuiContext)
+        {
+        std::swap(windowTitle, other.windowTitle);
+        std::swap(window, other.window);
+
         other.imGuiContext = nullptr;
     }
     CpexApp& operator=(CpexApp &&other) { // (RAII) Move
@@ -74,6 +87,9 @@ public:
 
         std::swap(windowTitle, other.windowTitle);
         std::swap(window, other.window);
+        std::swap(vb, other.vb);
+        std::swap(shd, other.shd);
+        std::swap(mat, other.mat);
         std::swap(imGuiContext, other.imGuiContext);
         return *this;
     }
