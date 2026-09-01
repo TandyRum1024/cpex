@@ -52,7 +52,7 @@ list(
     ${DIR_ZCL}/zcl.cpp
 )
 # (GLAD - https://gen.glad.sh/)
-set(DIR_GLAD ${CMAKE_CURRENT_SOURCE_DIR}/extern/glad)
+set(DIR_GLAD ${CMAKE_CURRENT_SOURCE_DIR}/../common_extern/glad)
 list(
     APPEND
     SRC_LIBS
