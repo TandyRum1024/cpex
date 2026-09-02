@@ -9,6 +9,9 @@ project(
     LANGUAGES CXX
 )
 
+# Set C++ standards
+set(CMAKE_CXX_STANDARD 20)
+
 # Using `FetchContent` for better external library handling! wow...
 # https://www.foonathan.net/2022/06/cmake-fetchcontent/
 include(FetchContent)
@@ -143,8 +146,18 @@ FetchContent_Declare(
     GIT_SHALLOW TRUE
 )
 FetchContent_MakeAvailable(spdlog)
-# (link program with spdlog)
 list(APPEND EXT_LIBS spdlog)
+
+# GLM (https://github.com/g-truc/glm)
+set(VER_GLM "1.0.3")
+FetchContent_Declare(
+    glm
+	GIT_REPOSITORY https://github.com/g-truc/glm.git
+	GIT_TAG ${VER_GLM}
+    GIT_SHALLOW TRUE
+)
+FetchContent_MakeAvailable(glm)
+list(APPEND EXT_LIBS glm)
 # -----------------------
 # External dependencies
 
