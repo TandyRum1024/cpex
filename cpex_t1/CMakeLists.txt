@@ -56,20 +56,12 @@ list(
     SRC_LIBS
     ${DIR_ZCL}/zcl.cpp
 )
-# (GLAD - https://gen.glad.sh/)
-set(DIR_GLAD ${CMAKE_CURRENT_SOURCE_DIR}/../common_extern/glad)
-list(
-    APPEND
-    SRC_LIBS
-    ${DIR_GLAD}/src/gl.c
-)
 
 list(
     APPEND
     SRC_LIBS_INCL
     ${CMAKE_CURRENT_SOURCE_DIR}/cpex_t1 # GFX, etc
     ${DIR_ZCL}/include
-    ${DIR_GLAD}/include
 )
 
 # For building `cpex_t1.exe` with source files `<root>/cpex_t1/main.cpp`
@@ -111,6 +103,19 @@ list(APPEND EXT_LIBS glfw)
 
 # (LEGACY: USE SUBMODULES INSTEAD)
 # add_subdirectory(${SRC_GLFW})
+
+# (GLAD - https://gen.glad.sh/)
+set(DIR_GLAD ${CMAKE_CURRENT_SOURCE_DIR}/../common_extern/glad)
+target_sources(
+    ${PROJECT_NAME}
+    PUBLIC
+    ${DIR_GLAD}/src/gl.c
+)
+target_include_directories(
+    ${PROJECT_NAME}
+    PUBLIC
+    ${DIR_GLAD}/include
+)
 
 # Dear ImGui (https://github.com/ocornut/imgui)
 set(DIR_IMGUI ${CMAKE_CURRENT_SOURCE_DIR}/../common_extern/imgui)
@@ -158,6 +163,14 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(glm)
 list(APPEND EXT_LIBS glm)
+
+# (STB - https://github.com/nothings/stb)
+set(DIR_STB ${CMAKE_CURRENT_SOURCE_DIR}/../common_extern/stb)
+target_include_directories(
+    ${PROJECT_NAME}
+    PUBLIC
+    ${DIR_STB}
+)
 # -----------------------
 # External dependencies
 
