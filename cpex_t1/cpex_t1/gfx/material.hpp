@@ -12,9 +12,14 @@
 namespace gfx {
     /** Contains set of uniforms and associated shader. */
     class Material {
+        GLuint texSlotIdx = 0;
+        
         std::shared_ptr<Shader> shd;
         std::vector<std::shared_ptr<Uniform>> uniforms;
         std::vector<GLint> uniformLocations;
+        
+        /** Update all sampler uniforms texture slots. */
+        void update_texture_slots();
 
     public:
         /** Links shader to this material. */
@@ -24,21 +29,31 @@ namespace gfx {
         /** Adds an uniform. */
         template <typename T>
         void add_uniform(T &uniform);
+        /** Adds uniforms. */
+        template <typename...T>
+        void add_uniforms(T... uniform);
         /** Returns an uniform with given name and type. `nullptr` if not found or wrong type. */
         template <typename T>
         std::shared_ptr<T> get_uniform(std::string name);
     };
 
     // DEFINITIONS (INCLUSION MODEL FOR TEMPLATES!) //
+
     template <typename T>
     void Material::add_uniform(T &uniform) {
         GLint location = 0;
         uniforms.push_back(std::make_shared<T>(uniform));
 
         if (shd) {
+            update_texture_slots();
             location = shd->get_uniform_location(uniform.get_name());
         }
         uniformLocations.push_back(location);
+    }
+
+    template <typename...T>
+    void Material::add_uniforms(T... uniform) {
+        (add_uniform<T>(uniform), ...);
     }
 
     template <typename T>
@@ -55,6 +70,7 @@ namespace gfx {
         // use `dynamic_pointer_cast` instead of normal `dynamic_cast` for `shared_ptr`!
         return (res != uniforms.end()) ? std::dynamic_pointer_cast<T>(resUni) : nullptr;
     }
+
     // DEFINITIONS (INCLUSION MODEL FOR TEMPLATES!) //
 }
 #endif

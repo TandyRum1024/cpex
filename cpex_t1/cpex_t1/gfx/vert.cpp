@@ -7,9 +7,7 @@
 
 using namespace gfx;
 
-VertPosUv::VertPosUv(double x, double y, double z, double u, double v):
-            x(x),
-            y(y),
-            z(z),
-            u(u),
-            v(v) {}
+VertPosUv::VertPosUv(glm::vec3 pos, glm::vec2 uv):
+    pos(pos),
+    uv(uv)
+    {}

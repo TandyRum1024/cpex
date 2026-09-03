@@ -24,6 +24,8 @@
 // ImGui
 #include <imgui.h>
 #include <imgui_impl_glfw.h>
+// GLM
+#include <glm/vec3.hpp>
 // ----------------------------
 // EXTERNAL LIBRARIES //
 
@@ -34,7 +36,14 @@ class CpexApp: public zap::OpenGlApp {
     std::shared_ptr<gfx::Shader> shd;
     std::shared_ptr<gfx::Material> mat;
 
-    double time = 0.0;
+    double time;
+
+    glm::vec3 tfPos;
+    glm::vec3 tfRot;
+    glm::vec3 tfScale;
+
+    GLuint texture1;
+    GLuint texture2;
 
     // ImGui
     ImGuiContext* imGuiContext = nullptr;
@@ -53,10 +62,8 @@ class CpexApp: public zap::OpenGlApp {
 
 public:
     CpexApp(std::string windowTitle):
-        zap::OpenGlApp(windowTitle),
-        time(0) {}
-    CpexApp():
-        time(0) {}
+        zap::OpenGlApp(windowTitle) {}
+    CpexApp() {}
     ~CpexApp() {
         free_resources();
     }
@@ -66,6 +73,11 @@ public:
 
     CpexApp(CpexApp &&other): // (RAII) Move
         time(std::exchange(other.time, 0.0)),
+        tfPos(other.tfPos),
+        tfRot(other.tfRot),
+        tfScale(other.tfScale),
+        texture1(std::exchange(texture1, 0)),
+        texture2(std::exchange(texture2, 0)),
         vb(std::move(other.vb)),
         shd(std::move(other.shd)),
         mat(std::move(other.mat)),
@@ -84,6 +96,13 @@ public:
 
         free_resources();
         windowTitle = "MOVED";
+
+        std::swap(time, other.time);
+        std::swap(tfPos, other.tfPos);
+        std::swap(tfRot, other.tfRot);
+        std::swap(tfScale, other.tfScale);
+        std::swap(texture1, other.texture1);
+        std::swap(texture2, other.texture2);
 
         std::swap(windowTitle, other.windowTitle);
         std::swap(window, other.window);

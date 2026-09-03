@@ -6,6 +6,7 @@
 #ifndef __CPEX_GFX_MESH_GUARD
 #define __CPEX_GFX_MESH_GUARD
 #include <vector>
+#include <stdexcept>
 
 #include <glad/gl.h>
 #include <GLFW/glfw3.h>
