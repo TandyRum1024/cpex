@@ -6,6 +6,7 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <filesystem>
 
 #include <app.hpp>
 
@@ -15,7 +16,7 @@
 // #include <gfx/shader.hpp>
 // #include <gfx/vb.hpp>
 // #include <gfx/vert.hpp>
-// #include <zcl/zcl.hpp>
+#include <zcl/zcl.hpp>
 
 // EXTERNAL LIBRARIES //
 // ----------------------------
@@ -42,6 +43,10 @@ void CpexApp::free_imgui() {
 }
 
 void CpexApp::on_setup() {
+    // Relative path
+    auto assetPath = zcl::file::get_exec_path().parent_path() / "data";
+    _logger->info("Detected asset path: {}", assetPath.string());
+
     // Setup scene
     time = 0;
     tfPos = glm::vec3(0.0);
@@ -71,8 +76,8 @@ void CpexApp::on_setup() {
 
     // (shader)
     try {
-        shd->load_shader_from("./data/triangle.vert", GL_VERTEX_SHADER);
-        shd->load_shader_from("./data/triangle.frag", GL_FRAGMENT_SHADER);
+        shd->load_shader_from(assetPath / "triangle.vert", GL_VERTEX_SHADER);
+        shd->load_shader_from(assetPath / "triangle.frag", GL_FRAGMENT_SHADER);
         shd->link_program();
     }
     catch (std::runtime_error err) {
@@ -84,8 +89,8 @@ void CpexApp::on_setup() {
         tex2Wid, tex2Hei, tex2Channels;
 
     stbi_set_flip_vertically_on_load(true);
-    unsigned char* tex1Buff = stbi_load("./data/textest.png", &tex1Wid, &tex1Hei, &tex1Channels, 0);
-    unsigned char* tex2Buff = stbi_load("./data/sprtest.png", &tex2Wid, &tex2Hei, &tex2Channels, 0);
+    unsigned char* tex1Buff = stbi_load((assetPath / "textest.png").string().c_str(), &tex1Wid, &tex1Hei, &tex1Channels, 0);
+    unsigned char* tex2Buff = stbi_load((assetPath / "sprtest.png").string().c_str(), &tex2Wid, &tex2Hei, &tex2Channels, 0);
 
     glGenTextures(1, &texture1);
     glGenTextures(1, &texture2);
@@ -127,7 +132,7 @@ void CpexApp::on_shutdown() {
 }
 
 void CpexApp::on_loop_update(double dtMillis) {
-    set_window_title(std::string("CPEX - T1 (DT: ") + std::to_string(dtMillis) + "ms)");
+    set_window_title(std::string("CT1 (DT: ") + std::to_string(dtMillis) + "ms)");
 
     time += dtMillis * 0.001;
     time = fmod(time, 1.0);

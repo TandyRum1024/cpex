@@ -71,7 +71,7 @@ void OpenGlApp::boot() {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     // https://sourceforge.net/p/predef/wiki/OperatingSystems/
-    #if defined(__APPLE__) || defined(__MACH__)
+    #if (defined(__APPLE__) && defined(__MACH__)) || defined(Macintosh) || defined(macintosh)
         glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
     #endif
 

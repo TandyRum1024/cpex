@@ -29,7 +29,7 @@
 // EXTERNAL LIBRARIES //
 
 int main() {
-    CpexApp app("CPEX - T1");
+    CpexApp app("CT1");
 
     spdlog::stdout_color_mt("PRG");
     auto logger = spdlog::get("PRG");

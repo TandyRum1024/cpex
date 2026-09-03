@@ -12,6 +12,11 @@ project(
 # Set C++ standards
 set(CMAKE_CXX_STANDARD 20)
 
+# Set output directory
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/out/bin)
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/out/bin)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/out/bin)
+
 # Using `FetchContent` for better external library handling! wow...
 # https://www.foonathan.net/2022/06/cmake-fetchcontent/
 include(FetchContent)
@@ -71,12 +76,21 @@ add_executable(${PROJECT_NAME} ${SRC_MAIN} ${SRC_LIBS})
 # Shaders & misc. files copy, using `copy_directory_if_different`
 # https://discourse.cmake.org/t/copying-files-with-destination-folder-depending-on-build-config/10686
 add_custom_target(
-    COPY_DATA
+    COPY_APP_DATA
     COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different
         "${CMAKE_CURRENT_SOURCE_DIR}/cpex_t1/data"
         "$<TARGET_FILE_DIR:${PROJECT_NAME}>/data"
+    # BYPRODUCTS "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/$<CONFIG>/data" # does not work for directory
 )
-add_dependencies(${PROJECT_NAME} COPY_DATA)
+
+add_custom_target(
+    CLEAN_APP_DATA
+    COMMAND ${CMAKE_COMMAND} -E rm -rf
+        "$<TARGET_FILE_DIR:${PROJECT_NAME}>"
+)
+
+add_dependencies(${PROJECT_NAME} COPY_APP_DATA)
+# add_dependencies(clean CLEAN_APP_DATA) # does not work as `clean` cannot be depended?
 
 # External dependencies
 # -----------------------
@@ -178,5 +192,5 @@ target_include_directories(
 target_link_libraries(${PROJECT_NAME} ${EXT_LIBS})
 
 # Testing (maybe)
-include(CTest)
-enable_testing()
+# include(CTest)
+# enable_testing()

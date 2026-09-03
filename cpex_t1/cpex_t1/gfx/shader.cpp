@@ -41,8 +41,8 @@ std::string Shader::get_shader_type_name(GLenum type) {
     return (it != TBL_SHADER_TYPE_TO_NAME.end()) ? it->second : ("UNKNOWN_TYPE_"s + std::to_string(it->first));
 }
 
-void Shader::load_shader_from(std::string filePath, GLenum type) {
-    _logger->debug("Loading shader ({}) from file `{}`...", get_shader_type_name(type), filePath);
+void Shader::load_shader_from(std::filesystem::path filePath, GLenum type) {
+    _logger->debug("Loading shader ({}) from file `{}`...", get_shader_type_name(type), filePath.string());
     set_shader(zcl::file::read_file_to_string(filePath), type);
 }
 

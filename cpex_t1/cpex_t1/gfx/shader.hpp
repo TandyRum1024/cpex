@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <string>
 #include <map>
+#include <filesystem>
 
 // LIBRARIES //
 #include <zcl/zcl.hpp>
@@ -89,7 +90,7 @@ namespace gfx {
         }
 
         /** Loads vertex/fragment/etc shader from given file path. */
-        void load_shader_from(std::string filePath, GLenum type);
+        void load_shader_from(std::filesystem::path filePath, GLenum type);
         /** Sets vertex/fragment/etc shdaer from given string source code. */
         void set_shader(std::string src, GLenum type);
         /** Links currently set shaders into a new program. */
