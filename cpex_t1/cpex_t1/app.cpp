@@ -54,10 +54,7 @@ void CpexApp::on_setup() {
     auto vb2 = gfx::Vb<gfx::VertPosUv>();
 
     // (model)
-    vb1.set_format(std::make_shared<gfx::VertFormat>(gfx::VertFormat {
-        gfx::VertAttribute(0, 3, GL_FLOAT, sizeof(float), 5, 0), // POS
-        gfx::VertAttribute(1, 2, GL_FLOAT, sizeof(float), 5, 3), // UV
-    }));
+    vb1.set_format(gfx::VertPosUv::format);
     vb1.push_back_verts(std::vector<gfx::VertPosUv> {
         gfx::VertPosUv({-0.5, -0.5, 0.0}, {0.0, 0.0}),
         gfx::VertPosUv({0.5, -0.5, 0.0}, {1.0, 0.0}),

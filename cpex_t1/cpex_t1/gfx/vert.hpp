@@ -6,6 +6,10 @@
 #ifndef __CPEX_GFX_VERT_GUARD
 #define __CPEX_GFX_VERT_GUARD
 
+#include <memory>
+
+#include <gfx/vb.hpp>
+
 // EXTERNAL LIBRARIES //
 // ----------------------------
 // GLM
@@ -18,6 +22,8 @@ namespace gfx {
     #pragma pack(push, 1)
     /** Example struct for vertices data, containing xyz positions and uv coordinates. */
     struct VertPosUv {
+        static const std::shared_ptr<gfx::VertFormat> format;
+
         glm::vec3 pos;
         glm::vec2 uv;
 
