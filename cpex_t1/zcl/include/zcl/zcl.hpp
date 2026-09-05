@@ -34,6 +34,25 @@ namespace zcl {
         std::filesystem::path get_exec_path();
     }
 
+    namespace str {
+        /** Converts `std::array` to string. */
+        template <typename T, int N>
+        inline std::string to_str(std::array<T, N> arr, const char* delim = ", ") {
+            //return std::string(arr.begin(), arr.end());
+            std::string res;
+
+            for (auto it=arr.begin(); it!=arr.end(); it++) {
+                res += std::to_string(*it);
+
+                if ((it + 1) != arr.end()) {
+                    res += delim;
+                }
+            }
+
+            return res;
+        }
+    }
+
     /** Returns a logger. */
     std::shared_ptr<spdlog::logger> logger(const std::string &name);
 }

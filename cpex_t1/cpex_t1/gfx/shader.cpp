@@ -19,6 +19,48 @@ const std::map<GLenum, std::string> Shader::TBL_SHADER_TYPE_TO_NAME = {
     { GL_FRAGMENT_SHADER, "GL_FRAGMENT_SHADER" },
 };
 
+Shader::Shader():
+    name("<UNNAMED_SHADER>"),
+    shaderProgram(0),
+    _logger(zcl::logger("GFX::SHADER"))
+    {}
+Shader::Shader(std::string name):
+    name(name),
+    shaderProgram(0),
+    _logger(zcl::logger("GFX::SHADER"))
+    {
+    // std::cout << "[GFX] Shader `" << name << "` created!" << std::endl;
+}
+Shader::~Shader() {
+    // std::cout << "[GFX] Shader `" << name << "` destroyed!" << std::endl;
+    release_resources();
+}
+
+Shader::Shader(Shader &&other):
+    loadedShaders(std::move(other.loadedShaders)),
+    name(std::exchange(other.name, "<UNNAMED_SHADER>")),
+    _logger(std::move(other._logger)),
+    // (replace GL resources with dummy)
+    shaderProgram(std::exchange(other.shaderProgram, 0))
+    {
+    // std::cout << "[GFX] Shader `" << name << "` moved!" << std::endl;
+}
+Shader& Shader::operator=(Shader &&other) { // (RAII) Move
+    if (this == &other) {
+        // Self assignment, no need to move
+        return *this;
+    }
+
+    // std::cout << "[GFX] Shader `" << name << "` <- `" << other.name << "` moved!" << std::endl;
+    release_resources();
+    
+    std::swap(loadedShaders, other.loadedShaders);
+    std::swap(shaderProgram, other.shaderProgram);
+    std::swap(name, other.name);
+    std::swap(_logger, other._logger);
+    return *this;
+}
+
 void Shader::release_resources() {
     for (auto &&shader: loadedShaders) {
         if (auto shaderIdx = shader.second) {

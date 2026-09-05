@@ -5,11 +5,21 @@
 
 #ifndef __CPEX_GFX_MESH_GUARD
 #define __CPEX_GFX_MESH_GUARD
+
 #include <vector>
 #include <stdexcept>
 
+// LIBRARIES //
+#include <zcl/zcl.hpp>
+
+// EXTERNAL LIBRARIES //
+// ----------------------------
+// OpenGL: GLAD
 #include <glad/gl.h>
+// OpenGL: GLFW
 #include <GLFW/glfw3.h>
+// ----------------------------
+// EXTERNAL LIBRARIES //
 
 namespace gfx {
     /** Contains all the neccessary information to manage a vertex attribute in VBO. */
@@ -51,94 +61,140 @@ namespace gfx {
             VB_BUFF_EBO,
             _VB_BUFF_OBJ_SZ
         };
+
+        std::shared_ptr<spdlog::logger> _logger;
         
-        GLuint vao = 0;
-        VertFormat format;
+        GLuint vao;
+        std::shared_ptr<VertFormat> format;
         bool isFormatSet;
-        /** Contains VBO, EBO. Indexed by `VB_BUFF_OBJ` */
-        GLuint objs[_VB_BUFF_OBJ_SZ] = { 0, 0 };
+        /** Contains VBO, EBO. Indexed by enum `VB_BUFF_*` */
+        std::array<GLuint, _VB_BUFF_OBJ_SZ> objs;
         std::vector<V> verts;
         std::vector<unsigned int> indices;
         
-        void release_resources() {
-            for (auto &&obj: objs) {
-                if (obj) {
-                    glDeleteBuffers(1, &obj);
-                    obj = 0;
-                }
-            }
-            
-            glDeleteVertexArrays(1, &vao);
-            vao = 0;
-
-            verts.clear();
-            indices.clear();
-        }
+        /** Releases OpenGL resources. */
+        void release_resources();
         
     public:
         // `Vb() = default;` does not work since its template / generic class, it will give deleted constructor as a default one
-        Vb():
-            vao(0),
-            objs{0, 0},
-            isFormatSet(false) {
-            // std::cout << "[GFX] Vb@" << this << " created!" << std::endl;
-        }
-        
-        ~Vb() {
-            // std::cout << "[GFX] Vb@" << this << " destroyed!" << std::endl;
-            release_resources();
-        }
+        Vb();
+        ~Vb();
 
-        Vb(const Vb &other) = delete; // (RAII) Disable copy
-        Vb& operator=(const Vb &other) = delete; // (RAII) Disable copy
+        // Disable default copy ops, since `Vb` is move only (tied to OpenGL objects that are hard to copy)!
 
-        Vb(Vb &&other): // (RAII) Move
-            verts(std::move(other.verts)),
-            indices(std::move(other.indices)),
-            format(other.format),
-            isFormatSet(other.isFormatSet),
-            // (replace GL resources with dummy)
-            // objs(std::exchange(other.objs, { 0, 0 })),
-            vao(std::exchange(other.vao, 0)) {
-            
-            for (size_t i = 0; i < _VB_BUFF_OBJ_SZ; i++) {
-                objs[i] = other.objs[i];
-                other.objs[i] = 0;
-            }
-            // std::cout << "[GFX] Vb@" << this << " <- Vb@" << &other << " moved!" << std::endl;
-        }
-        
-        Vb& operator=(Vb &&other) { // (RAII) Move
-            if (this == &other) {
-                // Self assignment, no need to move
-                return *this;
-            }
-            
-            // std::cout << "[GFX] Vb@" << this << " <- Vb@" << &other << " moved!" << std::endl;
-            release_resources();
+        Vb(const Vb &other) = delete;
+        Vb& operator=(const Vb &other) = delete;
 
-            std::swap(verts, other.verts);
-            std::swap(indices, other.indices);
-            std::swap(format, other.format);
-            std::swap(isFormatSet, other.isFormatSet);
-            std::swap(objs, other.objs);
-            std::swap(vao, other.vao);
-            return *this;
-        }
+        // Only implement move ops for now
 
-        void set_format(VertFormat format);
+        Vb(Vb &&other);
+        Vb& operator=(Vb &&other);
+
+        /** Sets vertex format. */
+        void set_format(std::shared_ptr<VertFormat> format);
+        /** Appends vertex. */
         void push_back_verts(V vert);
+        /** Appends vertices. */
         void push_back_verts(std::vector<V> appendVerts);
+        /** Appends index. */
         void push_back_indices(unsigned int idx);
+        /** Appends indices. */
         void push_back_indices(std::vector<unsigned int> appendIndices);
+        /** Returns number of vertices. */
+        unsigned int get_vertices_num();
+        /** Returns number of indices. */
+        unsigned int get_indices_num();
+        /** Builds the VBO/VAO/EBO. */
         void build();
-        void submit(GLenum mode, GLint startOff = 0, GLsizei vertsNum = 0);
+        /** Renders this vertex buffer. */
+        void submit(GLenum mode, int indicesStartOff, GLsizei indicesCount = -1);
+        /** Renders this vertex buffer. */
         void submit();
     };
 
     // DEFINITIONS (INCLUSION MODEL FOR TEMPLATE CLASSES!) //
+
     template <typename V>
-    void Vb<V>::set_format(VertFormat format) {
+    Vb<V>::Vb():
+        vao(0),
+        format(nullptr),
+        isFormatSet(false),
+        objs({0}),
+        verts(),
+        indices()
+        {
+        // std::cout << "[GFX] Vb@" << this << " created!" << std::endl;
+        // zcl::logger("VB")->info("Create VB @{}", (void*)this);
+    }
+        
+    template <typename V>
+    Vb<V>::~Vb() {
+        // zcl::logger("VB")->info("Destroy VB @{}", (void*)this);
+        release_resources();
+    }
+
+    template <typename V>
+    Vb<V>::Vb(Vb &&other):
+        verts(std::move(other.verts)),
+        indices(std::move(other.indices)),
+        format(std::move(other.format)),
+        isFormatSet(std::exchange(other.isFormatSet, false)),
+        // (replace GL resources with dummy)
+        objs(std::exchange(other.objs, { 0 })),
+        vao(std::exchange(other.vao, 0))
+        {
+        // zcl::logger("VB")->info("Move VB @{} <- @{} (objs: [{}] VS [{}])", (void*)this, (void*)&other, zcl::str::to_str(objs), zcl::str::to_str(other.objs));
+        // for (size_t i = 0; i < _VB_BUFF_OBJ_SZ; i++) {
+        //     objs[i] = other.objs[i];
+        //     other.objs[i] = 0;
+        // }
+        // std::cout << "[GFX] Vb@" << this << " <- Vb@" << &other << " moved!" << std::endl;
+    }
+
+    template <typename V>
+    Vb<V>& Vb<V>::operator=(Vb &&other) {
+        // zcl::logger("VB")->info("Move VB @{} <- @{} (objs: [{}] VS [{}])", (void*)this, (void*)&other, zcl::str::to_str(objs), zcl::str::to_str(other.objs));
+
+        if (this == &other) {
+            // Self assignment, no need to move
+            return *this;
+        }
+        
+        // std::cout << "[GFX] Vb@" << this << " <- Vb@" << &other << " moved!" << std::endl;
+
+        std::swap(verts, other.verts);
+        std::swap(indices, other.indices);
+        std::swap(format, other.format);
+        std::swap(isFormatSet, other.isFormatSet);
+        std::swap(objs, other.objs);
+        std::swap(vao, other.vao);
+
+        // zcl::logger("VB")->info("\tAfter move VB @{} <- @{} (objs: [{}] VS [{}])", (void*)this, (void*)&other, zcl::str::to_str(objs), zcl::str::to_str(other.objs));
+
+        // other.release_resources(); // automatically called on destruction
+        return *this;
+    }
+
+    template <typename V>
+    void Vb<V>::release_resources() {
+        for (auto &&obj: objs) {
+            if (obj) {
+                glDeleteBuffers(1, &obj);
+                obj = 0;
+            }
+        }
+        
+        if (vao) {
+            glDeleteVertexArrays(1, &vao);
+            vao = 0;
+        }
+
+        verts.clear();
+        indices.clear();
+    }
+
+    template <typename V>
+    void Vb<V>::set_format(std::shared_ptr<VertFormat> format) {
         this->format = format;
         isFormatSet = true;
     }
@@ -164,12 +220,22 @@ namespace gfx {
     }
 
     template <typename V>
+    unsigned int Vb<V>::get_vertices_num() {
+        return verts.size();
+    }
+
+    template <typename V>
+    unsigned int Vb<V>::get_indices_num() {
+        return indices.size();
+    }
+
+    template <typename V>
     void Vb<V>::build() {
         if (!isFormatSet) {
             throw std::runtime_error("Vertex format not set!");
         }
 
-        glGenBuffers(_VB_BUFF_OBJ_SZ, objs);
+        glGenBuffers(_VB_BUFF_OBJ_SZ, objs.data());
         
         // Setup VAO
         glGenVertexArrays(1, &vao);
@@ -184,14 +250,21 @@ namespace gfx {
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int) * indices.size(), indices.data(), GL_STATIC_DRAW);
 
         // Link attributes to locations
-        format.set_attribute_pointers();
+        format->set_attribute_pointers();
     }
 
     template <typename V>
-    void Vb<V>::submit(GLenum mode, GLint startOff, GLsizei vertsNum) {
+    void Vb<V>::submit(GLenum mode, int indicesStartOff, GLsizei indicesCount) {
+        if (!vao) {
+            zcl::logger("VB")->error("VB @{} is not ready to submitted!", (void*) this);
+            return;
+        }
+
+        auto totalCount = (indicesCount == -1) ? (get_indices_num() - indicesStartOff) : indicesCount;
+
         glBindVertexArray(vao);
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, objs[VB_BUFF_EBO]);
-        glDrawElements(mode, vertsNum, GL_UNSIGNED_INT, (const void *) startOff);
+        // byte offset (https://stackoverflow.com/questions/23177229/how-to-cast-int-to-const-glvoid)
+        glDrawElements(mode, totalCount, GL_UNSIGNED_INT, (char*)(0) + (indicesStartOff * sizeof(unsigned int)));
         // glDrawArrays(mode, startOff, vertsNum);
     }
     

@@ -25,32 +25,39 @@ namespace gfx {
         
         // OpenGL object refs
         GLuint texId;
-
+        GLenum texTarget;
+        
         // Format
-        GLenum fmtTarget;
         GLint fmtInternal;
         
     public:
         Texture();
         Texture(std::string name);
+        Texture(std::string name, GLenum texTarget);
         ~Texture();
         
-        // Disable default copy ops, since `Texture` is move only & frees resource on destruction!
+        // Disable default copy ops, since `Texture` is move only (tied to OpenGL objects that are hard to copy)!
 
         Texture(const Texture &other) = delete;
         Texture& operator=(const Texture &other) = delete;
 
         // Only implement move ops for now
 
-        Texture(Texture &&other) = default;
+        Texture(Texture &&other);
         Texture& operator=(Texture &&other);
 
+        /** Frees OpenGL resources. */
         void free_resources();
         
+        /** Load from given pixel buffer. */
         void load_from_buffer_2d(const void* pixels, int wid, int hei, GLenum dataFormat = GL_RGBA, GLenum dataType = GL_UNSIGNED_BYTE, int mipmapLevels = 0);
-        void set_format(GLenum target = GL_TEXTURE_2D, GLint internalFormat = GL_RGBA8);
-
+        /** Set OpenGL texture target and format. */
+        void set_format(GLint internalFormat = GL_RGBA8);
+        
+        /** Bind this texture to given slot. */
         void bind(GLenum slot);
+        /** Set OpenGL texture parameter. MUST be called after `bind()`! */
+        void set_texture_param(GLint texFilterMode, GLint texWrapMode);
     };
 
     // Helper functions

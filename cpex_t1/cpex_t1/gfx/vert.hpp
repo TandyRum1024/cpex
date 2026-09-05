@@ -21,7 +21,6 @@ namespace gfx {
         glm::vec3 pos;
         glm::vec2 uv;
 
-    public:
         VertPosUv(glm::vec3 pos, glm::vec2 uv);
     };
     #pragma pack(pop)

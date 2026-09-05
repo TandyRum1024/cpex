@@ -35,7 +35,7 @@ namespace gfx {
         /** Indexed by shader type (`GL_VERTEX_SHADER`, etc), contains results of `glCreateShader()` */
         std::map<GLenum, GLuint> loadedShaders;
         
-        /** Release aquired resources. */
+        /** Releases OpenGL resources. */
         void release_resources();
         
         /** (DEBUG) Table for converting OpenGL's shader type to human readable names. */
@@ -44,50 +44,19 @@ namespace gfx {
         std::string get_shader_type_name(GLenum type);
 
     public:
-        Shader():
-            name(""),
-            shaderProgram(0),
-            _logger(zcl::logger("GFX::SHADER"))
-            {}
-        Shader(std::string name):
-            name(name),
-            shaderProgram(0),
-            _logger(zcl::logger("GFX::SHADER"))
-            {
-            // std::cout << "[GFX] Shader `" << name << "` created!" << std::endl;
-        }
-        ~Shader() {
-            // std::cout << "[GFX] Shader `" << name << "` destroyed!" << std::endl;
-            release_resources();
-        }
+        Shader();
+        Shader(std::string name);
+        ~Shader();
 
-        Shader(const Shader &other) = delete; // (RAII) Disable copy
-        Shader& operator=(const Shader &other) = delete; // (RAII) Disable copy
+        // Disable default copy ops, since `Shader` is move only (tied to OpenGL objects that are hard to copy)!
 
-        Shader(Shader &&other): // (RAII) Move
-            loadedShaders(std::move(other.loadedShaders)),
-            name(std::exchange(other.name, "_MOVED")),
-            _logger(std::move(other._logger)),
-            // (replace GL resources with dummy)
-            shaderProgram(std::exchange(other.shaderProgram, 0))
-            {
-            // std::cout << "[GFX] Shader `" << name << "` moved!" << std::endl;
-        }
-        Shader& operator=(Shader &&other) { // (RAII) Move
-            if (this == &other) {
-                // Self assignment, no need to move
-                return *this;
-            }
+        Shader(const Shader &other) = delete;
+        Shader& operator=(const Shader &other) = delete;
 
-            // std::cout << "[GFX] Shader `" << name << "` <- `" << other.name << "` moved!" << std::endl;
-            release_resources();
-            
-            std::swap(loadedShaders, other.loadedShaders);
-            std::swap(shaderProgram, other.shaderProgram);
-            std::swap(name, other.name);
-            std::swap(_logger, other._logger);
-            return *this;
-        }
+        // Only implement move ops for now
+
+        Shader(Shader &&other);
+        Shader& operator=(Shader &&other);
 
         /** Loads vertex/fragment/etc shader from given file path. */
         void load_shader_from(std::filesystem::path filePath, GLenum type);

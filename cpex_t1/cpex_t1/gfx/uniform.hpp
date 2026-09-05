@@ -34,8 +34,7 @@ namespace gfx {
         std::string name;
         
     public:
-        Uniform(std::string name):
-            name(name) {};
+        Uniform(std::string name);
         virtual ~Uniform() = default;
         
         /** Apply uniform value to currently using shader at given location. */
@@ -52,12 +51,8 @@ namespace gfx {
         V val;
 
     public:
-        UniformTemplated(std::string name):
-            Uniform(name),
-            val({}) {};
-        UniformTemplated(std::string name, V val):
-            Uniform(name),
-            val(val) {};
+        UniformTemplated(std::string name);
+        UniformTemplated(std::string name, V val);
         virtual ~UniformTemplated() = default;
         
         virtual void apply_uniform(GLint location) override;
@@ -76,21 +71,9 @@ namespace gfx {
         GLint texWrapMode;
     
     public:
-        UniformSampler2D(std::string name):
-            UniformTemplated(name, nullptr),
-            texSlot(0),
-            texFilterMode(GL_LINEAR),
-            texWrapMode(GL_CLAMP_TO_EDGE) {};
-        UniformSampler2D(std::string name, std::shared_ptr<Texture> val):
-            UniformTemplated(name, std::move(val)),
-            texSlot(0),
-            texFilterMode(GL_LINEAR),
-            texWrapMode(GL_CLAMP_TO_EDGE) {};
-        UniformSampler2D(std::string name, std::shared_ptr<Texture> val, GLint texFilterMode, GLint texWrapMode):
-            UniformTemplated(name, std::move(val)),
-            texSlot(0),
-            texFilterMode(texFilterMode),
-            texWrapMode(texWrapMode) {};
+        UniformSampler2D(std::string name);
+        UniformSampler2D(std::string name, std::shared_ptr<Texture> val);
+        UniformSampler2D(std::string name, std::shared_ptr<Texture> val, GLint texFilterMode, GLint texWrapMode);
         
         void apply_uniform(GLint location) override;
         void set_tex_slot(GLenum texSlot);
@@ -179,21 +162,31 @@ namespace gfx {
     
     // DEFINITIONS (INCLUSION MODEL FOR TEMPLATES!) //
 
-    template <typename V>
-    void UniformTemplated<V>::set_value(V val) {
+    template <typename T>
+    UniformTemplated<T>::UniformTemplated(std::string name):
+        Uniform(name),
+        val({}) {}
+    
+    template <typename T>
+    UniformTemplated<T>::UniformTemplated(std::string name, T val):
+        Uniform(name),
+        val(val) {}
+    
+    template <typename T>
+    void UniformTemplated<T>::set_value(T val) {
         this->val = val;
     }
 
-    template <typename V>
-    void UniformTemplated<V>::operator=(V val) {
+    template <typename T>
+    void UniformTemplated<T>::operator=(T val) {
         set_value(val);
     }
 
-    template <typename V>
-    void UniformTemplated<V>::apply_uniform(GLint location) {
+    template <typename T>
+    void UniformTemplated<T>::apply_uniform(GLint location) {
         throw std::runtime_error("apply_uniform() not implemented!");
     }
-
+    
     // DEFINITIONS (INCLUSION MODEL FOR TEMPLATES!) //
 }
 #endif

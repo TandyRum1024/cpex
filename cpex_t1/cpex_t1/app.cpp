@@ -49,26 +49,30 @@ void CpexApp::on_setup() {
     tfRot = glm::vec3(0.0);
     tfScale = glm::vec3(1.0);
 
-    vb = std::make_shared<gfx::Vb<gfx::VertPosUv>>();
-    shd = std::make_shared<gfx::Shader>("triangle");
-    mat = std::make_shared<gfx::Material>();
+    // vb = std::make_shared<gfx::Vb<gfx::VertPosUv>>();
+    auto vb1 = gfx::Vb<gfx::VertPosUv>();
+    auto vb2 = gfx::Vb<gfx::VertPosUv>();
 
     // (model)
-    vb->set_format(gfx::VertFormat {
+    vb1.set_format(std::make_shared<gfx::VertFormat>(gfx::VertFormat {
         gfx::VertAttribute(0, 3, GL_FLOAT, sizeof(float), 5, 0), // POS
         gfx::VertAttribute(1, 2, GL_FLOAT, sizeof(float), 5, 3), // UV
-    });
-    vb->push_back_verts(std::vector<gfx::VertPosUv> {
+    }));
+    vb1.push_back_verts(std::vector<gfx::VertPosUv> {
         gfx::VertPosUv({-0.5, -0.5, 0.0}, {0.0, 0.0}),
         gfx::VertPosUv({0.5, -0.5, 0.0}, {1.0, 0.0}),
         gfx::VertPosUv({-0.5, 0.5, 0.0}, {0.0, 1.0}),
         gfx::VertPosUv({0.5, 0.5, 0.0}, {1.0, 1.0}),
     });
-    vb->push_back_indices({
+    vb1.push_back_indices({
         0, 1, 2,
         1, 2, 3,
     });
-    vb->build();
+    vb1.build();
+
+    vb = std::make_shared<gfx::Vb<gfx::VertPosUv>>(std::move(vb1));
+    shd = std::make_shared<gfx::Shader>("triangle");
+    mat = std::make_shared<gfx::Material>();
 
     // (shader)
     try {
@@ -82,7 +86,7 @@ void CpexApp::on_setup() {
 
     // (material)
     auto    tex1 = std::make_shared<gfx::Texture>("tex1"),
-            tex2 = std::make_shared<gfx::Texture>(gfx::Texture("tex2"));
+            tex2 = std::make_shared<gfx::Texture>(gfx::Texture("tex2")); // move
     
     gfx::texture_load_from_file_2d(*tex1, assetPath / "textest.png");
     gfx::texture_load_from_file_2d(*tex2, assetPath / "sprtest.png");
@@ -183,7 +187,9 @@ void CpexApp::on_loop_render(double dtMillis) {
         uniform->set_value(tf);
     }
 
-    vb->submit();
+    if (vb) {
+        vb->submit(GL_TRIANGLES, 0);
+    }
 }
 
 void CpexApp::on_loop_render_end(double dtMillis) {

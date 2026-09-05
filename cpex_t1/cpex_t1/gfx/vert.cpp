@@ -9,5 +9,4 @@ using namespace gfx;
 
 VertPosUv::VertPosUv(glm::vec3 pos, glm::vec2 uv):
     pos(pos),
-    uv(uv)
-    {}
+    uv(uv) {}

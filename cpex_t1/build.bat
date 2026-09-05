@@ -9,11 +9,11 @@ SET SKIP_CONF=0
 
 :: Check for no args
 if "%1" == "-h" (
-    ECHO "USAGE: %0 --config [Debug|Release] (default: Debug) --architecture x64 (default: x64) [-skip-config] [-run] [-clean]"
+    ECHO "USAGE: %0 --config [Debug|Release] (default: Debug) --architecture x64 (default: x64) [-skip-config] [-norun] [-clean]"
     EXIT /B
 )
 if "%1" == "--help" (
-    ECHO "USAGE: %0 --config [Debug|Release] (default: Debug) --architecture x64 (default: x64) [-skip-config] [-run] [-clean]"
+    ECHO "USAGE: %0 --config [Debug|Release] (default: Debug) --architecture x64 (default: x64) [-skip-config] [-norun] [-clean]"
     EXIT /B
 )
 
@@ -35,8 +35,8 @@ if "%1" == "--architecture" (
     goto param_parse
 )
 
-if "%1" == "-run" (
-    SET RUN=1
+if "%1" == "-norun" (
+    SET RUN=0
     SHIFT
     goto param_parse
 )
@@ -48,6 +48,8 @@ if "%1" == "-clean" (
 )
 
 if "%1" == "-skip-config" (
+    ECHO [!] TRY TO SKIP CONFIG...
+
     SET SKIP_CONF=1
     SHIFT
     goto param_parse
@@ -69,10 +71,6 @@ IF NOT "%CMAKE_CONFIG%" == "Debug" (
 :: IF "%ARCHITECTURE%" == "" SET ARCHITECTURE=x64
 :: IF "%OP%" == "" SET OP=build
 
-IF NOT EXIST "%~dp0gen" (
-    SET SKIP_CONF=0
-)
-
 IF %CLEAN% == 1 (
     :: (clean assets)
     :: cmake --build ./out/gen --config %CMAKE_CONFIG% --target CLEAN_APP_DATA
@@ -87,11 +85,17 @@ IF NOT EXIST "%~dp0out" (
     MKDIR "%~dp0out"
 )
 
+IF NOT EXIST "%~dp0out/gen" (
+    ECHO [!] "%~dp0out/gen" DOES NOT EXIST, FORCING CONFIG...
+
+    SET SKIP_CONF=0
+)
+
 :: Actual building
 :: (configure)
-IF NOT %SKIP_CONF% == 1 (
+IF %SKIP_CONF% NEQ 1 (
     ECHO [+] CONFIGURING...
-    cmake -G "Visual Studio 17 2022" -B "%~dp0out/gen" -T host=%ARCHITECTURE% -A %ARCHITECTURE%
+    cmake -B "%~dp0out/gen" -T host=%ARCHITECTURE% -A %ARCHITECTURE%
 
     if %ERRORLEVEL% NEQ 0 (
         ECHO CONFIGURE FAILED!

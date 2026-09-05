@@ -14,11 +14,29 @@
 
 using namespace gfx;
 
+Uniform::Uniform(std::string name):
+    name(name) {}
+
 std::string Uniform::get_name() {
     return name;
 }
 
 // And now for few pre-defined uniform type specializations
+UniformSampler2D::UniformSampler2D(std::string name):
+    UniformTemplated(name, nullptr),
+    texSlot(0),
+    texFilterMode(GL_LINEAR),
+    texWrapMode(GL_CLAMP_TO_EDGE) {}
+UniformSampler2D::UniformSampler2D(std::string name, std::shared_ptr<Texture> val):
+    UniformTemplated(name, std::move(val)),
+    texSlot(0),
+    texFilterMode(GL_LINEAR),
+    texWrapMode(GL_CLAMP_TO_EDGE) {}
+UniformSampler2D::UniformSampler2D(std::string name, std::shared_ptr<Texture> val, GLint texFilterMode, GLint texWrapMode):
+    UniformTemplated(name, std::move(val)),
+    texSlot(0),
+    texFilterMode(texFilterMode),
+    texWrapMode(texWrapMode) {}
 
 void UniformSampler2D::set_tex_slot(GLenum texSlot) {
     this->texSlot = texSlot;
@@ -31,12 +49,7 @@ void UniformSampler2D::set_tex_wrap(GLint texWrapMode) {
 }
 void UniformSampler2D::apply_uniform(GLint location) {
     val->bind(texSlot + GL_TEXTURE0);
-
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, texFilterMode);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, texFilterMode);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, texWrapMode);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, texWrapMode);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, texWrapMode);
+    val->set_texture_param(texFilterMode, texWrapMode);
     glUniform1i(location, texSlot);
 }
 
