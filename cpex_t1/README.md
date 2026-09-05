@@ -2,6 +2,13 @@
 ---
 First C++ project in a while, so this project focuses on (re)priming my C++ knowledge and using OpenGL and other external dependencies to do fun stuffs.
 
+# Features
+- OpenGL object abstraction (shader, shader uniform, texture, VBO/VAO/EBO)
+- Additional classes for easier rendering (material, vertex format)
+- Basic OpenGL app framework (`zap`) that manages window and handles rendering/game loop
+- (Multi-)textured mesh with uniforms
+- ImGUI for adjusting uniforms
+
 # Building
 Currently this project is being written on Windows machine with Microsoft Visual Studio 2022, with x64 target in mind.
 Please refer to [this link](https://code.visualstudio.com/docs/cpp/config-msvc) for downloading and setting up the environment.
@@ -16,27 +23,22 @@ Building on VSCode environment is as simple as... (on command palette, activated
 - CMake: Build (`F7`)
 - CMake: Debug (`SHIFT + F5`)
 
-Alternatively, you may generate, build and run manually. On CMake Tools, I've set up the build path as `"<root>/out/build/CPEX_x64"`. Therefore you may manually build into the same directory and run it like the snippet below.
+Alternatively, you may generate, build and run manually. For Windows machine, I've set up a convenience script, `build.bat`.
 ```powershell
-# (ASSUMING YOUR WORKING DIRECTORIES ARE AT THE PROEJCT ROOT)
-# cd <THIS DIRECTORY>
+build.bat --config [Debug|Release] (default: Debug) --architecture x64 (default: x64) [-skip-config] [-norun] [-clean]
 
-# (generate build files)
-cmake -G "Visual Studio 17 2022" -B ./out/build/CPEX_x64 -T host=x64 -A x64
-
-# (build)
-cmake --build ./out/build/CPEX_x64 --config Debug # Or --config Release
-
-# (run)
-./out/build/CPEX_x64/Debug/cpex_t1.exe # Directory will be different if you are using `Release` config
-
-# (clean)
-cmake --build ./out/build/CPEX_x64 --config Debug --target clean
+# --config - Either Debug or Release, determines the build target.
+# --architecture - Currently being written with x64 in mind. No other architectures are tested.
+# -skip-config - If set, Skips CMake configuration.
+# -norun - The script runs the built executable by default. If set, then it will not run.
+# -clean - If set, deletes `./out` folder before running config/build.
 ```
 
 # Dependencies
-- OpenGL
+- OpenGL (4.5, Core)
     - [GLFW 3.5.1](https://www.glfw.org/)
     - [GLAD2](https://gen.glad.sh/)
 - [Dear ImGui](https://github.com/ocornut/imgui)
 - [spdlog](https://github.com/gabime/spdlog)
+- [GLM](https://github.com/g-truc/glm)
+- [stb_image.h](https://github.com/nothings/stb)
