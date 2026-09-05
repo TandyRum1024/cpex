@@ -69,21 +69,29 @@ IF NOT "%CMAKE_CONFIG%" == "Debug" (
 :: IF "%ARCHITECTURE%" == "" SET ARCHITECTURE=x64
 :: IF "%OP%" == "" SET OP=build
 
+IF NOT EXIST "%~dp0gen" (
+    SET SKIP_CONF=0
+)
+
 IF %CLEAN% == 1 (
     :: (clean assets)
     :: cmake --build ./out/gen --config %CMAKE_CONFIG% --target CLEAN_APP_DATA
     :: cmake --build ./out/gen --config %CMAKE_CONFIG% --target clean
-    rd /s /q "./out/gen"
+    IF EXIST "%~dp0out" (
+        ECHO [+] REMOVING "%~dp0out"...
+        RD /s /q "%~dp0out"
+    )
+)
+
+IF NOT EXIST "%~dp0out" (
+    MKDIR "%~dp0out"
 )
 
 :: Actual building
 :: (configure)
 IF NOT %SKIP_CONF% == 1 (
-    cmake ^
-        -G "Visual Studio 17 2022" ^
-        -B ./out/gen ^
-        -T host=%ARCHITECTURE% ^
-        -A %ARCHITECTURE%
+    ECHO [+] CONFIGURING...
+    cmake -G "Visual Studio 17 2022" -B "%~dp0out/gen" -T host=%ARCHITECTURE% -A %ARCHITECTURE%
 
     if %ERRORLEVEL% NEQ 0 (
         ECHO CONFIGURE FAILED!
@@ -92,7 +100,8 @@ IF NOT %SKIP_CONF% == 1 (
 )
 
 :: (build)
-cmake --build ./out/gen --config %CMAKE_CONFIG%
+ECHO [+] BUILDING...
+cmake --build "%~dp0out/gen" --config %CMAKE_CONFIG%
 
 if %ERRORLEVEL% NEQ 0 (
     ECHO BUILD FAILED!
@@ -101,7 +110,8 @@ if %ERRORLEVEL% NEQ 0 (
 
 IF %RUN% == 1 (
     :: Run!
-    CALL "./out/bin/%CMAKE_CONFIG%/cpex_t1.exe"
+    ECHO [+] RUNNING EXECUTABLE AT %~dp0 ...
+    CALL "%~dp0out/bin/%CMAKE_CONFIG%/cpex_t1.exe"
 )
 
 ENDLOCAL
