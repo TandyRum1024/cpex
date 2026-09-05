@@ -30,8 +30,8 @@ void UniformSampler2D::set_tex_wrap(GLint texWrapMode) {
     this->texWrapMode = texWrapMode;
 }
 void UniformSampler2D::apply_uniform(GLint location) {
-    glActiveTexture(texSlot + GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, val);
+    val->bind(texSlot + GL_TEXTURE0);
+
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, texFilterMode);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, texFilterMode);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, texWrapMode);
@@ -41,7 +41,7 @@ void UniformSampler2D::apply_uniform(GLint location) {
 }
 
 template <>
-void UniformVec2::apply_uniform(GLint location) {
+void UniformTemplated<glm::vec2>::apply_uniform(GLint location) {
     glUniform2fv(location, 1, glm::value_ptr(val));
 }
 template <>

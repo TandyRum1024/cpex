@@ -71,8 +71,8 @@ IF NOT "%CMAKE_CONFIG%" == "Debug" (
 
 IF %CLEAN% == 1 (
     :: (clean assets)
-    cmake --build ./out/gen --config %CMAKE_CONFIG% --target CLEAN_APP_DATA
-    cmake --build ./out/gen --config %CMAKE_CONFIG% --target clean
+    :: cmake --build ./out/gen --config %CMAKE_CONFIG% --target CLEAN_APP_DATA
+    :: cmake --build ./out/gen --config %CMAKE_CONFIG% --target clean
     rd /s /q "./out/gen"
 )
 
@@ -84,10 +84,20 @@ IF NOT %SKIP_CONF% == 1 (
         -B ./out/gen ^
         -T host=%ARCHITECTURE% ^
         -A %ARCHITECTURE%
+
+    if %ERRORLEVEL% NEQ 0 (
+        ECHO CONFIGURE FAILED!
+        EXIT /B
+    )
 )
 
 :: (build)
 cmake --build ./out/gen --config %CMAKE_CONFIG%
+
+if %ERRORLEVEL% NEQ 0 (
+    ECHO BUILD FAILED!
+    EXIT /B
+)
 
 IF %RUN% == 1 (
     :: Run!

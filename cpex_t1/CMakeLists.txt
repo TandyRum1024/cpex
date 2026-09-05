@@ -42,9 +42,10 @@ list(
     SRC_LIBS
     ${DIR_GFX}/material.cpp
     ${DIR_GFX}/shader.cpp
-    ${DIR_GFX}/uniform.cpp
     ${DIR_GFX}/vb.cpp
     ${DIR_GFX}/vert.cpp
+    ${DIR_GFX}/texture.cpp
+    ${DIR_GFX}/uniform.cpp
 )
 # (ZAP)
 set(DIR_ZAP ${CMAKE_CURRENT_SOURCE_DIR}/cpex_t1/zap)

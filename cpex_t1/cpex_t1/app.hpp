@@ -9,6 +9,7 @@
 
 // LIBRARIES //
 #include <zap/opengl/opengl.hpp>
+#include <gfx/texture.hpp>
 #include <gfx/material.hpp>
 #include <gfx/shader.hpp>
 #include <gfx/vb.hpp>
@@ -42,9 +43,6 @@ class CpexApp: public zap::OpenGlApp {
     glm::vec3 tfRot;
     glm::vec3 tfScale;
 
-    GLuint texture1;
-    GLuint texture2;
-
     // ImGui
     ImGuiContext* imGuiContext = nullptr;
 
@@ -76,8 +74,6 @@ public:
         tfPos(other.tfPos),
         tfRot(other.tfRot),
         tfScale(other.tfScale),
-        texture1(std::exchange(texture1, 0)),
-        texture2(std::exchange(texture2, 0)),
         vb(std::move(other.vb)),
         shd(std::move(other.shd)),
         mat(std::move(other.mat)),
@@ -101,8 +97,6 @@ public:
         std::swap(tfPos, other.tfPos);
         std::swap(tfRot, other.tfRot);
         std::swap(tfScale, other.tfScale);
-        std::swap(texture1, other.texture1);
-        std::swap(texture2, other.texture2);
 
         std::swap(windowTitle, other.windowTitle);
         std::swap(window, other.window);

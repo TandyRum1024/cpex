@@ -7,15 +7,11 @@
 #include <fstream>
 #include <string>
 #include <filesystem>
+#include <memory>
 
 #include <app.hpp>
 
 // LIBRARIES //
-// #include <zap/opengl/opengl.hpp>
-// #include <gfx/material.hpp>
-// #include <gfx/shader.hpp>
-// #include <gfx/vb.hpp>
-// #include <gfx/vert.hpp>
 #include <zcl/zcl.hpp>
 
 // EXTERNAL LIBRARIES //
@@ -85,30 +81,18 @@ void CpexApp::on_setup() {
     }
 
     // (material)
-    int tex1Wid, tex1Hei, tex1Channels,
-        tex2Wid, tex2Hei, tex2Channels;
-
-    stbi_set_flip_vertically_on_load(true);
-    unsigned char* tex1Buff = stbi_load((assetPath / "textest.png").string().c_str(), &tex1Wid, &tex1Hei, &tex1Channels, 0);
-    unsigned char* tex2Buff = stbi_load((assetPath / "sprtest.png").string().c_str(), &tex2Wid, &tex2Hei, &tex2Channels, 0);
-
-    glGenTextures(1, &texture1);
-    glGenTextures(1, &texture2);
-
-    glBindTexture(GL_TEXTURE_2D, texture1);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, tex1Wid, tex1Hei, 0, GL_RGB, GL_UNSIGNED_BYTE, tex1Buff);
-    glGenerateMipmap(GL_TEXTURE_2D);
-
-    glBindTexture(GL_TEXTURE_2D, texture2);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, tex2Wid, tex2Hei, 0, GL_RGBA, GL_UNSIGNED_BYTE, tex2Buff);
-    glGenerateMipmap(GL_TEXTURE_2D);
+    auto    tex1 = std::make_shared<gfx::Texture>("tex1"),
+            tex2 = std::make_shared<gfx::Texture>(gfx::Texture("tex2"));
+    
+    gfx::texture_load_from_file_2d(*tex1, assetPath / "textest.png");
+    gfx::texture_load_from_file_2d(*tex2, assetPath / "sprtest.png");
 
     mat->set_shader(shd);
     mat->add_uniforms(
         gfx::UniformVec4("uTint", {1.0, 1.0, 1.0, 1.0}),
         gfx::UniformMat4("uMatTf", glm::mat4(1.0f)),
-        gfx::UniformSampler2D("uBaseTexture", texture1),
-        gfx::UniformSampler2D("uOverTexture", texture2, GL_LINEAR, GL_REPEAT)
+        gfx::UniformSampler2D("uBaseTexture", tex1),
+        gfx::UniformSampler2D("uOverTexture", tex2, GL_LINEAR, GL_REPEAT)
     );
 
     // Setup ImGui
@@ -120,6 +104,8 @@ void CpexApp::on_setup() {
     glClearColor(1.0f, 0.8f, 0.25f, 1.0f);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    _logger->info("Setup done");
 }
 
 void CpexApp::on_free_resource() {
