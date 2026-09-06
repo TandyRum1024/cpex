@@ -130,6 +130,9 @@ void OpenGlApp::boot() {
     // https://gameprogrammingpatterns.com/game-loop.html
     dtPrev = std::chrono::high_resolution_clock::now();
     std::chrono::steady_clock::time_point dtNow = dtPrev;
+
+    std::chrono::steady_clock::time_point dtRenderPrev = std::chrono::high_resolution_clock::now();
+    std::chrono::steady_clock::time_point dtRenderNow = dtRenderPrev;
     
     while (!glfwWindowShouldClose(window)) {
         dtPrev = dtNow;
@@ -141,13 +144,20 @@ void OpenGlApp::boot() {
             isRenderReady = true;
         }
         
+        dtRenderPrev = std::chrono::high_resolution_clock::now();
+
         // Logic
         on_loop_update(dtMillis.count());
-
+        
         // Render
         on_loop_render_begin(dtMillis.count());
         on_loop_render(dtMillis.count());
+
+        dtRenderNow = std::chrono::high_resolution_clock::now();
+        dtRenderMillis = dtRenderNow - dtRenderPrev;
+
         on_loop_render_end(dtMillis.count());
+
         glfwSwapBuffers(window);
 
         // Finishing logic

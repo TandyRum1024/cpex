@@ -116,7 +116,7 @@ void Texture::set_texture_param(GLint texFilterMode, GLint texWrapMode) {
     glTexParameteri(texTarget, GL_TEXTURE_WRAP_R, texWrapMode);
 }
 
-void gfx::texture_load_from_file_2d(Texture& tex, std::filesystem::path file, GLint formatOverride) {
+void texhelper::texture_load_from_file_2d(Texture& tex, std::filesystem::path file, GLint formatOverride) {
     stbi_set_flip_vertically_on_load(true);
 
     int wid, hei, channels;

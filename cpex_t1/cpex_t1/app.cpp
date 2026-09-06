@@ -39,6 +39,9 @@ void CpexApp::free_imgui() {
 }
 
 void CpexApp::on_setup() {
+    // Disable vsync
+    glfwSwapInterval(0);
+
     // Relative path
     auto assetPath = zcl::file::get_exec_path().parent_path() / "data";
     _logger->info("Detected asset path: {}", assetPath.string());
@@ -83,17 +86,17 @@ void CpexApp::on_setup() {
 
     // (material)
     auto    tex1 = std::make_shared<gfx::Texture>("tex1"),
-            tex2 = std::make_shared<gfx::Texture>(gfx::Texture("tex2")); // move
+            tex2 = std::make_shared<gfx::Texture>("tex2");
     
-    gfx::texture_load_from_file_2d(*tex1, assetPath / "textest.png");
-    gfx::texture_load_from_file_2d(*tex2, assetPath / "sprtest.png");
+    gfx::texhelper::texture_load_from_file_2d(*tex1, assetPath / "textest.png");
+    gfx::texhelper::texture_load_from_file_2d(*tex2, assetPath / "sprtest.png");
 
     mat->set_shader(shd);
     mat->add_uniforms(
         gfx::UniformVec4("uTint", {1.0, 1.0, 1.0, 1.0}),
         gfx::UniformMat4("uMatTf", glm::mat4(1.0f)),
         gfx::UniformSampler2D("uBaseTexture", tex1),
-        gfx::UniformSampler2D("uOverTexture", tex2, GL_LINEAR, GL_REPEAT)
+        gfx::UniformSampler2D("uOverTexture", tex2, GL_LINEAR, GL_CLAMP_TO_BORDER)
     );
 
     // Setup ImGui
@@ -140,6 +143,7 @@ void CpexApp::on_loop_render_begin(double dtMillis) {
     ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_Always);
     if (ImGui::Begin("Scene", nullptr, 0)) {
         ImGui::BulletText("render time: %lf", time);
+        ImGui::BulletText("taken time: %lfms", dtRenderMillis.count());
         ImGui::DragFloat3("pos", glm::value_ptr(tfPos));
         ImGui::DragFloat3("rot", glm::value_ptr(tfRot));
         ImGui::DragFloat3("scale", glm::value_ptr(tfScale));

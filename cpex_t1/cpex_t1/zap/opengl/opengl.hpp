@@ -44,6 +44,7 @@ namespace zap {
         int windowHei;
 
         std::chrono::steady_clock::time_point dtPrev;
+        std::chrono::duration<double, std::milli> dtRenderMillis;
 
         OpenGlApp(std::string windowTitle):
             isRenderReady(false),

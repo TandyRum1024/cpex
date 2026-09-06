@@ -61,8 +61,10 @@ namespace gfx {
     };
 
     // Helper functions
-    /** Loads 2D texture from file into given texture. */
-    void texture_load_from_file_2d(Texture& tex, std::filesystem::path file, GLint formatOverride = 0);
+    namespace texhelper {
+        /** Loads 2D texture from file into given texture. */
+        void texture_load_from_file_2d(Texture& tex, std::filesystem::path file, GLint formatOverride = 0);
+    }
 }
 
 #endif
