@@ -157,6 +157,17 @@ target_include_directories(
     ${DIR_IMGUI}/backends
 )
 
+# {fmt} (https://github.com/fmtlib/fmt)
+set(VER_FMT "12.2.0")
+FetchContent_Declare(
+  fmt
+  GIT_REPOSITORY https://github.com/fmtlib/fmt
+  GIT_TAG ${VER_FMT}
+  GIT_SHALLOW TRUE
+)
+FetchContent_MakeAvailable(fmt)
+list(APPEND EXT_LIBS fmt::fmt)
+
 # spdlog (https://github.com/gabime/spdlog)
 set(VER_SPDLOG "v1.17.0")
 FetchContent_Declare(

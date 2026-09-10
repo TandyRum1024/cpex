@@ -43,7 +43,7 @@ namespace zap {
         int windowWid;
         int windowHei;
 
-        std::chrono::steady_clock::time_point dtPrev;
+        // std::chrono::steady_clock::time_point dtPrev;
         std::chrono::duration<double, std::milli> dtRenderMillis;
 
         OpenGlApp(std::string windowTitle):
@@ -51,7 +51,6 @@ namespace zap {
             windowTitle(windowTitle),
             windowWid(1280),
             windowHei(720),
-            dtPrev(std::chrono::high_resolution_clock::now()),
             _logger(zcl::logger("APP"))
             {}
         OpenGlApp():
@@ -59,7 +58,6 @@ namespace zap {
             windowTitle("HELLO WINDOW TITLE"),
             windowWid(1280),
             windowHei(720),
-            dtPrev(std::chrono::high_resolution_clock::now()),
             _logger(zcl::logger("APP"))
             {}
         virtual ~OpenGlApp() {
@@ -74,7 +72,6 @@ namespace zap {
             windowTitle(std::move(other.windowTitle)),
             windowWid(std::exchange(other.windowWid, 0)),
             windowHei(std::exchange(other.windowHei, 0)),
-            dtPrev(other.dtPrev),
             window(other.window),
             _logger(std::move(other._logger)) {
             other.window = nullptr;
@@ -92,7 +89,6 @@ namespace zap {
             std::swap(windowTitle, other.windowTitle);
             std::swap(windowWid, other.windowWid);
             std::swap(windowHei, other.windowHei);
-            std::swap(dtPrev, other.dtPrev);
             std::swap(window, other.window);
             std::swap(_logger, other._logger);
             return *this;

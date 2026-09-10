@@ -6,22 +6,17 @@
 #ifndef __ZCL_GUARD
 #define __ZCL_GUARD
 
+#include <map>
 #include <string>
 #include <fstream>
 #include <filesystem>
+#include <chrono>
+#include <vector>
 
 // EXTERNAL LIBRARIES //
 // ----------------------------
 #include <spdlog/spdlog.h>
-// OS
-// https://github.com/cpredef/predef/blob/master/OperatingSystems.md
-#if defined(_WIN32)
-#include <Windows.h>
-#elif defined(__linux__)
-// TODO
-#elif (defined(__APPLE__) && defined(__MACH__)) || defined(Macintosh) || defined(macintosh)
-#include <mach-o/dyld.h>
-#endif
+#include <fmt/format.h>
 // ----------------------------
 // EXTERNAL LIBRARIES //
 
@@ -55,5 +50,62 @@ namespace zcl {
 
     /** Returns a logger. */
     std::shared_ptr<spdlog::logger> logger(const std::string &name);
+
+    namespace trace {
+        /**
+         * Stopwatch containing the data for unit of performance logging/profiling.
+         * Used for measuring how long a rendering function takes to execute for example.
+         **/
+        struct StopwatchData {
+            std::string name = "";
+            std::chrono::steady_clock::time_point timeBegin = std::chrono::steady_clock::now();
+            std::chrono::steady_clock::time_point timeEnd = std::chrono::steady_clock::time_point {};
+
+            std::vector<StopwatchData*> child;
+            
+        // public:
+            StopwatchData(std::string name):
+                name(name) {};
+
+            void begin_sprint() {
+                timeBegin = std::chrono::steady_clock::now();
+                child.clear();
+            }
+            void end_sprint() {
+                timeEnd = std::chrono::steady_clock::now();
+            }
+            void append_child_sprint(StopwatchData* watch) {
+                child.push_back(watch);
+            }
+
+            template <typename R, typename P>
+            std::chrono::duration<R, P> calc_duration() const;
+
+            // Cast to `std::string`.
+            // https://en.cppreference.com/cpp/language/cast_operator
+            operator std::string() const {
+                std::chrono::duration<double, std::milli> duration = calc_duration<double, std::milli>();
+                return fmt::format("Timer `{}` {:.4}", name, duration.count());
+            }
+        };
+
+        // static StopwatchData* currentWatch = nullptr;
+        static std::vector<StopwatchData*> currentWatch;
+
+        std::string format_as(StopwatchData data);
+
+        StopwatchData& stopwatch(std::string id);
+        StopwatchData& stopwatch_begin(std::string id);
+        StopwatchData& stopwatch_end(std::string id);
+
+        // DEFINITIONS (INCLUSION MODEL FOR TEMPLATES!) //
+
+        template <typename R, typename P>
+        std::chrono::duration<R, P> StopwatchData::calc_duration() const {
+            auto dst = (timeEnd < timeBegin) ? std::chrono::steady_clock::now() : timeEnd;
+            // logger("tr")->info("STOPWATCH {} DURATION: {}", name, timeBegin.time_since_epoch().count());
+            return dst - timeBegin;
+        }
+    }
 }
 #endif

@@ -128,40 +128,51 @@ void OpenGlApp::boot() {
 
     // Begin loop
     // https://gameprogrammingpatterns.com/game-loop.html
-    dtPrev = std::chrono::high_resolution_clock::now();
-    std::chrono::steady_clock::time_point dtNow = dtPrev;
+    // auto dtNow = dtPrev;
+    // auto dtRenderPrev = std::chrono::steady_clock::now();
+    // auto dtRenderNow = dtRenderPrev;
 
-    std::chrono::steady_clock::time_point dtRenderPrev = std::chrono::high_resolution_clock::now();
-    std::chrono::steady_clock::time_point dtRenderNow = dtRenderPrev;
-    
     while (!glfwWindowShouldClose(window)) {
-        dtPrev = dtNow;
-        dtNow = std::chrono::high_resolution_clock::now();
-        std::chrono::duration<double, std::milli> dtMillis = dtNow - dtPrev;
+        auto dtMillis = zcl::trace::stopwatch("frame").calc_duration<double, std::milli>();
+        zcl::trace::stopwatch_begin("frame");
 
         glfwPollEvents();
         if (!isRenderReady) {
             isRenderReady = true;
         }
         
-        dtRenderPrev = std::chrono::high_resolution_clock::now();
-
         // Logic
+        zcl::trace::stopwatch_begin("update");
         on_loop_update(dtMillis.count());
+        zcl::trace::stopwatch_end("update");
         
         // Render
+        zcl::trace::stopwatch_begin("render_all");
+
+        zcl::trace::stopwatch_begin("render_begin");
         on_loop_render_begin(dtMillis.count());
+        zcl::trace::stopwatch_end("render_begin");
+
+        zcl::trace::stopwatch_begin("render");
         on_loop_render(dtMillis.count());
+        zcl::trace::stopwatch_end("render");
 
-        dtRenderNow = std::chrono::high_resolution_clock::now();
-        dtRenderMillis = dtRenderNow - dtRenderPrev;
-
+        zcl::trace::stopwatch_begin("render_end");
         on_loop_render_end(dtMillis.count());
+        zcl::trace::stopwatch_end("render_end");
 
+        zcl::trace::stopwatch_end("render_all");
+
+        zcl::trace::stopwatch_begin("glfwSwapBuffers");
         glfwSwapBuffers(window);
+        zcl::trace::stopwatch_end("glfwSwapBuffers");
 
         // Finishing logic
+        zcl::trace::stopwatch_begin("update_end");
         on_loop_update_end(dtMillis.count());
+        zcl::trace::stopwatch_end("update_end");
+
+        zcl::trace::stopwatch_end("frame");
     }
     
     on_shutdown();
@@ -187,8 +198,7 @@ void OpenGlApp::on_window_resize(GLFWwindow* win, int wid, int hei) {
     glViewport(0, 0, wid, hei);
 
     if (isRenderReady) {
-        std::chrono::steady_clock::time_point dtNow = std::chrono::high_resolution_clock::now();
-        std::chrono::duration<double, std::milli> dtMillis = dtNow - dtPrev;
+        auto dtMillis = zcl::trace::stopwatch("Frame").calc_duration<double, std::milli>();
 
         on_loop_render_begin(dtMillis.count());
         on_loop_render(dtMillis.count());

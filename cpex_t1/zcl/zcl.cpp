@@ -14,6 +14,16 @@
 // ----------------------------
 #include <spdlog/spdlog.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
+
+// OS
+// https://github.com/cpredef/predef/blob/master/OperatingSystems.md
+#if defined(_WIN32)
+    #include <Windows.h>
+#elif defined(__linux__)
+    // TODO
+#elif (defined(__APPLE__) && defined(__MACH__)) || defined(Macintosh) || defined(macintosh)
+    #include <mach-o/dyld.h>
+#endif
 // ----------------------------
 // EXTERNAL LIBRARIES //
 
@@ -80,10 +90,46 @@ std::filesystem::path file::get_exec_path() {
 
 std::shared_ptr<spdlog::logger> zcl::logger(const std::string &name) {
     auto logger = spdlog::get(name);
+
     if (!logger) {
         logger = spdlog::stdout_color_mt(name);
         // _logger->set_level(spdlog::level::debug);
     }
-
     return logger;
+}
+
+zcl::trace::StopwatchData& zcl::trace::stopwatch(std::string id) {
+    static std::map<std::string, StopwatchData> stopwatches;
+
+    if (!stopwatches.contains(id)) {
+        stopwatches.emplace(id, StopwatchData(id));
+    }
+    return stopwatches.at(id);
+}
+
+zcl::trace::StopwatchData& zcl::trace::stopwatch_begin(std::string id) {
+    auto& watch = stopwatch(id);
+    watch.begin_sprint();
+
+    if (!currentWatch.empty() && currentWatch.back() != &watch) {
+        currentWatch.back()->append_child_sprint(&watch);
+    }
+    currentWatch.push_back(&watch);
+
+    return watch;
+}
+
+zcl::trace::StopwatchData& zcl::trace::stopwatch_end(std::string id) {
+    auto& watch = stopwatch(id);
+    watch.end_sprint();
+
+    if (!currentWatch.empty()) {
+        currentWatch.pop_back();
+    }
+
+    return watch;
+}
+
+std::string zcl::trace::format_as(StopwatchData data) {
+    return std::string(data);
 }

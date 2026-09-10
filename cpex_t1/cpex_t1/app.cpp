@@ -136,26 +136,6 @@ void CpexApp::on_loop_render_begin(double dtMillis) {
     ImGui_ImplGlfw_NewFrame();
     ImGui_ImplOpenGL3_NewFrame();
     ImGui::NewFrame();
-
-    // ImGui
-    //ImGui::ShowDemoWindow(); // Show demo window! :)
-    ImGui::SetNextWindowSize(ImVec2(256, 256), ImGuiCond_Once);
-    ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_Always);
-    if (ImGui::Begin("Scene", nullptr, 0)) {
-        ImGui::BulletText("render time: %lf", time);
-        ImGui::BulletText("taken time: %lfms", dtRenderMillis.count());
-        ImGui::DragFloat3("pos", glm::value_ptr(tfPos));
-        ImGui::DragFloat3("rot", glm::value_ptr(tfRot));
-        ImGui::DragFloat3("scale", glm::value_ptr(tfScale));
-    }
-    ImGui::End();
-
-    ImGui::SetNextWindowSize(ImVec2(256, 256), ImGuiCond_Once);
-    ImGui::SetNextWindowPos(ImVec2(windowWid - 256, 0), ImGuiCond_Always);
-    if (ImGui::Begin("Models", nullptr, 0)) {
-
-    }
-    ImGui::End();
 }
 
 void CpexApp::on_loop_render(double dtMillis) {
@@ -197,6 +177,56 @@ void CpexApp::on_loop_render_end(double dtMillis) {
     if (!imGuiContext) {
         return;
     }
+
+    // ImGui
+    //ImGui::ShowDemoWindow(); // Show demo window! :)
+    ImGui::SetNextWindowSize(ImVec2(256, 256), ImGuiCond_Once);
+    ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_Always);
+    if (ImGui::Begin("Scene", nullptr, 0)) {
+        auto depth = 0;
+        auto watch = &zcl::trace::stopwatch("frame");
+        auto watchqueue = std::vector<zcl::trace::StopwatchData*>();
+        auto depthqueue = std::vector<int>();
+
+        ImGui::BulletText("time: %lf", time);
+        ImGui::BulletText("[STOPWATCH]");
+        while (watch != nullptr) {
+            auto indent = ImGui::GetStyle().IndentSpacing * (1 + depth);
+
+            ImGui::Indent(indent);
+            ImGui::BulletText("%s: %lfms", watch->name.c_str(), watch->calc_duration<double, std::milli>().count());
+            ImGui::Unindent(indent);
+
+            for (auto child = watch->child.begin(); child != watch->child.end(); child++) {
+                watchqueue.push_back(*child);
+                depthqueue.push_back(depth + 1);
+            }
+            
+            if (watchqueue.empty()) {
+                watch = nullptr;
+                depth = 0;
+            }
+            else {
+                watch = watchqueue.front();
+                depth = depthqueue.front();
+
+                watchqueue.erase(watchqueue.begin());
+                depthqueue.erase(depthqueue.begin());
+            }
+        }
+        
+        ImGui::DragFloat3("pos", glm::value_ptr(tfPos));
+        ImGui::DragFloat3("rot", glm::value_ptr(tfRot));
+        ImGui::DragFloat3("scale", glm::value_ptr(tfScale));
+    }
+    ImGui::End();
+
+    ImGui::SetNextWindowSize(ImVec2(256, 256), ImGuiCond_Once);
+    ImGui::SetNextWindowPos(ImVec2(windowWid - 256, 0), ImGuiCond_Always);
+    if (ImGui::Begin("Models", nullptr, 0)) {
+
+    }
+    ImGui::End();
     
     ImGui::Render();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
