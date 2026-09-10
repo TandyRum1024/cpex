@@ -133,7 +133,7 @@ void OpenGlApp::boot() {
     // auto dtRenderNow = dtRenderPrev;
 
     while (!glfwWindowShouldClose(window)) {
-        auto dtMillis = zcl::trace::stopwatch("frame").calc_duration<double, std::milli>();
+        auto dtMillis = zcl::trace::stopwatch_get("frame").calc_duration<double, std::milli>();
         zcl::trace::stopwatch_begin("frame");
 
         glfwPollEvents();
@@ -198,7 +198,7 @@ void OpenGlApp::on_window_resize(GLFWwindow* win, int wid, int hei) {
     glViewport(0, 0, wid, hei);
 
     if (isRenderReady) {
-        auto dtMillis = zcl::trace::stopwatch("Frame").calc_duration<double, std::milli>();
+        auto dtMillis = zcl::trace::stopwatch_get("Frame").calc_duration();
 
         on_loop_render_begin(dtMillis.count());
         on_loop_render(dtMillis.count());

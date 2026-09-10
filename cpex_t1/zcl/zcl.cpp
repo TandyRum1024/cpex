@@ -98,34 +98,21 @@ std::shared_ptr<spdlog::logger> zcl::logger(const std::string &name) {
     return logger;
 }
 
-zcl::trace::StopwatchData& zcl::trace::stopwatch(std::string id) {
-    static std::map<std::string, StopwatchData> stopwatches;
-
-    if (!stopwatches.contains(id)) {
-        stopwatches.emplace(id, StopwatchData(id));
-    }
-    return stopwatches.at(id);
+std::weak_ptr<zcl::trace::StopwatchMeta> stopwatch_get(const std::string id) {
+    auto repo = zcl::trace::watchRepo;
+    return repo.get_watch(id);
 }
 
-zcl::trace::StopwatchData& zcl::trace::stopwatch_begin(std::string id) {
-    auto& watch = stopwatch(id);
-    watch.begin_sprint();
-
-    if (!currentWatch.empty() && currentWatch.back() != &watch) {
-        currentWatch.back()->append_child_sprint(&watch);
-    }
-    currentWatch.push_back(&watch);
-
-    return watch;
+std::weak_ptr<zcl::trace::StopwatchMeta> stopwatch_begin(const std::string id) {
+    auto repo = zcl::trace::watchRepo;
+    return repo.begin_watch(id);
 }
 
-zcl::trace::StopwatchData& zcl::trace::stopwatch_end(std::string id) {
-    auto& watch = stopwatch(id);
-    watch.end_sprint();
+std::weak_ptr<zcl::trace::StopwatchMeta> stopwatch_end(const std::string id) {
+    auto repo = zcl::trace::watchRepo;
+    auto watch = repo.get_watch(id);
 
-    if (!currentWatch.empty()) {
-        currentWatch.pop_back();
-    }
+    watch->end_sprint();
 
     return watch;
 }

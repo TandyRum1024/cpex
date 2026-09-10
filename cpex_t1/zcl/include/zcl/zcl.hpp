@@ -12,6 +12,7 @@
 #include <filesystem>
 #include <chrono>
 #include <vector>
+#include <algorithm>
 
 // EXTERNAL LIBRARIES //
 // ----------------------------
@@ -52,60 +53,171 @@ namespace zcl {
     std::shared_ptr<spdlog::logger> logger(const std::string &name);
 
     namespace trace {
-        /**
-         * Stopwatch containing the data for unit of performance logging/profiling.
-         * Used for measuring how long a rendering function takes to execute for example.
-         **/
-        struct StopwatchData {
-            std::string name = "";
-            std::chrono::steady_clock::time_point timeBegin = std::chrono::steady_clock::now();
-            std::chrono::steady_clock::time_point timeEnd = std::chrono::steady_clock::time_point {};
 
-            std::vector<StopwatchData*> child;
-            
-        // public:
-            StopwatchData(std::string name):
-                name(name) {};
+        class Stopwatch;
+        class StopwatchMeta;
+
+        class StopwatchRepository {
+            std::vector<std::shared_ptr<StopwatchMeta>> watches;
+            std::weak_ptr<StopwatchMeta> watchCurrent;
+
+        public:
+            std::weak_ptr<StopwatchMeta> get_scope_parent_watch() {
+                return watchCurrent;
+            }
+
+            void set_scope_parent_watch(const std::string id) {
+                if (id.empty()) {
+                    reset_scope_parent_watch();
+                }
+                else {
+                    auto res = get_watch(id);
+                    watchCurrent = res;
+                }
+            }
+
+            void reset_scope_parent_watch() {
+                watchCurrent.reset();
+            }
+
+            std::shared_ptr<StopwatchMeta> get_watch(const std::string id) {
+                auto res = std::find_if(
+                    watches.begin(),
+                    watches.end(),
+                    [&] (StopwatchMeta& meta) {
+                        return id == meta.id;
+                    }
+                );
+
+                if (res == watches.end()) {
+                    // Create new instance and return
+                    auto newMeta = StopwatchMeta();
+                    auto newWatch = std::make_shared<Stopwatch>(Stopwatch());
+                    auto newMetaShared = std::make_shared<StopwatchMeta>(newMeta);
+                    newMeta.id = id;
+                    newMeta.data = newWatch;
+
+                    watches.push_back(newMetaShared);
+                    return newMetaShared;
+                }
+                else {
+                    // Return query result
+                    return *res;
+                }
+            }
+
+            std::weak_ptr<StopwatchMeta> begin_watch(const std::string id) {
+                auto watch = get_watch(id);
+                watchCurrent = watch;
+
+                return watch;
+            }
+        };
+
+        static const StopwatchRepository watchRepo;
+
+        class StopwatchMeta {
+        public:
+            std::string id = "";
+            std::weak_ptr<StopwatchMeta> parent;
+            std::weak_ptr<Stopwatch> data;
+            std::chrono::duration<double, std::milli> timeDelta = std::chrono::duration<double, std::milli> {};
+
+            StopwatchMeta(): StopwatchMeta(id, std::weak_ptr<Stopwatch>()) {};
+            StopwatchMeta(std::string id, std::weak_ptr<Stopwatch> data):
+                id(id) {};
 
             void begin_sprint() {
-                timeBegin = std::chrono::steady_clock::now();
-                child.clear();
-            }
-            void end_sprint() {
-                timeEnd = std::chrono::steady_clock::now();
-            }
-            void append_child_sprint(StopwatchData* watch) {
-                child.push_back(watch);
+                if (auto watch = data.lock()) {
+                    watch->begin_sprint();
+                }
             }
 
-            template <typename R, typename P>
-            std::chrono::duration<R, P> calc_duration() const;
+            void end_sprint() {
+                if (auto watch = data.lock()) {
+                    watch->end_sprint();
+                }
+            }
 
             // Cast to `std::string`.
             // https://en.cppreference.com/cpp/language/cast_operator
             operator std::string() const {
-                std::chrono::duration<double, std::milli> duration = calc_duration<double, std::milli>();
-                return fmt::format("Timer `{}` {:.4}", name, duration.count());
+                if (auto watch = data.lock()) {
+                    auto duration = watch->calc_duration();
+                    return fmt::format("[{}]: {:.4}ms", id, duration.count());
+                }
+                else {
+                    return fmt::format("[{}]: <N/A>", id);
+                }
+            }
+        };
+
+        /**
+         * Data for stopwatch, unit of (nested) performance logging/profiling.
+         * Used for measuring how long a rendering function takes to execute for example.
+         **/
+        class Stopwatch {
+            std::weak_ptr<StopwatchMeta> meta;
+
+            std::chrono::steady_clock::time_point timeBegin = std::chrono::steady_clock::now();
+            std::chrono::steady_clock::time_point timeEnd = std::chrono::steady_clock::time_point {};
+            
+        public:
+            Stopwatch(): Stopwatch(std::weak_ptr<StopwatchMeta>()) {};
+            Stopwatch(std::weak_ptr<StopwatchMeta> meta):
+                meta(meta)
+                {
+                auto repo = watchRepo;
+
+                if (auto m = meta.lock()) {
+                    m->parent = repo.get_scope_parent_watch();
+                    repo.set_scope_parent_watch(m->id);
+                }
+
+                begin_sprint();
+            };
+            ~Stopwatch() {
+                auto repo = watchRepo;
+
+                if (auto m = meta.lock()) {
+                    if (auto watch = m->parent.lock()) {
+                        repo.set_scope_parent_watch(watch->id);
+                    }
+                    else {
+                        repo.reset_scope_parent_watch();
+                    }
+
+                    m->timeDelta = timeEnd - timeBegin;
+                }
+
+                end_sprint();
+            }
+            
+            void begin_sprint() {
+                timeBegin = std::chrono::steady_clock::now();
+            }
+            void end_sprint() {
+                timeEnd = std::chrono::steady_clock::now();
+            }
+            // void set_parent_sprint(std::weak_ptr<Stopwatch> watch) {
+            //     parent = watch;
+            // }
+            
+            std::chrono::duration<double, std::milli> calc_duration() const {
+                auto dst = (timeEnd < timeBegin) ? std::chrono::steady_clock::now() : timeEnd;
+                // logger("tr")->info("STOPWATCH {} DURATION: {}", name, timeBegin.time_since_epoch().count());
+                return dst - timeBegin;
             }
         };
 
         // static StopwatchData* currentWatch = nullptr;
-        static std::vector<StopwatchData*> currentWatch;
+        // static std::vector<StopwatchData*> currentWatch;
 
-        std::string format_as(StopwatchData data);
+        std::string format_as(Stopwatch data);
 
-        StopwatchData& stopwatch(std::string id);
-        StopwatchData& stopwatch_begin(std::string id);
-        StopwatchData& stopwatch_end(std::string id);
-
-        // DEFINITIONS (INCLUSION MODEL FOR TEMPLATES!) //
-
-        template <typename R, typename P>
-        std::chrono::duration<R, P> StopwatchData::calc_duration() const {
-            auto dst = (timeEnd < timeBegin) ? std::chrono::steady_clock::now() : timeEnd;
-            // logger("tr")->info("STOPWATCH {} DURATION: {}", name, timeBegin.time_since_epoch().count());
-            return dst - timeBegin;
-        }
+        std::weak_ptr<StopwatchMeta> stopwatch_get(const std::string id);
+        std::weak_ptr<StopwatchMeta> stopwatch_begin(const std::string id);
+        std::weak_ptr<StopwatchMeta> stopwatch_end(const std::string id);
     }
 }
 #endif

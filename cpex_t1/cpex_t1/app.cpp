@@ -184,7 +184,7 @@ void CpexApp::on_loop_render_end(double dtMillis) {
     ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_Always);
     if (ImGui::Begin("Scene", nullptr, 0)) {
         auto depth = 0;
-        auto watch = &zcl::trace::stopwatch("frame");
+        auto watch = &zcl::trace::stopwatch_get("frame");
         auto watchqueue = std::vector<zcl::trace::StopwatchData*>();
         auto depthqueue = std::vector<int>();
 
@@ -214,7 +214,7 @@ void CpexApp::on_loop_render_end(double dtMillis) {
                 depthqueue.erase(depthqueue.begin());
             }
         }
-        
+
         ImGui::DragFloat3("pos", glm::value_ptr(tfPos));
         ImGui::DragFloat3("rot", glm::value_ptr(tfRot));
         ImGui::DragFloat3("scale", glm::value_ptr(tfScale));
