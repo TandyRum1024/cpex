@@ -197,6 +197,11 @@ target_include_directories(
     PUBLIC
     ${DIR_STB}
 )
+
+# (Windows: DbgHelp needs this!)
+if(WIN32)
+list(APPEND EXT_LIBS DbgHelp)
+endif()
 # -----------------------
 # External dependencies
 

@@ -3,9 +3,7 @@
  * ZIK@MMXXVI
  */
 
-#include <iostream>
-#include <fstream>
-#include <string>
+#include <exception>
 
 #include <app.hpp>
 
@@ -34,17 +32,33 @@ int main() {
     spdlog::stdout_color_mt("PRG");
     auto logger = spdlog::get("PRG");
 
-    try {
-        logger->info("Booting app...");
-        app.boot();
-    }
-    catch (std::exception e) {
-        logger->error("UNHANDLED EXCEPTION!:\n{}", e.what());
-    }
-    catch (...) {
-        logger->error("FATAL EXCEPTION HAS OCCURED! AND NOW THE APP WILL TERMINATE. BYE");
-    }
+    std::set_terminate([] () {
+        auto trace = zcl::trace::get_stack_trace();
+        auto logger = spdlog::get("PRG");
+        auto eptr = std::exception_ptr(std::current_exception());
 
+        logger->error("********************* UNHANDLED EXCEPTION! *********************");
+        try {
+            if (eptr) {
+                std::rethrow_exception(eptr);
+            }
+            else {
+                logger->error("(NO EXCEPTION DATA WAS FOUND!)");
+            }
+        }
+        catch (std::exception e) {
+            logger->error(fmt::format("exception: {}", e.what()));
+        }
+        catch (...) {
+            logger->error("FATAL EXCEPTION HAS OCCURED! AND NOW THE APP WILL TERMINATE. BYE");
+        }
+        
+        logger->error(trace);
+        std::exit(EXIT_FAILURE);
+    });
+
+    logger->info("Booting app...");
+    app.boot();
     logger->info("Terminating app!");
     return 0;
 }

@@ -7,6 +7,8 @@
 #define __ZCL_GUARD
 
 #include <map>
+#include <exception>
+#include <utility>
 #include <string>
 #include <fstream>
 #include <filesystem>
@@ -53,171 +55,86 @@ namespace zcl {
     std::shared_ptr<spdlog::logger> logger(const std::string &name);
 
     namespace trace {
+        /**
+         * Data for stopwatch "split", unit of (nested) performance logging/profiling.
+         * Used for measuring how long a rendering function takes to execute for example.
+         */
+        class StopwatchSplit {
+            std::string id = "";
+            std::weak_ptr<StopwatchSplit> parentSplit;
+            
+            std::chrono::steady_clock::time_point timeBegin = std::chrono::steady_clock::now();
+            std::chrono::steady_clock::time_point timeEnd = std::chrono::steady_clock::time_point {};
+            std::chrono::duration<double, std::milli> timeDelta = std::chrono::duration<double, std::milli> {};
+            
+        public:
+            StopwatchSplit();
+            StopwatchSplit(std::string id);
 
-        class Stopwatch;
-        class StopwatchMeta;
+            std::weak_ptr<StopwatchSplit> get_parent();
+            void set_parent(std::weak_ptr<StopwatchSplit> split);
+            std::string get_id();
+            void begin_sprint();
+            void end_sprint();
 
-        class StopwatchRepository {
-            std::vector<std::shared_ptr<StopwatchMeta>> watches;
-            std::weak_ptr<StopwatchMeta> watchCurrent;
+            std::chrono::duration<double, std::milli> calc_duration() const;
+
+            // Cast to `std::string`.
+            // https://en.cppreference.com/cpp/language/cast_operator
+            operator std::string() const;
+        };
+
+        /** Helper class that uses RAII-like pattern to automatically begin and end the split. */
+        class StopwatchSplitHelper {
+            std::weak_ptr<StopwatchSplit> split;
 
         public:
-            std::weak_ptr<StopwatchMeta> get_scope_parent_watch() {
-                return watchCurrent;
-            }
+            StopwatchSplitHelper(std::weak_ptr<StopwatchSplit> split);
+            ~StopwatchSplitHelper();
+        };
 
-            void set_scope_parent_watch(const std::string id) {
-                if (id.empty()) {
-                    reset_scope_parent_watch();
-                }
-                else {
-                    auto res = get_watch(id);
-                    watchCurrent = res;
-                }
-            }
+        /** Convenience struct for containing "tree" of split. Mainly used for plugging into ImGui and likes. */
+        struct StopwatchSplitNode {
+            // (deliberately kept as struct since this works like a "data" class in Kotlin for example so its no use to make it a class and have it all public and/or make getter/setters for all fields)
+            std::string id = "";
+            std::weak_ptr<StopwatchSplitNode> parent;
+            std::vector<std::shared_ptr<StopwatchSplitNode>> children;
+            std::chrono::duration<double, std::milli> duration;
+        
+            StopwatchSplitNode();
+            StopwatchSplitNode(std::string id);
+            operator std::string() const;
+        };
 
-            void reset_scope_parent_watch() {
-                watchCurrent.reset();
-            }
+        /** Repository that manages splits. */
+        class StopwatchRepository {
+            std::vector<std::shared_ptr<StopwatchSplit>> splits;
+            std::weak_ptr<StopwatchSplit> splitCurrent;
 
-            std::shared_ptr<StopwatchMeta> get_watch(const std::string id) {
-                auto res = std::find_if(
-                    watches.begin(),
-                    watches.end(),
-                    [&] (StopwatchMeta& meta) {
-                        return id == meta.id;
-                    }
-                );
+        public:
+            std::weak_ptr<StopwatchSplit> get_scope_parent_split();
 
-                if (res == watches.end()) {
-                    // Create new instance and return
-                    auto newMeta = StopwatchMeta();
-                    auto newWatch = std::make_shared<Stopwatch>(Stopwatch());
-                    auto newMetaShared = std::make_shared<StopwatchMeta>(newMeta);
-                    newMeta.id = id;
-                    newMeta.data = newWatch;
+            void set_scope_parent_split(std::weak_ptr<StopwatchSplit> split);
+            void reset_scope_parent_split();
 
-                    watches.push_back(newMetaShared);
-                    return newMetaShared;
-                }
-                else {
-                    // Return query result
-                    return *res;
-                }
-            }
+            std::shared_ptr<StopwatchSplit> get_split(const std::string id);
+            std::shared_ptr<StopwatchSplitHelper> begin_split(const std::string id);
 
-            std::weak_ptr<StopwatchMeta> begin_watch(const std::string id) {
-                auto watch = get_watch(id);
-                watchCurrent = watch;
-
-                return watch;
-            }
+            std::vector<std::shared_ptr<StopwatchSplitNode>> get_all_splits_and_childs();
         };
 
         static const StopwatchRepository watchRepo;
 
-        class StopwatchMeta {
-        public:
-            std::string id = "";
-            std::weak_ptr<StopwatchMeta> parent;
-            std::weak_ptr<Stopwatch> data;
-            std::chrono::duration<double, std::milli> timeDelta = std::chrono::duration<double, std::milli> {};
-
-            StopwatchMeta(): StopwatchMeta(id, std::weak_ptr<Stopwatch>()) {};
-            StopwatchMeta(std::string id, std::weak_ptr<Stopwatch> data):
-                id(id) {};
-
-            void begin_sprint() {
-                if (auto watch = data.lock()) {
-                    watch->begin_sprint();
-                }
-            }
-
-            void end_sprint() {
-                if (auto watch = data.lock()) {
-                    watch->end_sprint();
-                }
-            }
-
-            // Cast to `std::string`.
-            // https://en.cppreference.com/cpp/language/cast_operator
-            operator std::string() const {
-                if (auto watch = data.lock()) {
-                    auto duration = watch->calc_duration();
-                    return fmt::format("[{}]: {:.4}ms", id, duration.count());
-                }
-                else {
-                    return fmt::format("[{}]: <N/A>", id);
-                }
-            }
-        };
-
-        /**
-         * Data for stopwatch, unit of (nested) performance logging/profiling.
-         * Used for measuring how long a rendering function takes to execute for example.
-         **/
-        class Stopwatch {
-            std::weak_ptr<StopwatchMeta> meta;
-
-            std::chrono::steady_clock::time_point timeBegin = std::chrono::steady_clock::now();
-            std::chrono::steady_clock::time_point timeEnd = std::chrono::steady_clock::time_point {};
-            
-        public:
-            Stopwatch(): Stopwatch(std::weak_ptr<StopwatchMeta>()) {};
-            Stopwatch(std::weak_ptr<StopwatchMeta> meta):
-                meta(meta)
-                {
-                auto repo = watchRepo;
-
-                if (auto m = meta.lock()) {
-                    m->parent = repo.get_scope_parent_watch();
-                    repo.set_scope_parent_watch(m->id);
-                }
-
-                begin_sprint();
-            };
-            ~Stopwatch() {
-                auto repo = watchRepo;
-
-                if (auto m = meta.lock()) {
-                    if (auto watch = m->parent.lock()) {
-                        repo.set_scope_parent_watch(watch->id);
-                    }
-                    else {
-                        repo.reset_scope_parent_watch();
-                    }
-
-                    m->timeDelta = timeEnd - timeBegin;
-                }
-
-                end_sprint();
-            }
-            
-            void begin_sprint() {
-                timeBegin = std::chrono::steady_clock::now();
-            }
-            void end_sprint() {
-                timeEnd = std::chrono::steady_clock::now();
-            }
-            // void set_parent_sprint(std::weak_ptr<Stopwatch> watch) {
-            //     parent = watch;
-            // }
-            
-            std::chrono::duration<double, std::milli> calc_duration() const {
-                auto dst = (timeEnd < timeBegin) ? std::chrono::steady_clock::now() : timeEnd;
-                // logger("tr")->info("STOPWATCH {} DURATION: {}", name, timeBegin.time_since_epoch().count());
-                return dst - timeBegin;
-            }
-        };
-
         // static StopwatchData* currentWatch = nullptr;
         // static std::vector<StopwatchData*> currentWatch;
 
-        std::string format_as(Stopwatch data);
+        std::string format_as(StopwatchSplit data);
 
-        std::weak_ptr<StopwatchMeta> stopwatch_get(const std::string id);
-        std::weak_ptr<StopwatchMeta> stopwatch_begin(const std::string id);
-        std::weak_ptr<StopwatchMeta> stopwatch_end(const std::string id);
+        std::shared_ptr<StopwatchSplit> stopwatch_get(const std::string id);
+        std::shared_ptr<StopwatchSplitHelper> stopwatch_begin(const std::string id);
+        void stopwatch_end(const std::string id);
+
+        std::string get_stack_trace(bool skipInternal = true, int skipLen = 0, int maxLen = 16);
     }
 }
 #endif

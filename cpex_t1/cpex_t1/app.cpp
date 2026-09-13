@@ -173,6 +173,19 @@ void CpexApp::on_loop_render(double dtMillis) {
     }
 }
 
+void imgui_draw_stopwatch_node(const std::shared_ptr<zcl::trace::StopwatchSplitNode> node) {
+    if (!node) {
+        return;
+    }
+
+    if (ImGui::TreeNodeEx(node->id.c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {
+        for (auto&& child: node->children) {
+            imgui_draw_stopwatch_node(child);
+        }
+        ImGui::TreePop();
+    }
+}
+
 void CpexApp::on_loop_render_end(double dtMillis) {
     if (!imGuiContext) {
         return;
@@ -183,36 +196,14 @@ void CpexApp::on_loop_render_end(double dtMillis) {
     ImGui::SetNextWindowSize(ImVec2(256, 256), ImGuiCond_Once);
     ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_Always);
     if (ImGui::Begin("Scene", nullptr, 0)) {
-        auto depth = 0;
-        auto watch = &zcl::trace::stopwatch_get("frame");
-        auto watchqueue = std::vector<zcl::trace::StopwatchData*>();
-        auto depthqueue = std::vector<int>();
-
         ImGui::BulletText("time: %lf", time);
-        ImGui::BulletText("[STOPWATCH]");
-        while (watch != nullptr) {
-            auto indent = ImGui::GetStyle().IndentSpacing * (1 + depth);
 
-            ImGui::Indent(indent);
-            ImGui::BulletText("%s: %lfms", watch->name.c_str(), watch->calc_duration<double, std::milli>().count());
-            ImGui::Unindent(indent);
-
-            for (auto child = watch->child.begin(); child != watch->child.end(); child++) {
-                watchqueue.push_back(*child);
-                depthqueue.push_back(depth + 1);
-            }
-            
-            if (watchqueue.empty()) {
-                watch = nullptr;
-                depth = 0;
-            }
-            else {
-                watch = watchqueue.front();
-                depth = depthqueue.front();
-
-                watchqueue.erase(watchqueue.begin());
-                depthqueue.erase(depthqueue.begin());
-            }
+        auto repo = zcl::trace::watchRepo;
+        auto roots = repo.get_all_splits_and_childs();
+        
+        ImGui::BulletText("[STOPWATCH (%d)]", roots.size());
+        for (auto&& root: roots) {
+            imgui_draw_stopwatch_node(root);
         }
 
         ImGui::DragFloat3("pos", glm::value_ptr(tfPos));

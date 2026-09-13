@@ -24,6 +24,13 @@
 #elif (defined(__APPLE__) && defined(__MACH__)) || defined(Macintosh) || defined(macintosh)
     #include <mach-o/dyld.h>
 #endif
+
+// (for stack trace)
+#ifdef _MSC_VER
+    #include <DbgHelp.h>
+#else
+    #include <execinfo.h>
+#endif
 // ----------------------------
 // EXTERNAL LIBRARIES //
 
@@ -98,25 +105,367 @@ std::shared_ptr<spdlog::logger> zcl::logger(const std::string &name) {
     return logger;
 }
 
-std::weak_ptr<zcl::trace::StopwatchMeta> stopwatch_get(const std::string id) {
-    auto repo = zcl::trace::watchRepo;
-    return repo.get_watch(id);
+// zcl::trace
+
+std::weak_ptr<trace::StopwatchSplit> trace::StopwatchRepository::get_scope_parent_split() {
+    return splitCurrent;
 }
 
-std::weak_ptr<zcl::trace::StopwatchMeta> stopwatch_begin(const std::string id) {
-    auto repo = zcl::trace::watchRepo;
-    return repo.begin_watch(id);
+void trace::StopwatchRepository::set_scope_parent_split(std::weak_ptr<trace::StopwatchSplit> split) {
+    // if (id.empty()) {
+    //     reset_scope_parent_split();
+    // }
+    // else {
+    //     auto res = get_split(id);
+    //     splitCurrent = res;
+    // }
+
+    splitCurrent = split;
 }
 
-std::weak_ptr<zcl::trace::StopwatchMeta> stopwatch_end(const std::string id) {
-    auto repo = zcl::trace::watchRepo;
-    auto watch = repo.get_watch(id);
-
-    watch->end_sprint();
-
-    return watch;
+void trace::StopwatchRepository::reset_scope_parent_split() {
+    splitCurrent.reset();
 }
 
-std::string zcl::trace::format_as(StopwatchData data) {
+std::shared_ptr<trace::StopwatchSplit> trace::StopwatchRepository::get_split(const std::string id) {
+    auto res = std::find_if(
+        splits.begin(),
+        splits.end(),
+        [&] (std::shared_ptr<StopwatchSplit> split) {
+            return id == split->get_id();
+        }
+    );
+
+    if (res == splits.end()) {
+        // Create new instance and return
+        auto split = StopwatchSplit();
+        auto splitPtr = std::make_shared<StopwatchSplit>(split);
+
+        splits.push_back(splitPtr);
+        return splitPtr;
+    }
+    else {
+        // Return query result
+        return *res;
+    }
+}
+
+std::shared_ptr<trace::StopwatchSplitHelper> trace::StopwatchRepository::begin_split(const std::string id) {
+    auto splitPtr = get_split(id);
+    auto helper = std::make_shared<StopwatchSplitHelper>(StopwatchSplitHelper(splitPtr));
+
+    return helper;
+}
+
+std::vector<std::shared_ptr<trace::StopwatchSplitNode>> trace::StopwatchRepository::get_all_splits_and_childs() {
+    auto roots = std::vector<std::shared_ptr<StopwatchSplitNode>>();
+    auto nodesById = std::map<std::string, std::shared_ptr<StopwatchSplitNode>>();
+
+    // For all splits, create map of children splits indexed by parents id
+    // And also prepare list of "roots"
+    for (auto &&split: splits) {
+        auto splitId = split->get_id();
+        auto splitNode = nodesById[splitId];
+
+        // Initialize node
+        if (!splitNode) {
+            splitNode = std::make_shared<StopwatchSplitNode>(StopwatchSplitNode(splitId));
+            nodesById[splitId] = splitNode;
+            splitNode->id = splitId;
+        }
+
+        if (auto parent = split->get_parent().lock()) {
+            // Has a parent!
+            auto parentId = parent->get_id();
+            auto parentNode = nodesById[parentId];
+
+            // Initialize parent if needed
+            if (!parentNode) {
+                parentNode = std::make_shared<StopwatchSplitNode>(StopwatchSplitNode(parentId));
+                nodesById[splitId] = parentNode;
+                parentNode->id = parentId;
+            }
+
+            parentNode->children.push_back(splitNode);
+        }
+        else {
+            // No parent. Might be the "root"
+            roots.push_back(splitNode);
+        }
+    }
+
+    return roots;
+}
+
+trace::StopwatchSplitNode::StopwatchSplitNode(): StopwatchSplitNode("") {}
+trace::StopwatchSplitNode::StopwatchSplitNode(std::string id): id(id) {}
+
+trace::StopwatchSplitNode::operator std::string() const {
+    return fmt::format("[{}]: {:.4}ms", id, duration.count());
+}
+
+trace::StopwatchSplit::StopwatchSplit(): StopwatchSplit("") {}
+trace::StopwatchSplit::StopwatchSplit(std::string id): id(id) {}
+
+std::weak_ptr<trace::StopwatchSplit> trace::StopwatchSplit::get_parent() {
+    return parentSplit;
+}
+
+void trace::StopwatchSplit::set_parent(std::weak_ptr<StopwatchSplit> split) {
+    parentSplit = split;
+}
+
+std::string trace::StopwatchSplit::get_id() {
+    return id;
+}
+
+void trace::StopwatchSplit::begin_sprint() {
+    timeBegin = std::chrono::steady_clock::now();
+}
+
+void trace::StopwatchSplit::end_sprint() {
+    timeEnd = std::chrono::steady_clock::now();
+    timeDelta = timeEnd - timeBegin;
+}
+
+std::chrono::duration<double, std::milli> trace::StopwatchSplit::calc_duration() const {
+    auto dst = (timeEnd < timeBegin) ? (std::chrono::steady_clock::now() - timeBegin) : timeDelta;
+    // logger("tr")->info("STOPWATCH {} DURATION: {}", name, timeBegin.time_since_epoch().count());
+    return dst;
+}
+
+// Cast to `std::string`.
+// https://en.cppreference.com/cpp/language/cast_operator
+trace::StopwatchSplit::operator std::string() const {
+    auto duration = calc_duration();
+    return fmt::format("[{}]: {:.4}ms", id, duration.count());
+}
+
+trace::StopwatchSplitHelper::StopwatchSplitHelper(std::weak_ptr<StopwatchSplit> split):
+    split(split)
+    {
+    auto repo = watchRepo;
+
+    if (auto s = split.lock()) {
+        s->set_parent(repo.get_scope_parent_split());
+        s->begin_sprint();
+        repo.set_scope_parent_split(s);
+    }
+}
+
+trace::StopwatchSplitHelper::~StopwatchSplitHelper() {
+    auto repo = watchRepo;
+
+    if (auto s = split.lock()) {
+        s->end_sprint();
+        if (auto p = s->get_parent().lock()) {
+            repo.set_scope_parent_split(p);
+        }
+        else {
+            repo.reset_scope_parent_split();
+        }
+    }
+}
+
+std::shared_ptr<trace::StopwatchSplit> zcl::trace::stopwatch_get(const std::string id) {
+    auto repo = zcl::trace::watchRepo;
+    return repo.get_split(id);
+}
+
+std::shared_ptr<trace::StopwatchSplitHelper> zcl::trace::stopwatch_begin(const std::string id) {
+    auto repo = zcl::trace::watchRepo;
+    auto helper = repo.begin_split(id);
+    return helper;
+}
+
+void zcl::trace::stopwatch_end(const std::string id) {
+    auto repo = zcl::trace::watchRepo;
+    auto split = repo.get_split(id);
+    split->end_sprint();
+}
+
+std::string zcl::trace::format_as(StopwatchSplit data) {
     return std::string(data);
+}
+
+std::string zcl::trace::get_stack_trace(bool skipInternal, int skipLen, int maxLen) {
+    std::ostringstream trace;
+
+    // Print trace
+    // https://stackoverflow.com/questions/691719/how-to-display-a-stack-trace-when-an-exception-is-thrown
+    #ifdef _MSC_VER
+        // MSVC
+        // https://learn.microsoft.com/en-gb/windows/win32/api/dbghelp/nf-dbghelp-stackwalk?redirectedfrom=MSDN
+        // https://www.rioki.org/2017/01/09/windows_stacktrace.html
+
+        // Grad exec context & build current stack frame
+        // https://stackoverflow.com/questions/1647930/is-it-possible-to-check-whether-you-are-building-for-64-bit-with-microsoft-c-com
+        DWORD machine;
+        STACKFRAME_EX frm = {};
+        CONTEXT ctx = { 0 };
+        ctx.ContextFlags = CONTEXT_CONTROL;
+
+        // Fields taken notes from https://github.com/JochenKalmbach/StackWalker/blob/master/Main/StackWalker/StackWalker.cpp
+        RtlCaptureContext(&ctx);
+        #ifdef _M_IX86
+            // Intel x86
+            machine = IMAGE_FILE_MACHINE_I386;
+
+            frm.AddrPC.Offset = ctx.Eip;
+            frm.AddrPC.Mode = AddrModeFlat;
+            frm.AddrFrame.Offset = ctx.Ebp;
+            frm.AddrFrame.Mode = AddrModeFlat;
+            frm.AddrStack.Offset = ctx.Esp;
+            frm.AddrStack.Mode = AddrModeFlat;
+        #elif _M_IA64
+            // Itanium
+            machine = IMAGE_FILE_MACHINE_IA64;
+
+            frm.AddrPC.Offset = ctx.StIIP;
+            frm.AddrPC.Mode = AddrModeFlat;
+            frm.AddrFrame.Offset = ctx.IntSp;
+            frm.AddrFrame.Mode = AddrModeFlat;
+            frm.AddrBStore.Offset = ctx.RsBSP;
+            frm.AddrBStore.Mode = AddrModeFlat;
+            frm.AddrStack.Offset = ctx.IntSp;
+            frm.AddrStack.Mode = AddrModeFlat;
+        #elif _M_X64
+            // x64 (AMD/EM)
+            machine = IMAGE_FILE_MACHINE_AMD64;
+
+            frm.AddrPC.Offset = ctx.Rip;
+            frm.AddrPC.Mode = AddrModeFlat;
+            frm.AddrFrame.Offset = ctx.Rsp;
+            frm.AddrFrame.Mode = AddrModeFlat;
+            frm.AddrStack.Offset = ctx.Rsp;
+            frm.AddrStack.Mode = AddrModeFlat;
+        #elif _M_ARM64
+            // Arm64
+            machine = IMAGE_FILE_MACHINE_ARM64;
+
+            frm.AddrPC.Offset = ctx.Pc;
+            frm.AddrPC.Mode = AddrModeFlat;
+            frm.AddrFrame.Offset = ctx.Fp;
+            frm.AddrFrame.Mode = AddrModeFlat;
+            frm.AddrStack.Offset = ctx.Sp;
+            frm.AddrStack.Mode = AddrModeFlat;
+        #else
+            #error "********************* UNSUPPORTED ARCHITECTURE!!! *********************"
+        #endif
+
+        auto proc = GetCurrentProcess();
+        auto thread = GetCurrentThread();
+        
+        SymSetOptions(SYMOPT_LOAD_LINES);
+        SymInitialize(proc, NULL, TRUE);
+
+        std::string invokerFile;
+        
+        auto moduleBase = SymGetModuleBase(proc, frm.AddrPC.Offset);
+        char moduleBuff[MAX_PATH];
+        if (moduleBase && GetModuleFileName((HINSTANCE) moduleBase, moduleBuff, MAX_PATH)) {
+            invokerFile = moduleBuff;
+        }
+
+        trace << "********************* [TRACE] *********************" << std::endl;
+        auto traceStrs = std::vector<std::string>();
+        int traceCtr = 0;
+        traceStrs.reserve(maxLen);
+        
+        while (
+            traceCtr < traceStrs.max_size() &&
+            StackWalkEx(
+                machine,
+                proc,
+                thread,
+                &frm,
+                &ctx,
+                NULL,
+                SymFunctionTableAccess,
+                SymGetModuleBase,
+                NULL,
+                NULL
+            )
+        ) {
+            if (skipLen > 0) {
+                skipLen--;
+                continue;
+            }
+
+            std::ostringstream traceLine;
+            auto addr = frm.AddrPC.Offset;
+            if (!addr) {
+                break;
+            }
+
+            // (module / executable)
+            auto moduleBase = SymGetModuleBase(proc, addr);
+            char moduleBuff[MAX_PATH];
+            if (moduleBase && GetModuleFileName((HINSTANCE) moduleBase, moduleBuff, MAX_PATH)) {
+                if (skipInternal && invokerFile.compare(moduleBuff) != 0) {
+                    continue;
+                }
+
+                traceLine << fmt::format("[file `{}`] ", moduleBuff);
+            }
+
+            // (function name & line)
+            // https://learn.microsoft.com/en-gb/windows/win32/debug/retrieving-symbol-information-by-address
+            char symBuff[sizeof(SYMBOL_INFO) + MAX_SYM_NAME * sizeof(TCHAR)];
+            PSYMBOL_INFO sym = (PSYMBOL_INFO)symBuff;
+            sym->MaxNameLen = 128;
+            sym->SizeOfStruct = sizeof(SYMBOL_INFO);
+            if (SymFromAddr(proc, addr,  NULL, sym)) {
+                std::string name = std::string(sym->Name, sym->NameLen);
+
+                if (
+                    skipInternal
+                    && (name.find("__CxxFrameHandler") != std::string::npos ||
+                        name.find("_CxxThrowException") != std::string::npos ||
+                        name.find("RaiseException") != std::string::npos)
+                ) {
+                    continue;
+                }
+
+                traceLine << fmt::format("`{}`", name);
+                // GetExceptionInformation()
+            }
+            else {
+                traceLine << "<unknown symbol>";
+            }
+            
+            DWORD off = 0;
+            IMAGEHLP_LINE line;
+            line.SizeOfStruct = sizeof(IMAGEHLP_LINE);
+            if (SymGetLineFromAddr(proc, addr, &off, &line)) {
+                traceLine << fmt::format("({}:{})", line.FileName, line.LineNumber);
+            }
+            
+            // (address)
+            traceLine << fmt::format(" @ 0x{:x}", addr);
+
+            traceCtr++;
+            trace << traceLine.str() << std::endl;
+        }
+
+        SymCleanup(proc);
+    #else
+        // (GNU/GCC)
+        void *traceBuff[16];
+        char **traceStrs = NULL;
+        size_t traceSz = backtrace(traceBuff, 16);
+        traceStrs = backtrace_symbols(traceBuff, traceSz);
+
+        if (traceStrs == NULL) {
+            trace << "********************* [TRACE FAILED! THIS IS BAD] *********************" << std::endl;
+        }
+        else {
+            trace << "********************* [TRACE] *********************" << std::endl;
+            for (int i=0; i<traceSz; i++) {
+                trace << traceStrs[i] << std::endl;
+            }
+        }
+    #endif
+
+    return trace.str();
 }
