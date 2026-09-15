@@ -90,6 +90,7 @@ namespace zcl {
 
         public:
             StopwatchSplitHelper(std::weak_ptr<StopwatchSplit> split);
+            StopwatchSplitHelper(StopwatchSplitHelper&& other);
             ~StopwatchSplitHelper();
         };
 
@@ -112,6 +113,14 @@ namespace zcl {
             std::weak_ptr<StopwatchSplit> splitCurrent;
 
         public:
+            // StopwatchRepository() {
+            //     zcl::logger("SPLIT")->info("NEW REPO {}", fmt::ptr(this));
+            // }
+            // ~StopwatchRepository() {
+            //     zcl::logger("SPLIT")->info("DEL REPO {}", fmt::ptr(this));
+            // }
+
+            static StopwatchRepository& get_instance();
             std::weak_ptr<StopwatchSplit> get_scope_parent_split();
 
             void set_scope_parent_split(std::weak_ptr<StopwatchSplit> split);
@@ -122,8 +131,6 @@ namespace zcl {
 
             std::vector<std::shared_ptr<StopwatchSplitNode>> get_all_splits_and_childs();
         };
-
-        static const StopwatchRepository watchRepo;
 
         // static StopwatchData* currentWatch = nullptr;
         // static std::vector<StopwatchData*> currentWatch;

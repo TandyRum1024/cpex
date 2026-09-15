@@ -165,14 +165,14 @@ void OpenGlApp::boot() {
             }
         }
 
-        auto st1 = zcl::trace::stopwatch_begin("glfwSwapBuffers");
+        // auto st1 = zcl::trace::stopwatch_begin("glfwSwapBuffers");
         glfwSwapBuffers(window);
-        zcl::trace::stopwatch_end("glfwSwapBuffers");
+        // zcl::trace::stopwatch_end("glfwSwapBuffers");
 
         // Finishing logic
-        auto st2 = zcl::trace::stopwatch_begin("update_end");
+        // auto st2 = zcl::trace::stopwatch_begin("update_end");
         on_loop_update_end(dtMillis.count());
-        zcl::trace::stopwatch_end("update_end");
+        // zcl::trace::stopwatch_end("update_end");
     }
     
     on_shutdown();

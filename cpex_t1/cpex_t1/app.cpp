@@ -178,7 +178,10 @@ void imgui_draw_stopwatch_node(const std::shared_ptr<zcl::trace::StopwatchSplitN
         return;
     }
 
-    if (ImGui::TreeNodeEx(node->id.c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {
+    auto flags = ImGuiTreeNodeFlags_DefaultOpen
+                        // | (!node->parent.lock() && ImGuiTreeNodeFlags_DefaultOpen)
+                        | (node->children.empty() && ImGuiTreeNodeFlags_Leaf);
+    if (ImGui::TreeNodeEx(fmt::format("watch: {} ({}ms)", node->id, node->duration.count()).c_str(), flags)) {
         for (auto&& child: node->children) {
             imgui_draw_stopwatch_node(child);
         }
@@ -198,7 +201,7 @@ void CpexApp::on_loop_render_end(double dtMillis) {
     if (ImGui::Begin("Scene", nullptr, 0)) {
         ImGui::BulletText("time: %lf", time);
 
-        auto repo = zcl::trace::watchRepo;
+        auto& repo = zcl::trace::StopwatchRepository::get_instance();
         auto roots = repo.get_all_splits_and_childs();
         
         ImGui::BulletText("[STOPWATCH (%d)]", roots.size());
