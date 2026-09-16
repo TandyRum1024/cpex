@@ -65,7 +65,7 @@ namespace gfx {
                 return uniform ? (uniform->get_name() ==  name) : false;
             }
         );
-        std::shared_ptr<Uniform> resUni = *res;
+        std::shared_ptr<Uniform> resUni = (res != uniforms.end()) ? (*res) : nullptr;
 
         // use `dynamic_pointer_cast` instead of normal `dynamic_cast` for `shared_ptr`!
         return (res != uniforms.end()) ? std::dynamic_pointer_cast<T>(resUni) : nullptr;
