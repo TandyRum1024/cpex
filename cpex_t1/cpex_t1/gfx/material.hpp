@@ -7,19 +7,14 @@
 #define __CPEX_GFX_MTL_GUARD
 
 #include <gfx/shader.hpp>
-#include <gfx/uniform.hpp>
+#include <gfx/uniformset.hpp>
 
 namespace gfx {
     /** Contains set of uniforms and associated shader. */
     class Material {
-        GLuint texSlotIdx = 0;
-        
         std::shared_ptr<Shader> shd;
-        std::vector<std::shared_ptr<Uniform>> uniforms;
+        UniformSet uniforms;
         std::vector<GLint> uniformLocations;
-        
-        /** Update all sampler uniforms texture slots. */
-        void update_texture_slots();
 
     public:
         /** Links shader to this material. */
@@ -42,10 +37,9 @@ namespace gfx {
     template <typename T>
     void Material::add_uniform(T &uniform) {
         GLint location = 0;
-        uniforms.push_back(std::make_shared<T>(uniform));
+        uniforms.add_uniform(uniform);
 
         if (shd) {
-            update_texture_slots();
             location = shd->get_uniform_location(uniform.get_name());
         }
         uniformLocations.push_back(location);
@@ -58,17 +52,7 @@ namespace gfx {
 
     template <typename T>
     std::shared_ptr<T> Material::get_uniform(std::string name) {
-        auto res = std::find_if(
-            uniforms.begin(),
-            uniforms.end(),
-            [name](const std::shared_ptr<Uniform> &uniform) {
-                return uniform ? (uniform->get_name() ==  name) : false;
-            }
-        );
-        std::shared_ptr<Uniform> resUni = (res != uniforms.end()) ? (*res) : nullptr;
-
-        // use `dynamic_pointer_cast` instead of normal `dynamic_cast` for `shared_ptr`!
-        return (res != uniforms.end()) ? std::dynamic_pointer_cast<T>(resUni) : nullptr;
+        return uniforms.get_uniform<T>(name);
     }
 
     // DEFINITIONS (INCLUSION MODEL FOR TEMPLATES!) //

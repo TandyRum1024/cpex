@@ -248,7 +248,7 @@ void CpexApp::on_loop_debug_ui(double dtMillis) {
     ImGui::SetNextWindowSize(ImVec2(256, 256), ImGuiCond_Once);
     ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_Always);
     if (ImGui::Begin("Scene", nullptr, 0)) {
-        ImGui::BulletText("time: %lf (dt: %lf)", time, dtMillis);
+        ImGui::BulletText("time: %.2lf (dt: %.2lfms, FPS: %2.2lf)", time, dtMillis, (dtMillis == 0.0) ? 0 : (1000 / dtMillis));
 
         auto& repo = zcl::trace::StopwatchRepository::get_instance();
         auto roots = repo.get_all_splits_and_childs();

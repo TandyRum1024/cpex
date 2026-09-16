@@ -46,6 +46,7 @@ list(
     ${DIR_GFX}/vert.cpp
     ${DIR_GFX}/texture.cpp
     ${DIR_GFX}/uniform.cpp
+    ${DIR_GFX}/uniformset.cpp
 )
 # (ZAP)
 set(DIR_ZAP ${CMAKE_CURRENT_SOURCE_DIR}/cpex_t1/zap)
