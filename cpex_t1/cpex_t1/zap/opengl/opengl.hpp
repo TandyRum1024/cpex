@@ -33,6 +33,7 @@ namespace zap {
     protected:
         std::shared_ptr<spdlog::logger> _logger;
 
+        bool isVsync;
         bool isGlDebug;
         bool isRenderReady;
         std::string windowTitle;
@@ -52,8 +53,6 @@ namespace zap {
 
         void free_resources();
 
-        /** Updates current windows title. */
-        void set_window_title(std::string windowTitle);
         /** Called on destructor, move, etc when the class is no longer being used. */
         virtual void on_free_resource() {};
         /** Called on program shutdown, before GLFW is terminated. */
@@ -74,6 +73,11 @@ namespace zap {
         virtual void on_loop_debug_ui(double dtMillis) {};
 
     public:
+        /** Updates current windows title. */
+        void set_window_title(std::string windowTitle);
+        /** Sets V-Sync. */
+        void set_vsync(bool isVsync);
+
         /** Called on window resize. */
         virtual void on_window_resize(GLFWwindow* win, int wid, int hei);
         /** Called on window resize. */

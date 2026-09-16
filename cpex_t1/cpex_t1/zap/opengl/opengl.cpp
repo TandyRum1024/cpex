@@ -76,6 +76,7 @@ void APIENTRY _common_debug_output(GLenum source, GLenum type, unsigned int id, 
 OpenGlApp::OpenGlApp(std::string windowTitle, bool isGlDebug):
     isGlDebug(isGlDebug),
     isRenderReady(false),
+    isVsync(true),
     windowTitle(windowTitle),
     windowWid(1280),
     windowHei(720),
@@ -93,6 +94,7 @@ OpenGlApp::OpenGlApp(OpenGlApp &&other):
     _logger(std::move(other._logger)),
     isGlDebug(std::exchange(other.isGlDebug, false)),
     isRenderReady(std::exchange(other.isRenderReady, false)),
+    isVsync(std::exchange(other.isVsync, false)),
     windowTitle(std::move(other.windowTitle)),
     windowWid(std::exchange(other.windowWid, 0)),
     windowHei(std::exchange(other.windowHei, 0)),
@@ -110,6 +112,7 @@ OpenGlApp& OpenGlApp::operator=(OpenGlApp &&other) {
     std::swap(_logger, other._logger);
     std::swap(isGlDebug, other.isGlDebug);
     std::swap(isRenderReady, other.isRenderReady);
+    std::swap(isVsync, other.isVsync);
     std::swap(windowTitle, other.windowTitle);
     std::swap(windowWid, other.windowWid);
     std::swap(windowHei, other.windowHei);
@@ -196,17 +199,21 @@ void OpenGlApp::boot() {
         throw std::runtime_error("INVALID WINDOW SIZE: (" + std::to_string(winWid) + ", " + std::to_string(winHei) + ")");
     }
 
+    // Set VSync
+    // glfwSwapInterval(1);
+
     // Setup
     on_setup();
 
     // Begin loop
     // https://gameprogrammingpatterns.com/game-loop.html
-    auto timeFramePrev = std::chrono::steady_clock::now();
+    //auto timeFramePrev = std::chrono::steady_clock::now();
+    auto timeFramePrev = glfwGetTime();
 
     while (!glfwWindowShouldClose(window)) {
-        auto timeFrameNow = std::chrono::steady_clock::now();
-        std::chrono::duration<double, std::milli> delta = timeFrameNow - timeFramePrev;
-        auto dtMillis = delta.count();
+        auto timeFrameNow = glfwGetTime();
+        auto delta = timeFrameNow - timeFramePrev; // in seconds
+        auto dtMillis = delta * 1000;
         timeFramePrev = timeFrameNow;
 
         glfwPollEvents();
@@ -265,6 +272,11 @@ void OpenGlApp::boot() {
 
 void OpenGlApp::shutdown() {
     glfwSetWindowShouldClose(window, true);
+}
+
+void OpenGlApp::set_vsync(bool isVsync) {
+    this->isVsync = isVsync;
+    glfwSwapInterval(isVsync ? 1 : 0);
 }
 
 void OpenGlApp::set_window_title(std::string windowTitle) {

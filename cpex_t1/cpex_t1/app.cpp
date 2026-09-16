@@ -83,8 +83,7 @@ void CpexApp::free_imgui() {
 }
 
 void CpexApp::on_setup() {
-    // Disable vsync
-    glfwSwapInterval(0);
+    set_vsync(false);
 
     // Relative path
     auto assetPath = zcl::file::get_exec_path().parent_path() / "data";
@@ -249,7 +248,7 @@ void CpexApp::on_loop_debug_ui(double dtMillis) {
     ImGui::SetNextWindowSize(ImVec2(256, 256), ImGuiCond_Once);
     ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_Always);
     if (ImGui::Begin("Scene", nullptr, 0)) {
-        ImGui::BulletText("time: %lf", time);
+        ImGui::BulletText("time: %lf (dt: %lf)", time, dtMillis);
 
         auto& repo = zcl::trace::StopwatchRepository::get_instance();
         auto roots = repo.get_all_splits_and_childs();
