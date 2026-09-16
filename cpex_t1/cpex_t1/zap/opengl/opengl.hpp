@@ -39,69 +39,21 @@ namespace zap {
 
         bool isRenderReady;
         std::string windowTitle;
-        GLFWwindow* window = nullptr;
         int windowWid;
         int windowHei;
+        GLFWwindow* window = nullptr;
 
-        // std::chrono::steady_clock::time_point dtPrev;
-        std::chrono::duration<double, std::milli> dtRenderMillis;
-
-        OpenGlApp(std::string windowTitle):
-            isRenderReady(false),
-            windowTitle(windowTitle),
-            windowWid(1280),
-            windowHei(720),
-            _logger(zcl::logger("APP"))
-            {}
-        OpenGlApp():
-            isRenderReady(false),
-            windowTitle("HELLO WINDOW TITLE"),
-            windowWid(1280),
-            windowHei(720),
-            _logger(zcl::logger("APP"))
-            {}
-        virtual ~OpenGlApp() {
-            free_resources();
-        }
+        OpenGlApp(std::string windowTitle);
+        OpenGlApp();
+        virtual ~OpenGlApp();
 
         OpenGlApp(const OpenGlApp &other) = delete; // (RAII) Disable copy
         OpenGlApp& operator=(const OpenGlApp &other) = delete; // (RAII) Disable copy
 
-        OpenGlApp(OpenGlApp &&other): // (RAII) Move
-            isRenderReady(std::exchange(other.isRenderReady, false)),
-            windowTitle(std::move(other.windowTitle)),
-            windowWid(std::exchange(other.windowWid, 0)),
-            windowHei(std::exchange(other.windowHei, 0)),
-            window(other.window),
-            _logger(std::move(other._logger)) {
-            other.window = nullptr;
-        }
-        OpenGlApp& operator=(OpenGlApp &&other) { // (RAII) Move
-            if (this == &other) {
-                // Self assignment, no need to move
-                return *this;
-            }
-            
-            free_resources();
-            windowTitle = "MOVED";
+        OpenGlApp(OpenGlApp &&other); // (RAII) Move
+        OpenGlApp& operator=(OpenGlApp &&other); // (RAII) Move
 
-            std::swap(isRenderReady, other.isRenderReady);
-            std::swap(windowTitle, other.windowTitle);
-            std::swap(windowWid, other.windowWid);
-            std::swap(windowHei, other.windowHei);
-            std::swap(window, other.window);
-            std::swap(_logger, other._logger);
-            return *this;
-        }
-
-        void free_resources() {
-            on_free_resource();
-
-            if (window) {
-                glfwDestroyWindow(window);
-            }
-            window = nullptr;
-        }
+        void free_resources();
 
         /** Updates current windows title. */
         void set_window_title(std::string windowTitle);
@@ -122,7 +74,7 @@ namespace zap {
         virtual void on_loop_update_end(double dtMillis) {};
 
         /** Called after everything right before swap. */
-        virtual void on_loop_frame_end(double dtMillis) {};
+        virtual void on_loop_debug_ui(double dtMillis) {};
 
     public:
         /** Called on window resize. */

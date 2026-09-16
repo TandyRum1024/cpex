@@ -58,6 +58,59 @@ void APIENTRY zap::_common_debug_output(GLenum source, GLenum type, unsigned int
     std::cout << std::endl;
 };
 
+OpenGlApp::OpenGlApp(std::string windowTitle):
+    isRenderReady(false),
+    windowTitle(windowTitle),
+    windowWid(1280),
+    windowHei(720),
+    _logger(zcl::logger("APP"))
+    {};
+
+OpenGlApp::OpenGlApp():
+    OpenGlApp("WINDOW TITLE") {};
+
+OpenGlApp::~OpenGlApp() {
+    free_resources();
+}
+
+OpenGlApp::OpenGlApp(OpenGlApp &&other):
+    _logger(std::move(other._logger)),
+    isRenderReady(std::exchange(other.isRenderReady, false)),
+    windowTitle(std::move(other.windowTitle)),
+    windowWid(std::exchange(other.windowWid, 0)),
+    windowHei(std::exchange(other.windowHei, 0)),
+    window(other.window) {
+    other.window = nullptr;
+}
+
+OpenGlApp& OpenGlApp::operator=(OpenGlApp &&other) {
+    if (this == &other) {
+        // Self assignment, no need to move
+        return *this;
+    }
+    
+    windowTitle = "MOVED";
+    std::swap(_logger, other._logger);
+    std::swap(isRenderReady, other.isRenderReady);
+    std::swap(windowTitle, other.windowTitle);
+    std::swap(windowWid, other.windowWid);
+    std::swap(windowHei, other.windowHei);
+    std::swap(window, other.window);
+    
+    other.free_resources();
+
+    return *this;
+}
+
+void OpenGlApp::free_resources() {
+    on_free_resource();
+
+    if (window) {
+        glfwDestroyWindow(window);
+    }
+    window = nullptr;
+}
+
 void OpenGlApp::boot() {
     if (!glfwInit()) {
         throw std::runtime_error("[GLFW] GLFW INIT FAILED!");
@@ -128,21 +181,20 @@ void OpenGlApp::boot() {
 
     // Begin loop
     // https://gameprogrammingpatterns.com/game-loop.html
-    // auto dtNow = dtPrev;
-    // auto dtRenderNow = dtRenderPrev;
     auto timeFramePrev = std::chrono::steady_clock::now();
 
     while (!glfwWindowShouldClose(window)) {
         auto timeFrameNow = std::chrono::steady_clock::now();
-        timeFramePrev = timeFrameNow;
-        std::chrono::duration<double, std::milli> delta = timeFramePrev - timeFrameNow;
+        std::chrono::duration<double, std::milli> delta = timeFrameNow - timeFramePrev;
         auto dtMillis = delta.count();
+        timeFramePrev = timeFrameNow;
 
         glfwPollEvents();
         if (!isRenderReady) {
             isRenderReady = true;
         }
         
+        // Begin frame
         {
             auto st = zcl::trace::stopwatch_begin("frame");
     
@@ -178,8 +230,8 @@ void OpenGlApp::boot() {
         }
         // Debug and all
         {
-            auto st = zcl::trace::stopwatch_begin("frame_end");
-            on_loop_frame_end(dtMillis);
+            auto st = zcl::trace::stopwatch_begin("debug_ui");
+            on_loop_debug_ui(dtMillis);
         }
 
         glfwSwapBuffers(window);
@@ -208,11 +260,10 @@ void OpenGlApp::on_window_resize(GLFWwindow* win, int wid, int hei) {
     glViewport(0, 0, wid, hei);
 
     if (isRenderReady) {
-        auto dtMillis = zcl::trace::stopwatch_get("Frame")->calc_duration();
-
-        on_loop_render_begin(dtMillis.count());
-        on_loop_render(dtMillis.count());
-        on_loop_render_end(dtMillis.count());
+        on_loop_render_begin(0);
+        on_loop_render(0);
+        on_loop_render_end(0);
+        on_loop_debug_ui(0);
         glfwSwapBuffers(win);
     }
 }

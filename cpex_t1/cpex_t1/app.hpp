@@ -56,57 +56,19 @@ class CpexApp: public zap::OpenGlApp {
     void on_loop_render_begin(double dtMillis) override;
     void on_loop_render(double dtMillis) override;
     // void on_loop_render_end(double dtMillis) override;
-    void on_loop_frame_end(double dtMillis) override;
     // void on_loop_update_end(double dtMillis) override;
+    void on_loop_debug_ui(double dtMillis) override;
 
 public:
-    CpexApp(std::string windowTitle):
-        zap::OpenGlApp(windowTitle) {}
-    CpexApp() {}
-    ~CpexApp() {
-        free_resources();
-    }
+    CpexApp(std::string windowTitle);
+    CpexApp();
+    ~CpexApp();
 
     CpexApp(const CpexApp &other) = delete; // (RAII) Disable copy
     CpexApp& operator=(const CpexApp &other) = delete; // (RAII) Disable copy
 
-    CpexApp(CpexApp &&other): // (RAII) Move
-        time(std::exchange(other.time, 0.0)),
-        tfPos(other.tfPos),
-        tfRot(other.tfRot),
-        tfScale(other.tfScale),
-        vb(std::move(other.vb)),
-        shd(std::move(other.shd)),
-        mat(std::move(other.mat)),
-        imGuiContext(other.imGuiContext)
-        {
-        std::swap(windowTitle, other.windowTitle);
-        std::swap(window, other.window);
-
-        other.imGuiContext = nullptr;
-    }
-    CpexApp& operator=(CpexApp &&other) { // (RAII) Move
-        if (this == &other) {
-            // Self assignment, no need to move
-            return *this;
-        }
-
-        free_resources();
-        windowTitle = "MOVED";
-
-        std::swap(time, other.time);
-        std::swap(tfPos, other.tfPos);
-        std::swap(tfRot, other.tfRot);
-        std::swap(tfScale, other.tfScale);
-
-        std::swap(windowTitle, other.windowTitle);
-        std::swap(window, other.window);
-        std::swap(vb, other.vb);
-        std::swap(shd, other.shd);
-        std::swap(mat, other.mat);
-        std::swap(imGuiContext, other.imGuiContext);
-        return *this;
-    }
+    CpexApp(CpexApp &&other); // (RAII) Move
+    CpexApp& operator=(CpexApp &&other); // (RAII) Move
 
     void on_window_key(GLFWwindow* win, int key, int scancode, int action, int mods) override;
 };

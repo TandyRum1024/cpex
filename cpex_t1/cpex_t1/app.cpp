@@ -29,6 +29,49 @@
 // ----------------------------
 // EXTERNAL LIBRARIES //
 
+CpexApp::CpexApp(std::string windowTitle):
+    zap::OpenGlApp(windowTitle) {}
+CpexApp::CpexApp() {}
+CpexApp::~CpexApp() {
+    free_resources();
+}
+CpexApp::CpexApp(CpexApp &&other):
+    OpenGlApp(std::move(other)),
+    time(std::exchange(other.time, 0.0)),
+    tfPos(other.tfPos),
+    tfRot(other.tfRot),
+    tfScale(other.tfScale),
+    vb(std::move(other.vb)),
+    shd(std::move(other.shd)),
+    mat(std::move(other.mat)),
+    imGuiContext(other.imGuiContext)
+    {
+    std::swap(windowTitle, other.windowTitle);
+    std::swap(window, other.window);
+
+    other.imGuiContext = nullptr;
+}
+CpexApp& CpexApp::operator=(CpexApp &&other) {
+    if (this == &other) {
+        // Self assignment, no need to move
+        return *this;
+    }   
+
+    std::swap(time, other.time);
+    std::swap(tfPos, other.tfPos);
+    std::swap(tfRot, other.tfRot);
+    std::swap(tfScale, other.tfScale);
+
+    std::swap(vb, other.vb);
+    std::swap(shd, other.shd);
+    std::swap(mat, other.mat);
+    std::swap(imGuiContext, other.imGuiContext);
+
+    OpenGlApp::operator=(std::move(other));
+
+    return *this;
+}
+
 void CpexApp::free_imgui() {
     if (imGuiContext) {
         ImGui_ImplOpenGL3_Shutdown();
@@ -195,7 +238,7 @@ void imgui_draw_stopwatch_node(const std::shared_ptr<zcl::trace::StopwatchSplitN
     }
 }
 
-void CpexApp::on_loop_frame_end(double dtMillis) {
+void CpexApp::on_loop_debug_ui(double dtMillis) {
     if (!imGuiContext) {
         return;
     }
