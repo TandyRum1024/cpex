@@ -27,7 +27,7 @@
 // EXTERNAL LIBRARIES //
 
 int main() {
-    CpexApp app("CT1");
+    CpexApp app("CT1", true);
 
     spdlog::stdout_color_mt("PRG");
     auto logger = spdlog::get("PRG");

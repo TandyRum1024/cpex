@@ -28,22 +28,19 @@
 // EXTERNAL LIBRARIES //
 
 namespace zap {
-    void _common_window_resize(GLFWwindow* win, int wid, int hei);
-    void _common_window_key(GLFWwindow* win, int key, int scancode, int action, int mods);
-    void APIENTRY _common_debug_output(GLenum source, GLenum type, unsigned int id, GLenum severity, GLsizei length, const char *message, const void *userParam);
-
     /** OpenGL app lifecycle abstraction. */
     class OpenGlApp : public App {
     protected:
         std::shared_ptr<spdlog::logger> _logger;
 
+        bool isGlDebug;
         bool isRenderReady;
         std::string windowTitle;
         int windowWid;
         int windowHei;
         GLFWwindow* window = nullptr;
 
-        OpenGlApp(std::string windowTitle);
+        OpenGlApp(std::string windowTitle, bool isGlDebug = false);
         OpenGlApp();
         virtual ~OpenGlApp();
 

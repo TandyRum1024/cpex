@@ -60,7 +60,7 @@ class CpexApp: public zap::OpenGlApp {
     void on_loop_debug_ui(double dtMillis) override;
 
 public:
-    CpexApp(std::string windowTitle);
+    CpexApp(std::string windowTitle, bool isGlDebug = false);
     CpexApp();
     ~CpexApp();
 

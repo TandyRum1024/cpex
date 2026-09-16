@@ -7,58 +7,74 @@
 
 using namespace zap;
 
-void zap::_common_window_resize(GLFWwindow* win, int wid, int hei) {
+void _common_window_resize(GLFWwindow* win, int wid, int hei) {
     // OpenGlApp* app = (OpenGlApp*) glfwGetWindowUserPointer(win);
     OpenGlApp* app = static_cast<OpenGlApp*>(glfwGetWindowUserPointer(win));
     app->on_window_resize(win, wid, hei);
 }
 
-void zap::_common_window_key(GLFWwindow* win, int key, int scancode, int action, int mods) {
+void _common_window_key(GLFWwindow* win, int key, int scancode, int action, int mods) {
     OpenGlApp* app = static_cast<OpenGlApp*>(glfwGetWindowUserPointer(win));
     app->on_window_key(win, key, scancode, action, mods);
 }
 
-void APIENTRY zap::_common_debug_output(GLenum source, GLenum type, unsigned int id, GLenum severity, GLsizei length, const char *message, const void *userParam) {
-    // ignore non-significant error/warning codes
-    if(id == 131169 || id == 131185 || id == 131218 || id == 131204) return; 
+void APIENTRY _common_debug_output(GLenum source, GLenum type, unsigned int id, GLenum severity, GLsizei length, const char *message, const void *userParam) {
+    // Ignore minor id/codes
+    if(id == 131169 || id == 131185 || id == 131218 || id == 131204) return;
 
-    std::cout << "---------------" << std::endl;
-    std::cout << "Debug message (" << id << "): " <<  message << std::endl;
+    auto prefix = "\t\t\t\t\t\t";
+    std::ostringstream msg;
 
+    msg << fmt::format("\tOPENGL DEBUG MSG ({}):", id) << std::endl;
+    msg << prefix << "======================================" << std::endl;
+
+    msg << prefix << fmt::format("\"{}\"", message) << std::endl;
+    msg << prefix << "\t* SRC = ";
     switch (source) {
-        case GL_DEBUG_SOURCE_API:             std::cout << "Source: API"; break;
-        case GL_DEBUG_SOURCE_WINDOW_SYSTEM:   std::cout << "Source: Window System"; break;
-        case GL_DEBUG_SOURCE_SHADER_COMPILER: std::cout << "Source: Shader Compiler"; break;
-        case GL_DEBUG_SOURCE_THIRD_PARTY:     std::cout << "Source: Third Party"; break;
-        case GL_DEBUG_SOURCE_APPLICATION:     std::cout << "Source: Application"; break;
-        case GL_DEBUG_SOURCE_OTHER:           std::cout << "Source: Other"; break;
+        case GL_DEBUG_SOURCE_API:             msg << "API"; break;
+        case GL_DEBUG_SOURCE_WINDOW_SYSTEM:   msg << "WINDOW_SYSTEM"; break;
+        case GL_DEBUG_SOURCE_SHADER_COMPILER: msg << "SHADER_COMPILER"; break;
+        case GL_DEBUG_SOURCE_THIRD_PARTY:     msg << "THIRD_PARTY"; break;
+        case GL_DEBUG_SOURCE_APPLICATION:     msg << "APPLICATION"; break;
+        case GL_DEBUG_SOURCE_OTHER:           msg << "OTHER"; break;
     }
-    std::cout << std::endl;
+    msg << std::endl;
 
+    msg << prefix << "\t* TYPE = ";
     switch (type) {
-        case GL_DEBUG_TYPE_ERROR:               std::cout << "Type: Error"; break;
-        case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR: std::cout << "Type: Deprecated Behaviour"; break;
-        case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR:  std::cout << "Type: Undefined Behaviour"; break; 
-        case GL_DEBUG_TYPE_PORTABILITY:         std::cout << "Type: Portability"; break;
-        case GL_DEBUG_TYPE_PERFORMANCE:         std::cout << "Type: Performance"; break;
-        case GL_DEBUG_TYPE_MARKER:              std::cout << "Type: Marker"; break;
-        case GL_DEBUG_TYPE_PUSH_GROUP:          std::cout << "Type: Push Group"; break;
-        case GL_DEBUG_TYPE_POP_GROUP:           std::cout << "Type: Pop Group"; break;
-        case GL_DEBUG_TYPE_OTHER:               std::cout << "Type: Other"; break;
+        case GL_DEBUG_TYPE_ERROR:               msg << "ERROR"; break;
+        case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR: msg << "DEPRECATED_BEHAVIOR"; break;
+        case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR:  msg << "UNDEFINED_BEHAVIOR"; break; 
+        case GL_DEBUG_TYPE_PORTABILITY:         msg << "PORTABILITY"; break;
+        case GL_DEBUG_TYPE_PERFORMANCE:         msg << "PERFORMANCE"; break;
+        case GL_DEBUG_TYPE_MARKER:              msg << "MARKER"; break;
+        case GL_DEBUG_TYPE_PUSH_GROUP:          msg << "PUSH_GROUP"; break;
+        case GL_DEBUG_TYPE_POP_GROUP:           msg << "POP_GROUP"; break;
+        case GL_DEBUG_TYPE_OTHER:               msg << "OTHER"; break;
     }
-    std::cout << std::endl;
+    msg << std::endl << std::endl;
+    msg << prefix << "======================================" << std::endl;
+
+    auto msgStr = msg.str();
     
     switch (severity) {
-        case GL_DEBUG_SEVERITY_HIGH:         std::cout << "Severity: high"; break;
-        case GL_DEBUG_SEVERITY_MEDIUM:       std::cout << "Severity: medium"; break;
-        case GL_DEBUG_SEVERITY_LOW:          std::cout << "Severity: low"; break;
-        case GL_DEBUG_SEVERITY_NOTIFICATION: std::cout << "Severity: notification"; break;
+        case GL_DEBUG_SEVERITY_HIGH:
+            zcl::logger("GL")->critical(msgStr);
+            break;
+        case GL_DEBUG_SEVERITY_MEDIUM:
+            zcl::logger("GL")->error(msgStr);
+            break;
+        case GL_DEBUG_SEVERITY_LOW:
+            zcl::logger("GL")->warn(msgStr);
+            break;
+        case GL_DEBUG_SEVERITY_NOTIFICATION:
+            zcl::logger("GL")->info(msgStr);
+            break;
     }
-    std::cout << std::endl;
-    std::cout << std::endl;
 };
 
-OpenGlApp::OpenGlApp(std::string windowTitle):
+OpenGlApp::OpenGlApp(std::string windowTitle, bool isGlDebug):
+    isGlDebug(isGlDebug),
     isRenderReady(false),
     windowTitle(windowTitle),
     windowWid(1280),
@@ -67,7 +83,7 @@ OpenGlApp::OpenGlApp(std::string windowTitle):
     {};
 
 OpenGlApp::OpenGlApp():
-    OpenGlApp("WINDOW TITLE") {};
+    OpenGlApp("WINDOW TITLE", false) {};
 
 OpenGlApp::~OpenGlApp() {
     free_resources();
@@ -75,6 +91,7 @@ OpenGlApp::~OpenGlApp() {
 
 OpenGlApp::OpenGlApp(OpenGlApp &&other):
     _logger(std::move(other._logger)),
+    isGlDebug(std::exchange(other.isGlDebug, false)),
     isRenderReady(std::exchange(other.isRenderReady, false)),
     windowTitle(std::move(other.windowTitle)),
     windowWid(std::exchange(other.windowWid, 0)),
@@ -91,6 +108,7 @@ OpenGlApp& OpenGlApp::operator=(OpenGlApp &&other) {
     
     windowTitle = "MOVED";
     std::swap(_logger, other._logger);
+    std::swap(isGlDebug, other.isGlDebug);
     std::swap(isRenderReady, other.isRenderReady);
     std::swap(windowTitle, other.windowTitle);
     std::swap(windowWid, other.windowWid);
@@ -117,7 +135,7 @@ void OpenGlApp::boot() {
     }
 
     _logger->info("GLFW: Activating debug context...");
-    glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, true);
+    glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, isGlDebug);
 
     _logger->info("GLFW: Creating window...");
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
@@ -153,15 +171,17 @@ void OpenGlApp::boot() {
     glfwSetKeyCallback(window, _common_window_key);
 
     // (debug callbacks)
-    int contextFlags;
-    glGetIntegerv(GL_CONTEXT_FLAGS, &contextFlags);
-
-    if (contextFlags & GL_CONTEXT_FLAG_DEBUG_BIT) {
-        _logger->warn("GLFW: DEBUG CONTEXT ACTIVATED!");
-        glEnable(GL_DEBUG_OUTPUT);
-        glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
-        glDebugMessageCallback(_common_debug_output, nullptr);
-        glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, nullptr, GL_TRUE);
+    if (isGlDebug) {
+        int contextFlags;
+        glGetIntegerv(GL_CONTEXT_FLAGS, &contextFlags);
+    
+        if (contextFlags & GL_CONTEXT_FLAG_DEBUG_BIT) {
+            _logger->warn("GLFW: DEBUG CONTEXT ACTIVATED!");
+            glEnable(GL_DEBUG_OUTPUT);
+            glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
+            glDebugMessageCallback(_common_debug_output, nullptr);
+            glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, nullptr, GL_TRUE);
+        }
     }
 
     // Set render viewport size

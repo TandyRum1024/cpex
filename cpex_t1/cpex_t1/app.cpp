@@ -29,9 +29,10 @@
 // ----------------------------
 // EXTERNAL LIBRARIES //
 
-CpexApp::CpexApp(std::string windowTitle):
-    zap::OpenGlApp(windowTitle) {}
-CpexApp::CpexApp() {}
+CpexApp::CpexApp(std::string windowTitle, bool isGlDebug):
+    zap::OpenGlApp(windowTitle, isGlDebug) {}
+CpexApp::CpexApp():
+    CpexApp("WINDOW TITLE", false) {}
 CpexApp::~CpexApp() {
     free_resources();
 }
