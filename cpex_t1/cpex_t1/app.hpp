@@ -55,7 +55,8 @@ class CpexApp: public zap::OpenGlApp {
     void on_loop_update(double dtMillis) override;
     void on_loop_render_begin(double dtMillis) override;
     void on_loop_render(double dtMillis) override;
-    void on_loop_render_end(double dtMillis) override;
+    // void on_loop_render_end(double dtMillis) override;
+    void on_loop_frame_end(double dtMillis) override;
     // void on_loop_update_end(double dtMillis) override;
 
 public:

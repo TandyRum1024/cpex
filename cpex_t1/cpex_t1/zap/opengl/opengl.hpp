@@ -121,6 +121,9 @@ namespace zap {
         /** Called after update & render in render loop. */
         virtual void on_loop_update_end(double dtMillis) {};
 
+        /** Called after everything right before swap. */
+        virtual void on_loop_frame_end(double dtMillis) {};
+
     public:
         /** Called on window resize. */
         virtual void on_window_resize(GLFWwindow* win, int wid, int hei);

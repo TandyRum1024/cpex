@@ -129,50 +129,60 @@ void OpenGlApp::boot() {
     // Begin loop
     // https://gameprogrammingpatterns.com/game-loop.html
     // auto dtNow = dtPrev;
-    // auto dtRenderPrev = std::chrono::steady_clock::now();
     // auto dtRenderNow = dtRenderPrev;
+    auto timeFramePrev = std::chrono::steady_clock::now();
 
     while (!glfwWindowShouldClose(window)) {
-        auto dtMillis = zcl::trace::stopwatch_get("frame")->calc_duration();
-        auto st = zcl::trace::stopwatch_begin("frame");
+        auto timeFrameNow = std::chrono::steady_clock::now();
+        timeFramePrev = timeFrameNow;
+        std::chrono::duration<double, std::milli> delta = timeFramePrev - timeFrameNow;
+        auto dtMillis = delta.count();
 
         glfwPollEvents();
         if (!isRenderReady) {
             isRenderReady = true;
         }
         
-        // Logic
         {
-            auto st = zcl::trace::stopwatch_begin("update");
-            on_loop_update(dtMillis.count());
+            auto st = zcl::trace::stopwatch_begin("frame");
+    
+            // Logic
+            {
+                auto st = zcl::trace::stopwatch_begin("update");
+                on_loop_update(dtMillis);
+            }
+            
+            // Render
+            {
+                auto st = zcl::trace::stopwatch_begin("render_all");
+    
+                {
+                    auto st = zcl::trace::stopwatch_begin("render_begin");
+                    on_loop_render_begin(dtMillis);
+                }
+                {
+                    auto st = zcl::trace::stopwatch_begin("render");
+                    on_loop_render(dtMillis);
+                }
+                {
+                    auto st = zcl::trace::stopwatch_begin("render_end");
+                    on_loop_render_end(dtMillis);
+                }
+            }
+    
+            // Logic end
+            {
+                auto st = zcl::trace::stopwatch_begin("update_end");
+                on_loop_update_end(dtMillis);
+            }
         }
-        
-        // Render
+        // Debug and all
         {
-            auto st = zcl::trace::stopwatch_begin("render_all");
-
-            {
-                auto st = zcl::trace::stopwatch_begin("render_begin");
-                on_loop_render_begin(dtMillis.count());
-            }
-            {
-                auto st = zcl::trace::stopwatch_begin("render");
-                on_loop_render(dtMillis.count());
-            }
-            {
-                auto st = zcl::trace::stopwatch_begin("render_end");
-                on_loop_render_end(dtMillis.count());
-            }
+            auto st = zcl::trace::stopwatch_begin("frame_end");
+            on_loop_frame_end(dtMillis);
         }
 
-        // auto st1 = zcl::trace::stopwatch_begin("glfwSwapBuffers");
         glfwSwapBuffers(window);
-        // zcl::trace::stopwatch_end("glfwSwapBuffers");
-
-        // Finishing logic
-        // auto st2 = zcl::trace::stopwatch_begin("update_end");
-        on_loop_update_end(dtMillis.count());
-        // zcl::trace::stopwatch_end("update_end");
     }
     
     on_shutdown();

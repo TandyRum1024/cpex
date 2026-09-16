@@ -33,6 +33,8 @@ namespace zcl {
     }
 
     namespace str {
+        // Template functions needs to be declared here!!
+        
         /** Converts `std::array` to string. */
         template <typename T, int N>
         inline std::string to_str(std::array<T, N> arr, const char* delim = ", ") {

@@ -178,18 +178,24 @@ void imgui_draw_stopwatch_node(const std::shared_ptr<zcl::trace::StopwatchSplitN
         return;
     }
 
-    auto flags = ImGuiTreeNodeFlags_DefaultOpen
-                        // | (!node->parent.lock() && ImGuiTreeNodeFlags_DefaultOpen)
-                        | (node->children.empty() && ImGuiTreeNodeFlags_Leaf);
-    if (ImGui::TreeNodeEx(fmt::format("watch: {} ({}ms)", node->id, node->duration.count()).c_str(), flags)) {
+    auto flags = ImGuiTreeNodeFlags_None
+                        | (node->parent.expired() ? ImGuiTreeNodeFlags_DefaultOpen : 0)
+                        | (node->children.empty() ? ImGuiTreeNodeFlags_Leaf : 0);
+    auto totalTime = 0.0;
+    
+    if (ImGui::TreeNodeEx(fmt::format("watch: {0} ({1:.2f}ms)###{0}", node->id, node->duration.count()).c_str(), flags)) {
         for (auto&& child: node->children) {
+            totalTime += child->duration.count();
             imgui_draw_stopwatch_node(child);
         }
         ImGui::TreePop();
     }
+    if (!node->children.empty()) {
+        ImGui::TextColored(ImVec4(1, 1, 1, 0.5), fmt::format("({}: {:.2f}ms total w/ overhead)", node->id, totalTime).c_str());
+    }
 }
 
-void CpexApp::on_loop_render_end(double dtMillis) {
+void CpexApp::on_loop_frame_end(double dtMillis) {
     if (!imGuiContext) {
         return;
     }

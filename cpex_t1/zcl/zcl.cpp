@@ -316,6 +316,12 @@ void zcl::trace::stopwatch_end(const std::string id) {
     auto& repo = zcl::trace::StopwatchRepository::get_instance();
     auto split = repo.get_split(id);
     split->end_sprint();
+    if (auto p = split->get_parent().lock()) {
+        repo.set_scope_parent_split(p);
+    }
+    else {
+        repo.reset_scope_parent_split();
+    }
 }
 
 std::string zcl::trace::format_as(StopwatchSplit data) {
