@@ -27,9 +27,9 @@ namespace gfx {
 
         // Internal merge / cached result
         /** Merged uniforms from parents. Do not directly modify this unless you know what you're doing!!! */
-        UniformSet uniformsMerged;
+        UniformSet mergedUniforms;
         /** Merged shader from either this material or parent(s). Do not directly modify this unless you know what you're doing!!! */
-        std::shared_ptr<Shader> shdMerged;
+        std::shared_ptr<Shader> mergedShd;
 
         /** Merge from parent materials and this material and cache them. */
         inline void process_merge();
@@ -82,7 +82,7 @@ namespace gfx {
     template <typename T>
     std::shared_ptr<T> Material::get_uniform(const std::string name) {
         process_merge();
-        return uniformsMerged.get_uniform<T>(name);
+        return mergedUniforms.get_uniform<T>(name);
     }
 
     // DEFINITIONS (INCLUSION MODEL FOR TEMPLATES!) //

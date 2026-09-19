@@ -17,7 +17,7 @@ Material::Material(const std::string &id, const std::weak_ptr<Material> &parent)
 
 const std::vector<std::shared_ptr<Uniform>>& Material::get_uniforms() {
     process_merge();
-    return uniformsMerged.get_uniforms();
+    return mergedUniforms.get_uniforms();
 }
 
 bool Material::get_merge_required() const {
@@ -35,23 +35,23 @@ inline void Material::process_merge() {
     if (isMergeRequired) {
         zcl::logger("GFX")->trace("{}: MERGE!", id);
         if (shd) {
-            shdMerged = shd;
+            mergedShd = shd;
         }
         else if (auto parentMat = parent.lock()) {
-            shdMerged = parentMat->shdMerged;
+            mergedShd = parentMat->mergedShd;
         }
         else {
-            shdMerged = nullptr;
+            mergedShd = nullptr;
         }
 
-        uniformsMerged.clear();
+        mergedUniforms.clear();
         uniformLocations.clear();
-        add_uniforms_to(uniformsMerged);
+        add_uniforms_to(mergedUniforms);
 
-        for (auto&& uniform: uniformsMerged) {
+        for (auto&& uniform: mergedUniforms) {
             GLint location = 0;
-            if (shdMerged) {
-                location = shdMerged->get_uniform_location(uniform->get_name());
+            if (mergedShd) {
+                location = mergedShd->get_uniform_location(uniform->get_name());
                 // zcl::logger("GFX")->info("{}: FROM SHADER `{}`, UNIFORM `{}`: \t {}", id, shdMerged->get_name(), uniform->get_name(), location);
             }
             uniformLocations.push_back(location);
@@ -59,9 +59,9 @@ inline void Material::process_merge() {
 
         isMergeRequired = false;
 
-        // Update children aswell
+        // Mark children for updates aswell
         for (auto&& child: children) {
-            child->process_merge();
+            child->isMergeRequired = true;
         }
     }
 }
@@ -69,7 +69,7 @@ inline void Material::process_merge() {
 void Material::add_uniforms_to(UniformSet &outUniforms) {
     if (auto parentMat = parent.lock()) {
         // parent->add_uniforms_to(outUniforms);
-        outUniforms.add_uniforms_from(parentMat->uniformsMerged);
+        outUniforms.add_uniforms_from(parentMat->mergedUniforms);
     }
 
     outUniforms.add_uniforms_from(uniforms);
@@ -91,12 +91,12 @@ void Material::add_child(const std::shared_ptr<Material> &child) {
 void Material::apply_material() {
     process_merge();
 
-    if (shdMerged) {
-        shdMerged->apply_shader();
+    if (mergedShd) {
+        mergedShd->apply_shader();
     }
     
     // Apply all uniforms
-    auto& allUniforms = uniformsMerged.get_uniforms();
+    auto& allUniforms = mergedUniforms.get_uniforms();
     for (size_t i = 0; i < allUniforms.size(); i++) {
         auto& uniform = allUniforms[i];
         auto& location = uniformLocations[i];
