@@ -187,3 +187,7 @@ GLint Shader::get_uniform_location(const std::string &name) {
         return 0;
     }
 }
+
+const std::string Shader::get_name() const {
+    return name;
+}

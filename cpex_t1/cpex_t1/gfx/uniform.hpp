@@ -62,6 +62,8 @@ namespace gfx {
         void set_value(V val);
         /** Set the value. */
         void operator=(V val);
+        /** Get the value. */
+        V get_value();
     };
 
     // And now for few pre-defined uniform type specializations
@@ -181,6 +183,11 @@ namespace gfx {
     template <typename T>
     void UniformTemplated<T>::operator=(T val) {
         set_value(val);
+    }
+
+    template <typename T>
+    T UniformTemplated<T>::get_value() {
+        return this->val;
     }
 
     template <typename T>

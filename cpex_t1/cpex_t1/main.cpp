@@ -19,11 +19,12 @@ int main() {
     CpexApp app("CT1", true);
 
     spdlog::stdout_color_mt("PRG");
-    auto logger = spdlog::get("PRG");
+    auto logger = zcl::logger("PRG");
+    zcl::logger("GFX")->set_level(spdlog::level::trace);
 
     std::set_terminate([] () {
         auto trace = zcl::trace::get_stack_trace();
-        auto logger = spdlog::get("PRG");
+        auto logger = zcl::logger("PRG");
         auto eptr = std::exception_ptr(std::current_exception());
 
         logger->error("********************* UNHANDLED EXCEPTION! *********************");

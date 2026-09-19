@@ -115,7 +115,10 @@ void CpexApp::on_setup() {
 
     vb = std::make_shared<gfx::Vb<gfx::VertPosUv>>(std::move(vb1));
     shd = std::make_shared<gfx::Shader>("triangle");
-    mat = std::make_shared<gfx::Material>();
+
+    matBase = std::make_shared<gfx::Material>("hello");
+    mat = gfx::material_make_inherited(matBase, "hello2");
+    // mat = std::make_shared<gfx::Material>(gfx::Material("hello2", srcMat));
 
     // (shader)
     try {
@@ -134,9 +137,9 @@ void CpexApp::on_setup() {
     gfx::texhelper::texture_load_from_file_2d(*tex1, assetPath / "textest.png");
     gfx::texhelper::texture_load_from_file_2d(*tex2, assetPath / "sprtest.png");
 
-    mat->set_shader(shd);
-    mat->add_uniforms(
-        gfx::UniformVec4("uTint", {1.0, 1.0, 1.0, 1.0}),
+    matBase->set_shader(shd);
+    matBase->add_uniforms(
+        gfx::UniformVec4("uTint", {0.0, 0.0, 0.0, 0.0}),
         gfx::UniformMat4("uMatTf", glm::mat4(1.0f)),
         gfx::UniformSampler2D("uBaseTexture", tex1),
         gfx::UniformSampler2D("uOverTexture", tex2, GL_LINEAR, GL_CLAMP_TO_BORDER)
@@ -152,7 +155,13 @@ void CpexApp::on_setup() {
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
+    // _logger->info("MATERIALS: ");
+    // for (auto&& uniform: mat->get_uniforms()) {
+    //     _logger->info("\t {}", uniform->get_name());
+    // }
+
     _logger->info("Setup done");
+    // assert(false);
 }
 
 void CpexApp::on_free_resource() {

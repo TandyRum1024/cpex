@@ -35,6 +35,7 @@ class CpexApp: public zap::OpenGlApp {
     // Scene
     std::shared_ptr<gfx::Vb<gfx::VertPosUv>> vb;
     std::shared_ptr<gfx::Shader> shd;
+    std::shared_ptr<gfx::Material> matBase;
     std::shared_ptr<gfx::Material> mat;
 
     double time;

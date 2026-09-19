@@ -4,11 +4,13 @@
  */
 
 #include <gfx/uniform.hpp>
+#define GLM_ENABLE_EXPERIMENTAL
 
 // EXTERNAL LIBRARIES //
 // ----------------------------
 // GLM
 #include <glm/gtc/type_ptr.hpp>
+#include <glm/gtx/string_cast.hpp>
 // ----------------------------
 // EXTERNAL LIBRARIES //
 
@@ -129,3 +131,5 @@ template <>
 void UniformMat4::apply_uniform(GLint location) const {
     glUniformMatrix4fv(location, 1, false, glm::value_ptr(val));
 }
+
+#undef GLM_ENABLE_EXPERIMENTAL

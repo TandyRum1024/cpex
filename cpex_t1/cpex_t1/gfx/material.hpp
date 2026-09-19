@@ -12,15 +12,41 @@
 namespace gfx {
     /** Contains set of uniforms and associated shader. */
     class Material {
+        const std::string id;
+
+        std::weak_ptr<Material> parent;
+        std::vector<std::shared_ptr<Material>> children;
         std::shared_ptr<Shader> shd;
+
+        /** Dirty flag for lazy-recalculating merged material. */
+        bool isMergeRequired;
+        /** Uniforms that are unique to this material. Not including the ones from parents! */
         UniformSet uniforms;
+        /** Calculated uniforms locations. Do not directly modify this unless you know what you're doing!!! */
         std::vector<GLint> uniformLocations;
 
+        // Internal merge / cached result
+        /** Merged uniforms from parents. Do not directly modify this unless you know what you're doing!!! */
+        UniformSet uniformsMerged;
+        /** Merged shader from either this material or parent(s). Do not directly modify this unless you know what you're doing!!! */
+        std::shared_ptr<Shader> shdMerged;
+
+        /** Merge from parent materials and this material and cache them. */
+        inline void process_merge();
+        /** Append all uniforms in this material to given uniformset. */
+        void add_uniforms_to(UniformSet &outUniforms);
+        
     public:
-        /** Links shader to this material. */
-        void set_shader(std::shared_ptr<Shader> shd);
+        Material() = delete;
+        Material(const std::string &id);
+        Material(const std::string &id, const std::weak_ptr<Material> &parent);
+
+        /** Adds child to this material. */
+        void add_child(const std::shared_ptr<Material> &child);
         /** Applies shader and uniform for next render. */
         void apply_material();
+        /** Links shader to this material. */
+        void set_shader(std::shared_ptr<Shader> shd);
         /** Adds an uniform. */
         template <typename T>
         void add_uniform(const T &uniform);
@@ -30,19 +56,22 @@ namespace gfx {
         /** Returns an uniform with given name and type. `nullptr` if not found or wrong type. */
         template <typename T>
         std::shared_ptr<T> get_uniform(const std::string name);
+        /** Returns an iterable for accessing the uniformset. */
+        const std::vector<std::shared_ptr<Uniform>>& get_uniforms();
+
+        /** Returns whether or not if this material has its properties changed and must be re-processed. */
+        bool get_merge_required() const;
     };
+
+    /** Returns a new material "inherited" from this material. */
+    std::shared_ptr<Material> material_make_inherited(std::shared_ptr<Material> parent, const std::string &childId);
 
     // DEFINITIONS (INCLUSION MODEL FOR TEMPLATES!) //
 
     template <typename T>
     void Material::add_uniform(const T &uniform) {
-        GLint location = 0;
         uniforms.add_uniform(uniform);
-
-        if (shd) {
-            location = shd->get_uniform_location(uniform.get_name());
-        }
-        uniformLocations.push_back(location);
+        isMergeRequired = true;
     }
 
     template <typename...T>
@@ -52,7 +81,8 @@ namespace gfx {
 
     template <typename T>
     std::shared_ptr<T> Material::get_uniform(const std::string name) {
-        return uniforms.get_uniform<T>(name);
+        process_merge();
+        return uniformsMerged.get_uniform<T>(name);
     }
 
     // DEFINITIONS (INCLUSION MODEL FOR TEMPLATES!) //

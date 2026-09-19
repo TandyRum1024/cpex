@@ -68,6 +68,8 @@ namespace gfx {
         void apply_shader();
         /** Returns uniform location. */
         GLint get_uniform_location(const std::string &name);
+        /** Returns this shaders name */
+        const std::string get_name() const;
     };
 }
 #endif
