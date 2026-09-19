@@ -73,7 +73,7 @@ void APIENTRY _common_debug_output(GLenum source, GLenum type, unsigned int id, 
     }
 };
 
-OpenGlApp::OpenGlApp(std::string windowTitle, bool isGlDebug):
+OpenGlApp::OpenGlApp(const std::string windowTitle, bool isGlDebug):
     isGlDebug(isGlDebug),
     isRenderReady(false),
     isVsync(true),
@@ -279,7 +279,7 @@ void OpenGlApp::set_vsync(bool isVsync) {
     glfwSwapInterval(isVsync ? 1 : 0);
 }
 
-void OpenGlApp::set_window_title(std::string windowTitle) {
+void OpenGlApp::set_window_title(const std::string windowTitle) {
     this->windowTitle = windowTitle;
     glfwSetWindowTitle(window, windowTitle.c_str());
 }

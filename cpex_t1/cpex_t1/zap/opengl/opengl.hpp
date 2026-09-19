@@ -41,7 +41,7 @@ namespace zap {
         int windowHei;
         GLFWwindow* window = nullptr;
 
-        OpenGlApp(std::string windowTitle, bool isGlDebug = false);
+        OpenGlApp(const std::string windowTitle, bool isGlDebug = false);
         OpenGlApp();
         virtual ~OpenGlApp();
 
@@ -74,7 +74,7 @@ namespace zap {
 
     public:
         /** Updates current windows title. */
-        void set_window_title(std::string windowTitle);
+        void set_window_title(const std::string windowTitle);
         /** Sets V-Sync. */
         void set_vsync(bool isVsync);
 

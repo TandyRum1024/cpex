@@ -23,19 +23,19 @@ namespace gfx {
         void apply_material();
         /** Adds an uniform. */
         template <typename T>
-        void add_uniform(T &uniform);
+        void add_uniform(const T &uniform);
         /** Adds uniforms. */
         template <typename...T>
-        void add_uniforms(T... uniform);
+        void add_uniforms(const T... uniform);
         /** Returns an uniform with given name and type. `nullptr` if not found or wrong type. */
         template <typename T>
-        std::shared_ptr<T> get_uniform(std::string name);
+        std::shared_ptr<T> get_uniform(const std::string name);
     };
 
     // DEFINITIONS (INCLUSION MODEL FOR TEMPLATES!) //
 
     template <typename T>
-    void Material::add_uniform(T &uniform) {
+    void Material::add_uniform(const T &uniform) {
         GLint location = 0;
         uniforms.add_uniform(uniform);
 
@@ -46,12 +46,12 @@ namespace gfx {
     }
 
     template <typename...T>
-    void Material::add_uniforms(T... uniform) {
+    void Material::add_uniforms(const T... uniform) {
         (add_uniform<T>(uniform), ...);
     }
 
     template <typename T>
-    std::shared_ptr<T> Material::get_uniform(std::string name) {
+    std::shared_ptr<T> Material::get_uniform(const std::string name) {
         return uniforms.get_uniform<T>(name);
     }
 

@@ -24,7 +24,7 @@ Shader::Shader():
     shaderProgram(0),
     _logger(zcl::logger("GFX::SHADER"))
     {}
-Shader::Shader(std::string name):
+Shader::Shader(const std::string &name):
     name(name),
     shaderProgram(0),
     _logger(zcl::logger("GFX::SHADER"))
@@ -88,7 +88,7 @@ void Shader::load_shader_from(std::filesystem::path filePath, GLenum type) {
     set_shader(zcl::file::read_file_to_string(filePath), type);
 }
 
-void Shader::set_shader(std::string src, GLenum type) {
+void Shader::set_shader(const std::string &src, GLenum type) {
     auto cstr = src.c_str();
     int compileRes;
     GLuint shader;
@@ -179,7 +179,7 @@ void Shader::apply_shader() {
     }
 }
 
-GLint Shader::get_uniform_location(std::string name) {
+GLint Shader::get_uniform_location(const std::string &name) {
     if (shaderProgram) {
         return glGetUniformLocation(shaderProgram, name.c_str());
     }

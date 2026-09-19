@@ -29,7 +29,7 @@
 // ----------------------------
 // EXTERNAL LIBRARIES //
 
-CpexApp::CpexApp(std::string windowTitle, bool isGlDebug):
+CpexApp::CpexApp(const std::string windowTitle, bool isGlDebug):
     zap::OpenGlApp(windowTitle, isGlDebug) {}
 CpexApp::CpexApp():
     CpexApp("WINDOW TITLE", false) {}

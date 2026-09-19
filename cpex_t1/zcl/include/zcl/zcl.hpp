@@ -71,9 +71,9 @@ namespace zcl {
             
         public:
             StopwatchSplit();
-            StopwatchSplit(std::string id);
+            StopwatchSplit(const std::string &id);
 
-            std::weak_ptr<StopwatchSplit> get_parent();
+            std::weak_ptr<StopwatchSplit> get_parent() const;
             void set_parent(std::weak_ptr<StopwatchSplit> split);
             std::string get_id();
             void begin_sprint();
@@ -105,7 +105,7 @@ namespace zcl {
             std::chrono::duration<double, std::milli> duration;
         
             StopwatchSplitNode();
-            StopwatchSplitNode(std::string id);
+            StopwatchSplitNode(const std::string &id);
             operator std::string() const;
         };
 
@@ -123,15 +123,15 @@ namespace zcl {
             // }
 
             static StopwatchRepository& get_instance();
-            std::weak_ptr<StopwatchSplit> get_scope_parent_split();
+            std::weak_ptr<StopwatchSplit> get_scope_parent_split() const;
 
             void set_scope_parent_split(std::weak_ptr<StopwatchSplit> split);
             void reset_scope_parent_split();
 
-            std::shared_ptr<StopwatchSplit> get_split(const std::string id);
-            std::shared_ptr<StopwatchSplitHelper> begin_split(const std::string id);
+            std::shared_ptr<StopwatchSplit> get_split(const std::string &id);
+            std::shared_ptr<StopwatchSplitHelper> begin_split(const std::string &id);
 
-            std::vector<std::shared_ptr<StopwatchSplitNode>> get_all_splits_and_childs();
+            std::vector<std::shared_ptr<StopwatchSplitNode>> get_all_splits_and_childs() const;
         };
 
         // static StopwatchData* currentWatch = nullptr;
@@ -139,9 +139,9 @@ namespace zcl {
 
         std::string format_as(StopwatchSplit data);
 
-        std::shared_ptr<StopwatchSplit> stopwatch_get(const std::string id);
-        std::shared_ptr<StopwatchSplitHelper> stopwatch_begin(const std::string id);
-        void stopwatch_end(const std::string id);
+        std::shared_ptr<StopwatchSplit> stopwatch_get(const std::string &id);
+        std::shared_ptr<StopwatchSplitHelper> stopwatch_begin(const std::string &id);
+        void stopwatch_end(const std::string &id);
 
         std::string get_stack_trace(bool skipInternal = true, int skipLen = 0, int maxLen = 16);
     }

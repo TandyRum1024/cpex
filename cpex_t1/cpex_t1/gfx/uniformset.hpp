@@ -30,13 +30,13 @@ namespace gfx {
     public:
         /** Adds an uniform. */
         template <typename T>
-        void add_uniform(T &uniform);
+        void add_uniform(const T &uniform);
         /** Adds uniforms. */
         template <typename...T>
-        void add_uniforms(T... uniform);
+        void add_uniforms(const T... uniform);
         /** Returns an uniform with given name and type. `nullptr` if not found or wrong type. */
         template <typename T>
-        std::shared_ptr<T> get_uniform(std::string name);
+        std::shared_ptr<T> get_uniform(const std::string name);
 
         /** Gets uniform at certain position. */
         std::shared_ptr<Uniform>& operator[](int pos);
@@ -47,18 +47,18 @@ namespace gfx {
     // DEFINITIONS (INCLUSION MODEL FOR TEMPLATES!) //
 
     template <typename T>
-    void UniformSet::add_uniform(T &uniform) {
+    void UniformSet::add_uniform(const T &uniform) {
         uniforms.push_back(std::make_shared<T>(uniform));
         update_texture_slots();
     }
 
     template <typename...T>
-    void UniformSet::add_uniforms(T... uniform) {
+    void UniformSet::add_uniforms(const T... uniform) {
         (add_uniform<T>(uniform), ...);
     }
 
     template <typename T>
-    std::shared_ptr<T> UniformSet::get_uniform(std::string name) {
+    std::shared_ptr<T> UniformSet::get_uniform(const std::string name) {
         auto res = std::find_if(
             uniforms.begin(),
             uniforms.end(),

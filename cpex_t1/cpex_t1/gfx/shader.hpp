@@ -45,7 +45,7 @@ namespace gfx {
 
     public:
         Shader();
-        Shader(std::string name);
+        Shader(const std::string &name);
         ~Shader();
 
         // Disable default copy ops, since `Shader` is move only (tied to OpenGL objects that are hard to copy)!
@@ -61,13 +61,13 @@ namespace gfx {
         /** Loads vertex/fragment/etc shader from given file path. */
         void load_shader_from(std::filesystem::path filePath, GLenum type);
         /** Sets vertex/fragment/etc shdaer from given string source code. */
-        void set_shader(std::string src, GLenum type);
+        void set_shader(const std::string &src, GLenum type);
         /** Links currently set shaders into a new program. */
         void link_program();
         /** Uses shader for next rendering. */
         void apply_shader();
         /** Returns uniform location. */
-        GLint get_uniform_location(std::string name);
+        GLint get_uniform_location(const std::string &name);
     };
 }
 #endif

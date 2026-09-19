@@ -112,7 +112,7 @@ trace::StopwatchRepository& trace::StopwatchRepository::get_instance() {
     return inst;
 }
 
-std::weak_ptr<trace::StopwatchSplit> trace::StopwatchRepository::get_scope_parent_split() {
+std::weak_ptr<trace::StopwatchSplit> trace::StopwatchRepository::get_scope_parent_split() const {
     // if (auto s = splitCurrent.lock()) {
     //     logger("SPLIT")->info("CURRENT PARENT IS {}", s->get_id());
     // }
@@ -141,7 +141,7 @@ void trace::StopwatchRepository::reset_scope_parent_split() {
     splitCurrent.reset();
 }
 
-std::shared_ptr<trace::StopwatchSplit> trace::StopwatchRepository::get_split(const std::string id) {
+std::shared_ptr<trace::StopwatchSplit> trace::StopwatchRepository::get_split(const std::string &id) {
     auto res = std::find_if(
         splits.begin(),
         splits.end(),
@@ -166,14 +166,14 @@ std::shared_ptr<trace::StopwatchSplit> trace::StopwatchRepository::get_split(con
     }
 }
 
-std::shared_ptr<trace::StopwatchSplitHelper> trace::StopwatchRepository::begin_split(const std::string id) {
+std::shared_ptr<trace::StopwatchSplitHelper> trace::StopwatchRepository::begin_split(const std::string &id) {
     auto splitPtr = get_split(id);
     auto helper = std::make_shared<StopwatchSplitHelper>(StopwatchSplitHelper(splitPtr));
 
     return helper;
 }
 
-std::vector<std::shared_ptr<trace::StopwatchSplitNode>> trace::StopwatchRepository::get_all_splits_and_childs() {
+std::vector<std::shared_ptr<trace::StopwatchSplitNode>> trace::StopwatchRepository::get_all_splits_and_childs() const {
     auto roots = std::vector<std::shared_ptr<StopwatchSplitNode>>();
     auto nodesById = std::map<std::string, std::shared_ptr<StopwatchSplitNode>>();
 
@@ -216,18 +216,18 @@ std::vector<std::shared_ptr<trace::StopwatchSplitNode>> trace::StopwatchReposito
 }
 
 trace::StopwatchSplitNode::StopwatchSplitNode(): StopwatchSplitNode("") {}
-trace::StopwatchSplitNode::StopwatchSplitNode(std::string id): id(id) {}
+trace::StopwatchSplitNode::StopwatchSplitNode(const std::string &id): id(id) {}
 
 trace::StopwatchSplitNode::operator std::string() const {
     return fmt::format("[{}]: {:.4}ms", id, duration.count());
 }
 
 trace::StopwatchSplit::StopwatchSplit(): StopwatchSplit("") {}
-trace::StopwatchSplit::StopwatchSplit(std::string id): id(id) {
+trace::StopwatchSplit::StopwatchSplit(const std::string &id): id(id) {
     // logger("SPLIT")->info("NEW SPLIT {} {}", id, fmt::ptr(this));
 }
 
-std::weak_ptr<trace::StopwatchSplit> trace::StopwatchSplit::get_parent() {
+std::weak_ptr<trace::StopwatchSplit> trace::StopwatchSplit::get_parent() const {
     return parentSplit;
 }
 
@@ -301,18 +301,18 @@ trace::StopwatchSplitHelper::~StopwatchSplitHelper() {
     }
 }
 
-std::shared_ptr<trace::StopwatchSplit> zcl::trace::stopwatch_get(const std::string id) {
+std::shared_ptr<trace::StopwatchSplit> zcl::trace::stopwatch_get(const std::string &id) {
     auto& repo = zcl::trace::StopwatchRepository::get_instance();
     return repo.get_split(id);
 }
 
-std::shared_ptr<trace::StopwatchSplitHelper> zcl::trace::stopwatch_begin(const std::string id) {
+std::shared_ptr<trace::StopwatchSplitHelper> zcl::trace::stopwatch_begin(const std::string &id) {
     auto& repo = zcl::trace::StopwatchRepository::get_instance();
     auto helper = repo.begin_split(id);
     return helper;
 }
 
-void zcl::trace::stopwatch_end(const std::string id) {
+void zcl::trace::stopwatch_end(const std::string &id) {
     auto& repo = zcl::trace::StopwatchRepository::get_instance();
     auto split = repo.get_split(id);
     split->end_sprint();

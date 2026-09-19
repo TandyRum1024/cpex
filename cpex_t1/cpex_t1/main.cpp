@@ -4,22 +4,11 @@
  */
 
 #include <exception>
-
 #include <app.hpp>
 
 // LIBRARIES //
-#include <zap/opengl/opengl.hpp>
-#include <gfx/shader.hpp>
-#include <gfx/vb.hpp>
-#include <gfx/vert.hpp>
-#include <zcl/zcl.hpp>
-
 // EXTERNAL LIBRARIES //
 // ----------------------------
-// OpenGL: GLAD
-#include <glad/gl.h>
-// OpenGL: GLFW
-#include <GLFW/glfw3.h>
 // spdlog
 #include <spdlog/spdlog.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
