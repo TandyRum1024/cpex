@@ -91,7 +91,7 @@ void CpexApp::on_setup() {
 
     // Setup scene
     time = 0;
-    tfPos = glm::vec3(0.0);
+    tfPos = glm::vec3(-0.5, 0.0, 0.0);
     tfRot = glm::vec3(0.0);
     tfScale = glm::vec3(1.0);
 
@@ -139,10 +139,15 @@ void CpexApp::on_setup() {
 
     matBase->set_shader(shd);
     matBase->add_uniforms(
-        gfx::UniformVec4("uTint", {0.0, 0.0, 0.0, 0.0}),
-        gfx::UniformMat4("uMatTf", glm::mat4(1.0f)),
+        gfx::UniformVec4("uTint", {1.0, 1.0, 1.0, 1.0}),
+        gfx::UniformMat4("uMatTf", glm::translate(glm::mat4(1.0f), glm::vec3(0.5, 0.0, 0.0))),
         gfx::UniformSampler2D("uBaseTexture", tex1),
         gfx::UniformSampler2D("uOverTexture", tex2, GL_LINEAR, GL_CLAMP_TO_BORDER)
+    );
+
+    mat->add_uniforms(
+        gfx::UniformVec4("uTint", {0.0, 0.0, 0.0, 0.0}),
+        gfx::UniformMat4("uMatTf", glm::mat4(1.0f))
     );
 
     // Setup ImGui
@@ -155,10 +160,15 @@ void CpexApp::on_setup() {
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    // _logger->info("MATERIALS: ");
-    // for (auto&& uniform: mat->get_uniforms()) {
-    //     _logger->info("\t {}", uniform->get_name());
-    // }
+    _logger->info("MATERIAL {}", mat->get_id());
+    for (auto&& uniform: mat->get_uniforms()) {
+        _logger->info("\t {} @ {}", uniform->get_name(), fmt::ptr(&(*uniform)));
+    }
+
+    _logger->info("MATERIAL {}", matBase->get_id());
+    for (auto&& uniform: matBase->get_uniforms()) {
+        _logger->info("\t {} @ {}", uniform->get_name(), fmt::ptr(&(*uniform)));
+    }
 
     _logger->info("Setup done");
     // assert(false);
@@ -193,33 +203,36 @@ void CpexApp::on_loop_render_begin(double dtMillis) {
 void CpexApp::on_loop_render(double dtMillis) {
     glClear(GL_COLOR_BUFFER_BIT);
 
-    // Draw VAO
+    // Draw VAO with base material
+    matBase->apply_material();
+    if (vb) {
+        vb->submit(GL_TRIANGLES, 0);
+    }
+
+    // Draw VAO with child material
     //shd->apply_shader();
-    mat->apply_material();
     if (auto uniform = mat->get_uniform<gfx::UniformVec4>("uTint")) {
         uniform->set_value({ (float) time, (float) time, (float) time, 1.0 });
     }
     if (auto uniform = mat->get_uniform<gfx::UniformMat4>("uMatTf")) {
-        auto tf = glm::translate(
+        auto tf = glm::rotate(
             glm::rotate(
                 glm::rotate(
-                    glm::rotate(
-                        glm::scale(glm::mat4(1.0), tfScale),
-                        glm::radians(tfRot.x),
-                        glm::vec3(1.0, 0.0, 0.0)
-                    ),
-                    glm::radians(tfRot.y),
-                    glm::vec3(0.0, 1.0, 0.0)
+                    glm::scale(glm::translate(glm::mat4(1.0), tfPos), tfScale),
+                    glm::radians(tfRot.x),
+                    glm::vec3(1.0, 0.0, 0.0)
                 ),
-                glm::radians(tfRot.z),
-                glm::vec3(0.0, 0.0, 1.0)
+                glm::radians(tfRot.y),
+                glm::vec3(0.0, 1.0, 0.0)
             ),
-            tfPos
+            glm::radians(tfRot.z),
+            glm::vec3(0.0, 0.0, 1.0)
         );
         
         uniform->set_value(tf);
     }
-
+    mat->apply_material();
+    
     if (vb) {
         vb->submit(GL_TRIANGLES, 0);
     }

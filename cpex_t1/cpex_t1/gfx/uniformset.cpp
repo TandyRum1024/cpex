@@ -26,7 +26,9 @@ void UniformSet::add_uniform(const std::shared_ptr<Uniform> &uniformPtr) {
     
     // Override if needed
     if (uniformsByName.contains(name)) {
-        std::pair<size_t, std::shared_ptr<Uniform>> entry = uniformsByName[name];
+        auto& entry = uniformsByName[name];
+        auto idx = entry.first;
+        uniforms[idx] = uniformPtr;
         entry.second = uniformPtr;
     }
     else {

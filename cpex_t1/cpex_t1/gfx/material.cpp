@@ -15,6 +15,10 @@ Material::Material(const std::string &id, const std::weak_ptr<Material> &parent)
     parent(parent),
     isMergeRequired(true) {}
 
+const std::string Material::get_id() const {
+    return id;
+}
+
 const std::vector<std::shared_ptr<Uniform>>& Material::get_uniforms() {
     process_merge();
     return mergedUniforms.get_uniforms();
@@ -22,6 +26,16 @@ const std::vector<std::shared_ptr<Uniform>>& Material::get_uniforms() {
 
 bool Material::get_merge_required() const {
     return isMergeRequired;
+}
+
+void Material::set_merge_required() {
+    isMergeRequired = true;
+
+    for (auto&& child: children) {
+        if (child->get_merge_required()) {
+            child->set_merge_required();
+        }
+    }
 }
 
 inline void Material::process_merge() {
@@ -58,11 +72,6 @@ inline void Material::process_merge() {
         }
 
         isMergeRequired = false;
-
-        // Mark children for updates aswell
-        for (auto&& child: children) {
-            child->isMergeRequired = true;
-        }
     }
 }
 
@@ -80,7 +89,7 @@ void Material::set_shader(std::shared_ptr<Shader> shd) {
 
     // Update uniformsets to adapt newly set shader
     if (shd) {
-        isMergeRequired = true;
+        set_merge_required();
     }
 }
 

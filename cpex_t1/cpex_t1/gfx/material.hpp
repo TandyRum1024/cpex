@@ -41,6 +41,9 @@ namespace gfx {
         Material(const std::string &id);
         Material(const std::string &id, const std::weak_ptr<Material> &parent);
 
+        /** Returns id of this material. */
+        const std::string get_id() const;
+
         /** Adds child to this material. */
         void add_child(const std::shared_ptr<Material> &child);
         /** Applies shader and uniform for next render. */
@@ -61,6 +64,8 @@ namespace gfx {
 
         /** Returns whether or not if this material has its properties changed and must be re-processed. */
         bool get_merge_required() const;
+        /** Recursively marks this material for re-processing. */
+        void set_merge_required();
     };
 
     /** Returns a new material "inherited" from this material. */
@@ -71,7 +76,7 @@ namespace gfx {
     template <typename T>
     void Material::add_uniform(const T &uniform) {
         uniforms.add_uniform(uniform);
-        isMergeRequired = true;
+        set_merge_required();
     }
 
     template <typename...T>
