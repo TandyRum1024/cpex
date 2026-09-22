@@ -45,7 +45,8 @@ CpexApp::CpexApp(CpexApp &&other):
     vb(std::move(other.vb)),
     shd(std::move(other.shd)),
     mat(std::move(other.mat)),
-    imGuiContext(other.imGuiContext)
+    imGuiContext(other.imGuiContext),
+    texManager(gfx::TextureManager())
     {
     std::swap(windowTitle, other.windowTitle);
     std::swap(window, other.window);
@@ -204,7 +205,7 @@ void CpexApp::on_loop_render(double dtMillis) {
     glClear(GL_COLOR_BUFFER_BIT);
 
     // Draw VAO with base material
-    matBase->apply_material();
+    matBase->apply_material(texManager);
     if (vb) {
         vb->submit(GL_TRIANGLES, 0);
     }
@@ -231,7 +232,7 @@ void CpexApp::on_loop_render(double dtMillis) {
         
         uniform->set_value(tf);
     }
-    mat->apply_material();
+    mat->apply_material(texManager);
     
     if (vb) {
         vb->submit(GL_TRIANGLES, 0);

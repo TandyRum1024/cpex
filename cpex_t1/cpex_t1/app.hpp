@@ -47,6 +47,9 @@ class CpexApp: public zap::OpenGlApp {
     // ImGui
     ImGuiContext* imGuiContext = nullptr;
 
+    // Renderer
+    gfx::TextureManager texManager;
+
     void free_imgui();
 
     void on_setup() override;

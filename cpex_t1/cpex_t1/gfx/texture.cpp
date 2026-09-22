@@ -108,12 +108,59 @@ void Texture::bind(GLenum slot) {
     glBindTexture(texTarget, texId);
 }
 
+void Texture::unbind(GLenum slot) {
+    glActiveTexture(slot);
+    glBindTexture(texTarget, 0);
+}
+
 void Texture::set_texture_param(GLint texFilterMode, GLint texWrapMode) {
     glTexParameteri(texTarget, GL_TEXTURE_MIN_FILTER, texFilterMode);
     glTexParameteri(texTarget, GL_TEXTURE_MAG_FILTER, texFilterMode);
     glTexParameteri(texTarget, GL_TEXTURE_WRAP_S, texWrapMode);
     glTexParameteri(texTarget, GL_TEXTURE_WRAP_T, texWrapMode);
     glTexParameteri(texTarget, GL_TEXTURE_WRAP_R, texWrapMode);
+}
+
+TextureManager::TextureManager():
+    currentUnitIdx(0) {};
+
+GLuint TextureManager::bind_texture(std::weak_ptr<Texture> tex) {
+    const static auto TEXTURES_MAX = (GL_TEXTURE31 - GL_TEXTURE0);
+    GLuint newSlot;
+
+    // On overflow, release the earliest texture
+    if (unitsFree.empty() && currentUnitIdx >= TEXTURES_MAX) {
+        unbind_texture(0 + GL_TEXTURE0);
+    }
+    
+    // Check for available slots
+    if (unitsFree.empty()) {
+        newSlot = currentUnitIdx + GL_TEXTURE0;
+        currentUnitIdx++;
+    }
+    else {
+        newSlot = unitsFree.back();
+        unitsFree.pop_back();
+    }
+
+    if (auto texture = tex.lock()) {
+        unitsAllocated[newSlot] = tex;
+        texture->bind(newSlot);
+    }
+
+    return newSlot;
+}
+
+void TextureManager::unbind_texture(GLuint slot) {
+    if (!unitsAllocated.contains(slot)) {
+        return;
+    }
+    
+    if (auto texture = unitsAllocated.at(slot).lock()) {
+        texture->unbind(slot);
+    }
+    unitsAllocated.erase(slot);
+    unitsFree.push_back(slot);
 }
 
 void texhelper::texture_load_from_file_2d(Texture& tex, std::filesystem::path file, GLint formatOverride) {

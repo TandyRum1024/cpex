@@ -8,6 +8,7 @@
 
 #include <gfx/shader.hpp>
 #include <gfx/uniformset.hpp>
+#include <gfx/texture.hpp>
 
 namespace gfx {
     /** Contains set of uniforms and associated shader. */
@@ -47,7 +48,7 @@ namespace gfx {
         /** Adds child to this material. */
         void add_child(const std::shared_ptr<Material> &child);
         /** Applies shader and uniform for next render. */
-        void apply_material();
+        void apply_material(TextureManager &texManager);
         /** Links shader to this material. */
         void set_shader(std::shared_ptr<Shader> shd);
         /** Adds an uniform. */

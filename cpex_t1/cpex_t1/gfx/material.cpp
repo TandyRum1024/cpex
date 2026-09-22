@@ -97,7 +97,7 @@ void Material::add_child(const std::shared_ptr<Material> &child) {
     children.push_back(child);
 }
 
-void Material::apply_material() {
+void Material::apply_material(TextureManager &texManager) {
     process_merge();
 
     if (mergedShd) {

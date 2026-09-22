@@ -7,6 +7,8 @@
 #define __CPEX_GFX_TEX_GUARD
 
 #include <string>
+#include <map>
+#include <vector>
 #include <filesystem>
 
 // EXTERNAL LIBRARIES //
@@ -56,8 +58,23 @@ namespace gfx {
         
         /** Bind this texture to given slot. */
         void bind(GLenum slot);
+        /** Unbind this texture to given slot. */
+        void unbind(GLenum slot);
         /** Set OpenGL texture parameter. MUST be called after `bind()`! */
         void set_texture_param(GLint texFilterMode, GLint texWrapMode);
+    };
+
+    /** Texture maanger. */
+    class TextureManager {
+        GLuint currentUnitIdx;
+        std::map<GLuint, std::weak_ptr<Texture>> unitsAllocated;
+        std::vector<GLuint> unitsFree;
+
+    public:
+        TextureManager();
+
+        GLuint bind_texture(std::weak_ptr<Texture> tex);
+        void unbind_texture(GLuint slot);
     };
 
     // Helper functions
