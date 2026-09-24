@@ -84,7 +84,7 @@ void CpexApp::free_imgui() {
 }
 
 void CpexApp::on_setup() {
-    set_vsync(false);
+    set_vsync(true);
 
     // Relative path
     auto assetPath = zcl::file::get_exec_path().parent_path() / "data";
@@ -210,7 +210,7 @@ void CpexApp::on_loop_render(double dtMillis) {
 
     // Draw VAO with base material
     matBase->apply_material(texManager);
-    for (int i=0; i<4096; i++) {
+    for (int i=0; i<1024; i++) {
         if (vb) {
             vb->submit(GL_TRIANGLES, 0);
         }
@@ -279,10 +279,12 @@ void CpexApp::on_loop_debug_ui(double dtMillis) {
     ImGui::SetNextWindowSize(ImVec2(256, 256), ImGuiCond_Once);
     ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_Always);
     if (ImGui::Begin("Scene", nullptr, 0)) {
-        ImGui::BulletText("time: %.2lf (dt: %.2lfms, FPS: %2.2lf)", time, dtMillis, (dtMillis == 0.0) ? 0 : (1000 / dtMillis));
-
         auto& repo = zcl::trace::StopwatchRepository::get_instance();
         auto roots = repo.get_all_splits_and_childs();
+        auto frameTime = zcl::trace::stopwatch_get("frame")->calc_duration().count();
+
+        ImGui::BulletText("time: %.2lf (dt: %.2lfms, FPS: %2.2lf)", time, dtMillis, (dtMillis == 0.0) ? 0 : (1000 / dtMillis));
+        ImGui::BulletText("frame time: %.2lf (FPS: %2.2lf)", frameTime, (frameTime == 0.0) ? 0 : (1000 / frameTime));
         
         ImGui::BulletText("[STOPWATCH (%d)]", roots.size());
         for (auto&& root: roots) {
