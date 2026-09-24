@@ -112,7 +112,8 @@ void Material::apply_material(TextureManager &texManager) {
 
     // Bind all textures
     for (auto&& samplerUniform: mergedUniformSamplers) {
-        auto res = texManager.bind_texture(samplerUniform->get_value());
+        auto res = texManager.bind_texture(samplerUniform->get_value(), samplerUniform->get_key_salt());
+        samplerUniform->set_tex_slot(res);
         // zcl::logger("GFX")->info("\t{}] bind tex {} -> {}", id, samplerUniform->get_name(), res);
     }
     

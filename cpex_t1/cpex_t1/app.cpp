@@ -84,6 +84,8 @@ void CpexApp::free_imgui() {
 }
 
 void CpexApp::on_setup() {
+    gfx::TextureManager::init();
+
     set_vsync(true);
 
     // Relative path
@@ -138,18 +140,20 @@ void CpexApp::on_setup() {
     gfx::texhelper::texture_load_from_file_2d(*tex1, assetPath / "textest.png");
     gfx::texhelper::texture_load_from_file_2d(*tex2, assetPath / "sprtest.png");
 
+    // std::forward<gfx::UniformVec4>(gfx::UniformVec4("uTint", {1.0, 1.0, 1.0, 1.0}));
+
     matBase->set_shader(shd);
     matBase->add_uniforms(
-        gfx::UniformVec4("uTint", {1.0, 1.0, 1.0, 1.0}),
-        gfx::UniformMat4("uMatTf", glm::translate(glm::mat4(1.0f), glm::vec3(0.5, 0.0, 0.0))),
-        gfx::UniformSampler("uBaseTexture", tex1),
-        gfx::UniformSampler("uOverTexture", tex2, GL_LINEAR, GL_CLAMP_TO_BORDER)
+        std::move(gfx::UniformVec4("uTint", {1.0, 1.0, 1.0, 1.0})),
+        std::move(gfx::UniformMat4("uMatTf", glm::translate(glm::mat4(1.0f), glm::vec3(0.5, 0.0, 0.0)))),
+        std::move(gfx::UniformSampler("uBaseTexture", tex1)),
+        std::move(gfx::UniformSampler("uOverTexture", tex2, GL_LINEAR, GL_CLAMP_TO_BORDER))
     );
 
     mat->add_uniforms(
-        gfx::UniformVec4("uTint", {0.0, 0.0, 0.0, 0.0}),
-        gfx::UniformMat4("uMatTf", glm::mat4(1.0f)),
-        gfx::UniformSampler("uOverTexture", tex1, GL_LINEAR, GL_CLAMP_TO_BORDER)
+        std::move(gfx::UniformVec4("uTint", {0.0, 0.0, 0.0, 0.0})),
+        std::move(gfx::UniformMat4("uMatTf", glm::mat4(1.0f))),
+        std::move(gfx::UniformSampler("uOverTexture", tex1, GL_LINEAR, GL_MIRRORED_REPEAT))
     );
 
     // Setup ImGui
@@ -209,8 +213,9 @@ void CpexApp::on_loop_render(double dtMillis) {
     texManager.clear();
 
     // Draw VAO with base material
-    matBase->apply_material(texManager);
+    // _logger->info("basemat");
     for (int i=0; i<1024; i++) {
+        matBase->apply_material(texManager);
         if (vb) {
             vb->submit(GL_TRIANGLES, 0);
         }
@@ -218,6 +223,7 @@ void CpexApp::on_loop_render(double dtMillis) {
 
     // Draw VAO with child material
     //shd->apply_shader();
+    // _logger->info("childmat");
     if (auto uniform = mat->get_uniform<gfx::UniformVec4>("uTint")) {
         uniform->set_value({ (float) time, (float) time, (float) time, 1.0 });
     }
@@ -291,7 +297,7 @@ void CpexApp::on_loop_debug_ui(double dtMillis) {
             imgui_draw_stopwatch_node(root);
         }
 
-        ImGui::BulletText("TextureManager: %d/%d", texManager.get_allocated_num(), gfx::TextureManager::TEXTURES_MAX);
+        ImGui::BulletText("TextureManager: %d/%d", texManager.get_allocated_num(), gfx::TextureManager::SLOTS_MAX);
 
         ImGui::DragFloat3("pos", glm::value_ptr(tfPos));
         ImGui::DragFloat3("rot", glm::value_ptr(tfRot));

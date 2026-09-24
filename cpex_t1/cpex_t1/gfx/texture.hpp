@@ -6,8 +6,10 @@
 #ifndef __CPEX_GFX_TEX_GUARD
 #define __CPEX_GFX_TEX_GUARD
 
+#include <stdint.h>
 #include <string>
 #include <map>
+#include <unordered_map>
 #include <vector>
 #include <filesystem>
 
@@ -28,7 +30,7 @@ namespace gfx {
         // OpenGL object refs
         GLuint texId;
         GLenum texTarget;
-        GLenum texSlot;
+        GLenum texUnit;
         
         // Format
         GLint fmtInternal;
@@ -60,40 +62,49 @@ namespace gfx {
         /** Set OpenGL texture target and format. */
         void set_format(GLint internalFormat = GL_RGBA8);
         
-        /** Bind this texture to given slot. */
-        void bind(GLenum slot);
-        /** Unbind this texture to given slot. */
+        /** Bind this texture to given unit. */
+        void bind(GLenum unit);
+        /** Unbind this texture to given unit. */
         void unbind();
 
-        /** Returns the slot that this texture was bound to. */
-        GLenum get_bound_slot() const;
+        /** Returns the unit that this texture was bound to. */
+        GLenum get_bound_unit() const;
         /** Returns the target this texture was assigned to. */
         GLenum get_target() const;
     };
 
     /** Texture slot/units manager. Implements dead simple (recycled) index management. */
     class TextureManager {
-        unsigned int currentUnitIdx;
-        // Technically texture units, but I like the wording "slots" better...
+        /** Texture - key pair */
+        struct TextureAndKey {
+            std::weak_ptr<gfx::Texture> texture;
+            int64_t key;
+        };
 
-        std::map<unsigned int, std::weak_ptr<Texture>> slotsAllocated;
-        std::map<GLuint, unsigned int> slotsAllocatedByTexId;
+        // For clarification, texture units = [ GL_TEXTURE0 .. GL_TEXTURE* ], slots = texture units except they are 0-indexed
+        unsigned int currentSlotIdx;
+
+        std::map<unsigned int, TextureAndKey> slotsAllocated;
+        std::unordered_map<int64_t, unsigned int> slotsAllocatedTbl;
         std::vector<unsigned int> slotsRecycled;
 
     public:
+        static int SLOTS_MAX;
+
         TextureManager();
         ~TextureManager();
 
         /** Bind the texture to any free slot. */
-        unsigned int bind_texture(const std::weak_ptr<Texture> &tex);
+        unsigned int bind_texture(const std::weak_ptr<Texture> &tex, const GLuint keySalt);
         /** Unbinds the texture at given slot. */
         void unbind_texture(unsigned int slot);
         /** Resets internal state. Recommended to call this at the start of a rendering function. */
         void clear();
         /** Returns number of currently bound textures. */
         unsigned int get_allocated_num() const;
-
-        const static unsigned int TEXTURES_MAX = (GL_TEXTURE31 - GL_TEXTURE0);
+        
+        /** Initializes static values. Must be called after GL context has been initialized! */
+        static void init();
     };
 
     // Helper functions

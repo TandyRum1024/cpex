@@ -55,10 +55,10 @@ namespace gfx {
         void set_shader(std::shared_ptr<Shader> shd);
         /** Adds an uniform. */
         template <typename T>
-        void add_uniform(const T &uniform);
+        void add_uniform(T &&uniform);
         /** Adds uniforms. */
         template <typename...T>
-        void add_uniforms(const T... uniform);
+        void add_uniforms(T&&... uniform);
         /** Returns an uniform with given name and type. `nullptr` if not found or wrong type. */
         template <typename T>
         std::shared_ptr<T> get_uniform(const std::string name);
@@ -77,14 +77,14 @@ namespace gfx {
     // DEFINITIONS (INCLUSION MODEL FOR TEMPLATES!) //
 
     template <typename T>
-    void Material::add_uniform(const T &uniform) {
-        uniforms.add_uniform(uniform);
+    void Material::add_uniform(T &&uniform) {
+        uniforms.add_uniform(std::forward<T>(uniform));
         set_merge_required();
     }
 
-    template <typename...T>
-    void Material::add_uniforms(const T... uniform) {
-        (add_uniform<T>(uniform), ...);
+    template <typename... T>
+    void Material::add_uniforms(T&&... uniform) {
+        (add_uniform<T>(std::forward<T>(uniform)), ...);
     }
 
     template <typename T>

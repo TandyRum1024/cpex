@@ -31,12 +31,12 @@ namespace gfx {
     public:
         /** Adds an uniform. */
         template <typename T>
-        void add_uniform(const T &uniform);
+        void add_uniform(T &&uniform);
         /** Adds an uniform. */
         void add_uniform(const std::shared_ptr<Uniform> &uniformPtr);
         /** Adds uniforms. */
         template <typename...T>
-        void add_uniforms(const T... uniform);
+        void add_uniforms(T&&... uniform);
         /** Adds uniforms from other uniformset. */
         void add_uniforms_from(const UniformSet &other);
         /** Clears all uniforms. */
@@ -59,10 +59,10 @@ namespace gfx {
     // DEFINITIONS (INCLUSION MODEL FOR TEMPLATES!) //
 
     template <typename T>
-    void UniformSet::add_uniform(const T &uniform) {
+    void UniformSet::add_uniform(T &&uniform) {
         static_assert(std::is_base_of<Uniform, T>::value, "T must be type of Uniform!");
         
-        auto ptr = std::make_shared<T>(uniform);
+        auto ptr = std::make_shared<T>(std::forward<T>(uniform));
         auto name = uniform.get_name();
 
         // Override if needed
@@ -78,8 +78,8 @@ namespace gfx {
     }    
 
     template <typename...T>
-    void UniformSet::add_uniforms(const T... uniform) {
-        (add_uniform<T>(uniform), ...);
+    void UniformSet::add_uniforms(T&&... uniform) {
+        (add_uniform<T>(std::forward<T>(uniform)), ...);
     }
 
     template <typename T>

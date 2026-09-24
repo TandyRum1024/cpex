@@ -70,17 +70,42 @@ namespace gfx {
     /** sampler<*> uniform. */
     class UniformSampler: public UniformTemplated<std::shared_ptr<Texture>> {
     protected:
+        GLuint samplerId;
+
         GLint texFilterMode;
         GLint texWrapMode;
+        GLenum texTarget;
+        GLenum texSlot;
+
+        uint8_t keySalt;
+
+        void update_key_salt();
     
     public:
         UniformSampler(const std::string &name);
         UniformSampler(const std::string &name, std::shared_ptr<Texture> val);
         UniformSampler(const std::string &name, std::shared_ptr<Texture> val, GLint texFilterMode, GLint texWrapMode);
+        ~UniformSampler();
+
+        // Move operations
+
+        UniformSampler(UniformSampler &&other);
+        UniformSampler& operator=(UniformSampler &&other);
+
+        // Disable copies. for now
+
+        UniformSampler(const UniformSampler &other) = delete;
+        UniformSampler& operator=(const UniformSampler &other) = delete;
         
+        uint8_t get_key_salt() const;
+
+        void set_value(std::shared_ptr<Texture> val);
+
         void apply_uniform(GLint location) const override;
         void set_tex_filter(GLint texFilterMode);
         void set_tex_wrap(GLint texWrapMode);
+        void set_tex_target(GLenum texTarget);
+        void set_tex_slot(GLuint texSlot);
     };
 
     /** vec2 uniform. */
