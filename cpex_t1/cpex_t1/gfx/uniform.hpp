@@ -67,20 +67,18 @@ namespace gfx {
     };
 
     // And now for few pre-defined uniform type specializations
-    /** sampler2D uniform. */
-    class UniformSampler2D: public UniformTemplated<std::shared_ptr<Texture>> {
+    /** sampler<*> uniform. */
+    class UniformSampler: public UniformTemplated<std::shared_ptr<Texture>> {
     protected:
-        GLenum texSlot;
         GLint texFilterMode;
         GLint texWrapMode;
     
     public:
-        UniformSampler2D(const std::string &name);
-        UniformSampler2D(const std::string &name, std::shared_ptr<Texture> val);
-        UniformSampler2D(const std::string &name, std::shared_ptr<Texture> val, GLint texFilterMode, GLint texWrapMode);
+        UniformSampler(const std::string &name);
+        UniformSampler(const std::string &name, std::shared_ptr<Texture> val);
+        UniformSampler(const std::string &name, std::shared_ptr<Texture> val, GLint texFilterMode, GLint texWrapMode);
         
         void apply_uniform(GLint location) const override;
-        void set_tex_slot(GLenum texSlot);
         void set_tex_filter(GLint texFilterMode);
         void set_tex_wrap(GLint texWrapMode);
     };

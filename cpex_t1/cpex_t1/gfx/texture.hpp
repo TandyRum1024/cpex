@@ -28,6 +28,7 @@ namespace gfx {
         // OpenGL object refs
         GLuint texId;
         GLenum texTarget;
+        GLenum texSlot;
         
         // Format
         GLint fmtInternal;
@@ -48,6 +49,9 @@ namespace gfx {
         Texture(Texture &&other);
         Texture& operator=(Texture &&other);
 
+        /** Returns OpenGL texture ID. */
+        GLuint get_texture_id() const;
+
         /** Frees OpenGL resources. */
         void free_resources();
         
@@ -59,22 +63,37 @@ namespace gfx {
         /** Bind this texture to given slot. */
         void bind(GLenum slot);
         /** Unbind this texture to given slot. */
-        void unbind(GLenum slot);
-        /** Set OpenGL texture parameter. MUST be called after `bind()`! */
-        void set_texture_param(GLint texFilterMode, GLint texWrapMode);
+        void unbind();
+
+        /** Returns the slot that this texture was bound to. */
+        GLenum get_bound_slot() const;
+        /** Returns the target this texture was assigned to. */
+        GLenum get_target() const;
     };
 
-    /** Texture maanger. */
+    /** Texture slot/units manager. Implements dead simple (recycled) index management. */
     class TextureManager {
-        GLuint currentUnitIdx;
-        std::map<GLuint, std::weak_ptr<Texture>> unitsAllocated;
-        std::vector<GLuint> unitsFree;
+        unsigned int currentUnitIdx;
+        // Technically texture units, but I like the wording "slots" better...
+
+        std::map<unsigned int, std::weak_ptr<Texture>> slotsAllocated;
+        std::map<GLuint, unsigned int> slotsAllocatedByTexId;
+        std::vector<unsigned int> slotsRecycled;
 
     public:
         TextureManager();
+        ~TextureManager();
 
-        GLuint bind_texture(std::weak_ptr<Texture> tex);
-        void unbind_texture(GLuint slot);
+        /** Bind the texture to any free slot. */
+        unsigned int bind_texture(const std::weak_ptr<Texture> &tex);
+        /** Unbinds the texture at given slot. */
+        void unbind_texture(unsigned int slot);
+        /** Resets internal state. Recommended to call this at the start of a rendering function. */
+        void clear();
+        /** Returns number of currently bound textures. */
+        unsigned int get_allocated_num() const;
+
+        const static unsigned int TEXTURES_MAX = (GL_TEXTURE31 - GL_TEXTURE0);
     };
 
     // Helper functions

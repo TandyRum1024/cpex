@@ -29,29 +29,33 @@ std::string Uniform::get_name() const {
 }
 
 // And now for few pre-defined uniform type specializations
-UniformSampler2D::UniformSampler2D(const std::string &name):
-    UniformSampler2D(name, nullptr, GL_LINEAR, GL_CLAMP_TO_EDGE) {}
-UniformSampler2D::UniformSampler2D(const std::string &name, std::shared_ptr<Texture> val):
-    UniformSampler2D(name, std::move(val), GL_LINEAR, GL_CLAMP_TO_EDGE) {}
-UniformSampler2D::UniformSampler2D(const std::string &name, std::shared_ptr<Texture> val, GLint texFilterMode, GLint texWrapMode):
+UniformSampler::UniformSampler(const std::string &name):
+    UniformSampler(name, nullptr, GL_LINEAR, GL_CLAMP_TO_EDGE) {}
+UniformSampler::UniformSampler(const std::string &name, std::shared_ptr<Texture> val):
+    UniformSampler(name, std::move(val), GL_LINEAR, GL_CLAMP_TO_EDGE) {}
+UniformSampler::UniformSampler(const std::string &name, std::shared_ptr<Texture> val, GLint texFilterMode, GLint texWrapMode):
     UniformTemplated(name, std::move(val)),
-    texSlot(0),
     texFilterMode(texFilterMode),
     texWrapMode(texWrapMode) {}
 
-void UniformSampler2D::set_tex_slot(GLenum texSlot) {
-    this->texSlot = texSlot;
-}
-void UniformSampler2D::set_tex_filter(GLint texFilterMode) {
+void UniformSampler::set_tex_filter(GLint texFilterMode) {
     this->texFilterMode = texFilterMode;
 }
-void UniformSampler2D::set_tex_wrap(GLint texWrapMode) {
+void UniformSampler::set_tex_wrap(GLint texWrapMode) {
     this->texWrapMode = texWrapMode;
 }
-void UniformSampler2D::apply_uniform(GLint location) const {
-    val->bind(texSlot + GL_TEXTURE0);
-    val->set_texture_param(texFilterMode, texWrapMode);
-    glUniform1i(location, texSlot);
+void UniformSampler::apply_uniform(GLint location) const {
+    if (auto slot = val->get_bound_slot(); slot >= GL_TEXTURE0) {
+        auto target = val->get_target();
+        
+        glActiveTexture(slot);
+        glTexParameteri(target, GL_TEXTURE_MIN_FILTER, texFilterMode);
+        glTexParameteri(target, GL_TEXTURE_MAG_FILTER, texFilterMode);
+        glTexParameteri(target, GL_TEXTURE_WRAP_S, texWrapMode);
+        glTexParameteri(target, GL_TEXTURE_WRAP_T, texWrapMode);
+        glTexParameteri(target, GL_TEXTURE_WRAP_R, texWrapMode);
+        glUniform1i(location, slot - GL_TEXTURE0); // be sure to convert from range [GL_TEXTURE0 ..] to [0 ..]
+    }
 }
 
 template <>

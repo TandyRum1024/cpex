@@ -31,6 +31,8 @@ namespace gfx {
         UniformSet mergedUniforms;
         /** Merged shader from either this material or parent(s). Do not directly modify this unless you know what you're doing!!! */
         std::shared_ptr<Shader> mergedShd;
+        /** List of texture uniforms. Do not directly modify this unless you know what you're doing!!! */
+        std::vector<std::shared_ptr<UniformSampler>> mergedUniformSamplers;
 
         /** Merge from parent materials and this material and cache them. */
         inline void process_merge();

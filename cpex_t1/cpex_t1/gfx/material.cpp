@@ -4,6 +4,7 @@
  */
 
 #include <gfx/material.hpp>
+#include <memory>
 
 using namespace gfx;
 
@@ -32,7 +33,7 @@ void Material::set_merge_required() {
     isMergeRequired = true;
 
     for (auto&& child: children) {
-        if (child->get_merge_required()) {
+        if (!child->get_merge_required()) {
             child->set_merge_required();
         }
     }
@@ -58,6 +59,7 @@ inline void Material::process_merge() {
             mergedShd = nullptr;
         }
 
+        mergedUniformSamplers.clear();
         mergedUniforms.clear();
         uniformLocations.clear();
         add_uniforms_to(mergedUniforms);
@@ -69,6 +71,10 @@ inline void Material::process_merge() {
                 // zcl::logger("GFX")->info("{}: FROM SHADER `{}`, UNIFORM `{}`: \t {}", id, shdMerged->get_name(), uniform->get_name(), location);
             }
             uniformLocations.push_back(location);
+
+            if (auto samplerUniform = std::dynamic_pointer_cast<UniformSampler>(uniform)) {
+                mergedUniformSamplers.push_back(samplerUniform);
+            }
         }
 
         isMergeRequired = false;
@@ -103,6 +109,12 @@ void Material::apply_material(TextureManager &texManager) {
     if (mergedShd) {
         mergedShd->apply_shader();
     }
+
+    // Bind all textures
+    for (auto&& samplerUniform: mergedUniformSamplers) {
+        auto res = texManager.bind_texture(samplerUniform->get_value());
+        // zcl::logger("GFX")->info("\t{}] bind tex {} -> {}", id, samplerUniform->get_name(), res);
+    }
     
     // Apply all uniforms
     auto& allUniforms = mergedUniforms.get_uniforms();
@@ -111,6 +123,7 @@ void Material::apply_material(TextureManager &texManager) {
         auto& location = uniformLocations[i];
         
         uniform->apply_uniform(location);
+        // zcl::logger("GFX")->info("\t{}] apply uni {}", id, uniform->get_name());
     }
 }
 

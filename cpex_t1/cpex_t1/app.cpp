@@ -142,13 +142,14 @@ void CpexApp::on_setup() {
     matBase->add_uniforms(
         gfx::UniformVec4("uTint", {1.0, 1.0, 1.0, 1.0}),
         gfx::UniformMat4("uMatTf", glm::translate(glm::mat4(1.0f), glm::vec3(0.5, 0.0, 0.0))),
-        gfx::UniformSampler2D("uBaseTexture", tex1),
-        gfx::UniformSampler2D("uOverTexture", tex2, GL_LINEAR, GL_CLAMP_TO_BORDER)
+        gfx::UniformSampler("uBaseTexture", tex1),
+        gfx::UniformSampler("uOverTexture", tex2, GL_LINEAR, GL_CLAMP_TO_BORDER)
     );
 
     mat->add_uniforms(
         gfx::UniformVec4("uTint", {0.0, 0.0, 0.0, 0.0}),
-        gfx::UniformMat4("uMatTf", glm::mat4(1.0f))
+        gfx::UniformMat4("uMatTf", glm::mat4(1.0f)),
+        gfx::UniformSampler("uOverTexture", tex1, GL_LINEAR, GL_CLAMP_TO_BORDER)
     );
 
     // Setup ImGui
@@ -202,12 +203,17 @@ void CpexApp::on_loop_render_begin(double dtMillis) {
 }
 
 void CpexApp::on_loop_render(double dtMillis) {
+    // _logger->info("Rrender begin");
+
     glClear(GL_COLOR_BUFFER_BIT);
+    texManager.clear();
 
     // Draw VAO with base material
     matBase->apply_material(texManager);
-    if (vb) {
-        vb->submit(GL_TRIANGLES, 0);
+    for (int i=0; i<4096; i++) {
+        if (vb) {
+            vb->submit(GL_TRIANGLES, 0);
+        }
     }
 
     // Draw VAO with child material
@@ -237,6 +243,8 @@ void CpexApp::on_loop_render(double dtMillis) {
     if (vb) {
         vb->submit(GL_TRIANGLES, 0);
     }
+
+    // assert(false);
 }
 
 void imgui_draw_stopwatch_node(const std::shared_ptr<zcl::trace::StopwatchSplitNode> node) {
@@ -280,6 +288,8 @@ void CpexApp::on_loop_debug_ui(double dtMillis) {
         for (auto&& root: roots) {
             imgui_draw_stopwatch_node(root);
         }
+
+        ImGui::BulletText("TextureManager: %d/%d", texManager.get_allocated_num(), gfx::TextureManager::TEXTURES_MAX);
 
         ImGui::DragFloat3("pos", glm::value_ptr(tfPos));
         ImGui::DragFloat3("rot", glm::value_ptr(tfRot));

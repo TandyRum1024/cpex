@@ -8,7 +8,7 @@
 #include <gfx/texture.hpp>
 
 // LIBRARIES //
-// #include <zcl/zcl.hpp>
+#include <zcl/zcl.hpp>
 
 // EXTERNAL LIBRARIES //
 // ----------------------------
@@ -33,6 +33,7 @@ Texture::Texture(std::string name, GLenum texTarget):
     name(name),
     texId(0),
     texTarget(texTarget),
+    texSlot(GL_TEXTURE0),
     fmtInternal(GL_RGBA8)
     {
     // zcl::logger("TEX")->info("TEXTURE {} CREATED", name);
@@ -47,6 +48,7 @@ Texture::Texture(Texture &&other):
     name(std::move(other.name)),
     texId(std::exchange(other.texId, 0)),
     texTarget(std::exchange(other.texTarget, 0)),
+    texSlot(std::exchange(other.texSlot, 0)),
     fmtInternal(std::exchange(other.fmtInternal, 0)) {}
 
 Texture& Texture::operator=(Texture &&other) {
@@ -60,10 +62,15 @@ Texture& Texture::operator=(Texture &&other) {
     std::swap(name, other.name);
     std::swap(texId, other.texId);
     std::swap(texTarget, other.texTarget);
+    std::swap(texSlot, other.texSlot);
     std::swap(fmtInternal, other.fmtInternal);
     // other.free_resources(); // will be automatically called @ destructor
 
     return *this;
+}
+
+GLuint Texture::get_texture_id() const {
+    return texId;
 }
 
 void Texture::free_resources() {
@@ -104,63 +111,99 @@ void Texture::set_format(GLint internalFormat) {
 }
 
 void Texture::bind(GLenum slot) {
-    glActiveTexture(slot);
+    texSlot = slot;
+    glActiveTexture(texSlot);
     glBindTexture(texTarget, texId);
 }
 
-void Texture::unbind(GLenum slot) {
-    glActiveTexture(slot);
+void Texture::unbind() {
+    glActiveTexture(texSlot);
     glBindTexture(texTarget, 0);
 }
 
-void Texture::set_texture_param(GLint texFilterMode, GLint texWrapMode) {
-    glTexParameteri(texTarget, GL_TEXTURE_MIN_FILTER, texFilterMode);
-    glTexParameteri(texTarget, GL_TEXTURE_MAG_FILTER, texFilterMode);
-    glTexParameteri(texTarget, GL_TEXTURE_WRAP_S, texWrapMode);
-    glTexParameteri(texTarget, GL_TEXTURE_WRAP_T, texWrapMode);
-    glTexParameteri(texTarget, GL_TEXTURE_WRAP_R, texWrapMode);
+GLenum Texture::get_bound_slot() const {
+    return texSlot;
+}
+
+GLenum Texture::get_target() const {
+    return texTarget;
 }
 
 TextureManager::TextureManager():
     currentUnitIdx(0) {};
 
-GLuint TextureManager::bind_texture(std::weak_ptr<Texture> tex) {
-    const static auto TEXTURES_MAX = (GL_TEXTURE31 - GL_TEXTURE0);
-    GLuint newSlot;
+TextureManager::~TextureManager() {
+    clear();
+}
+
+unsigned int TextureManager::bind_texture(const std::weak_ptr<Texture> &tex) {
+    auto texture = tex.lock();
+
+    if (!texture) {
+        return 0;
+    }
+
+    // Check for already bound texture
+    auto texId = texture->get_texture_id();
+
+    if (auto slot = slotsAllocatedByTexId.find(texId); slot != slotsAllocatedByTexId.end()) {
+        return slot->second;
+    }
+
+    bool mayRecycle = !slotsRecycled.empty();
+    unsigned int newSlot;
 
     // On overflow, release the earliest texture
-    if (unitsFree.empty() && currentUnitIdx >= TEXTURES_MAX) {
-        unbind_texture(0 + GL_TEXTURE0);
+    if (currentUnitIdx >= TEXTURES_MAX && !mayRecycle) {
+        unbind_texture(0);
+        mayRecycle = !slotsRecycled.empty();
     }
     
     // Check for available slots
-    if (unitsFree.empty()) {
-        newSlot = currentUnitIdx + GL_TEXTURE0;
-        currentUnitIdx++;
+    if (mayRecycle) {
+        newSlot = slotsRecycled.back();
+        slotsRecycled.pop_back();
     }
     else {
-        newSlot = unitsFree.back();
-        unitsFree.pop_back();
+        newSlot = currentUnitIdx;
+        currentUnitIdx++;
     }
 
-    if (auto texture = tex.lock()) {
-        unitsAllocated[newSlot] = tex;
-        texture->bind(newSlot);
-    }
-
+    // zcl::logger("TEX")->info("newSlot {}", newSlot);
+    slotsAllocated[newSlot] = tex;
+    slotsAllocatedByTexId[texId] = newSlot;
+    texture->bind(GL_TEXTURE0 + newSlot);
     return newSlot;
 }
 
-void TextureManager::unbind_texture(GLuint slot) {
-    if (!unitsAllocated.contains(slot)) {
+void TextureManager::unbind_texture(unsigned int slot) {
+    if (!slotsAllocated.contains(slot)) {
         return;
     }
     
-    if (auto texture = unitsAllocated.at(slot).lock()) {
-        texture->unbind(slot);
+    if (auto texture = slotsAllocated.at(slot).lock()) {
+        texture->unbind();
+        slotsAllocatedByTexId.erase(texture->get_texture_id());
     }
-    unitsAllocated.erase(slot);
-    unitsFree.push_back(slot);
+    slotsAllocated.erase(slot);
+    slotsRecycled.push_back(slot);
+}
+
+void TextureManager::clear() {
+    for (auto&& entry: slotsAllocated) {
+        if (auto texture = entry.second.lock()) {
+            texture->unbind();
+        }
+    }
+
+    currentUnitIdx = 0;
+    slotsAllocated.clear();
+    slotsAllocatedByTexId.clear();
+    slotsRecycled.clear();
+}
+
+unsigned int TextureManager::get_allocated_num() const {
+    return slotsAllocated.size();
 }
 
 void texhelper::texture_load_from_file_2d(Texture& tex, std::filesystem::path file, GLint formatOverride) {
