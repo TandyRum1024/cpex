@@ -13,6 +13,7 @@
 
 // LIBRARIES //
 #include <zcl/zcl.hpp>
+#include <gfx/vb.hpp>
 
 // EXTERNAL LIBRARIES //
 // ----------------------------
@@ -99,24 +100,41 @@ void CpexApp::on_setup() {
     tfScale = glm::vec3(1.0);
 
     // vb = std::make_shared<gfx::Vb<gfx::VertPosUv>>();
-    auto vb1 = gfx::Vb<gfx::VertPosUv>();
-    auto vb2 = gfx::Vb<gfx::VertPosUv>();
+    auto vb1 = gfx::Vb();
+    auto vb2 = gfx::Vb();
 
     // (model)
-    vb1.set_format(gfx::VertPosUv::format);
-    vb1.push_back_verts(std::vector<gfx::VertPosUv> {
+    auto verts = std::vector {
         gfx::VertPosUv({-0.5, -0.5, 0.0}, {0.0, 0.0}),
         gfx::VertPosUv({0.5, -0.5, 0.0}, {1.0, 0.0}),
         gfx::VertPosUv({-0.5, 0.5, 0.0}, {0.0, 1.0}),
         gfx::VertPosUv({0.5, 0.5, 0.0}, {1.0, 1.0}),
-    });
-    vb1.push_back_indices({
+    };
+    auto indices = std::vector<unsigned int> {
         0, 1, 2,
         1, 2, 3,
-    });
+    };
+
+    auto verts2 = std::vector {
+        gfx::VertPosUv({-0.2, 0.5, 0.0}, {0.0, 0.0}),
+        gfx::VertPosUv({0.2, 0.5, 0.0}, {1.0, 0.0}),
+        gfx::VertPosUv({-0.2, 0.9, 0.0}, {0.0, 1.0}),
+        gfx::VertPosUv({0.2, 0.9, 0.0}, {1.0, 1.0}),
+    };
+    auto indices2 = std::vector<unsigned int> {
+        0, 1, 2,
+        1, 2, 3,
+    };
+    
+    vb1.set_format(gfx::VertPosUv::format);
+    vb1.append_buffer<gfx::VertPosUv>(gfx::Vb::VB_BUFFER_VBO, verts);
+    vb1.append_buffer_indices(indices);
+    // vb1.clear_buffer_all();
+    vb1.append_buffer<gfx::VertPosUv>(gfx::Vb::VB_BUFFER_VBO, verts2);
+    vb1.append_buffer_indices(indices2, verts.size());
     vb1.build();
 
-    vb = std::make_shared<gfx::Vb<gfx::VertPosUv>>(std::move(vb1));
+    vb = std::make_shared<gfx::Vb>(std::move(vb1));
     shd = std::make_shared<gfx::Shader>("triangle");
 
     matBase = std::make_shared<gfx::Material>("hello");
@@ -214,11 +232,9 @@ void CpexApp::on_loop_render(double dtMillis) {
 
     // Draw VAO with base material
     // _logger->info("basemat");
-    for (int i=0; i<1024; i++) {
-        matBase->apply_material(texManager);
-        if (vb) {
-            vb->submit(GL_TRIANGLES, 0);
-        }
+    matBase->apply_material(texManager);
+    if (vb) {
+        vb->submit(GL_TRIANGLES, 0);
     }
 
     // Draw VAO with child material
