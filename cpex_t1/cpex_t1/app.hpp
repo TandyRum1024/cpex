@@ -14,6 +14,7 @@
 #include <gfx/shader.hpp>
 #include <gfx/vb.hpp>
 #include <gfx/vert.hpp>
+#include <zmd2/model.hpp>
 #include <zcl/zcl.hpp>
 
 // EXTERNAL LIBRARIES //
@@ -33,10 +34,13 @@
 /** App for CPEX - T1 */
 class CpexApp: public zap::OpenGlApp {
     // Scene
-    std::shared_ptr<gfx::Vb> vb;
-    std::shared_ptr<gfx::Shader> shd;
-    std::shared_ptr<gfx::Material> matBase;
-    std::shared_ptr<gfx::Material> mat;
+    // std::shared_ptr<gfx::Vb> vb;
+    // std::shared_ptr<gfx::Shader> shd;
+    // std::shared_ptr<gfx::Material> matBase;
+    // std::shared_ptr<gfx::Material> mat;
+
+    std::shared_ptr<zmd2::Model> model1;
+    std::shared_ptr<zmd2::Model> model2;
 
     double time;
 

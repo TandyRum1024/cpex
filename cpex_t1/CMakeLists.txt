@@ -63,7 +63,15 @@ list(
     SRC_LIBS
     ${DIR_ZCL}/zcl.cpp
 )
+# (ZMD2)
+set(DIR_ZMD2 ${CMAKE_CURRENT_SOURCE_DIR}/cpex_t1/zmd2)
+list(
+    APPEND
+    SRC_LIBS
+    ${DIR_ZMD2}/model.cpp
+)
 
+# Includes
 list(
     APPEND
     SRC_LIBS_INCL
@@ -161,10 +169,10 @@ target_include_directories(
 # {fmt} (https://github.com/fmtlib/fmt)
 set(VER_FMT "12.2.0")
 FetchContent_Declare(
-  fmt
-  GIT_REPOSITORY https://github.com/fmtlib/fmt
-  GIT_TAG ${VER_FMT}
-  GIT_SHALLOW TRUE
+    fmt
+    GIT_REPOSITORY https://github.com/fmtlib/fmt
+    GIT_TAG ${VER_FMT}
+    GIT_SHALLOW TRUE
 )
 FetchContent_MakeAvailable(fmt)
 list(APPEND EXT_LIBS fmt::fmt)

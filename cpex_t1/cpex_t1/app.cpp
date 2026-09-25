@@ -43,9 +43,8 @@ CpexApp::CpexApp(CpexApp &&other):
     tfPos(other.tfPos),
     tfRot(other.tfRot),
     tfScale(other.tfScale),
-    vb(std::move(other.vb)),
-    shd(std::move(other.shd)),
-    mat(std::move(other.mat)),
+    model1(std::move(other.model1)),
+    model2(std::move(other.model2)),
     imGuiContext(other.imGuiContext),
     texManager(gfx::TextureManager())
     {
@@ -65,9 +64,8 @@ CpexApp& CpexApp::operator=(CpexApp &&other) {
     std::swap(tfRot, other.tfRot);
     std::swap(tfScale, other.tfScale);
 
-    std::swap(vb, other.vb);
-    std::swap(shd, other.shd);
-    std::swap(mat, other.mat);
+    std::swap(model1, other.model1);
+    std::swap(model2, other.model2);
     std::swap(imGuiContext, other.imGuiContext);
 
     OpenGlApp::operator=(std::move(other));
@@ -134,11 +132,11 @@ void CpexApp::on_setup() {
     vb1.append_buffer_indices(indices2, verts.size());
     vb1.build();
 
-    vb = std::make_shared<gfx::Vb>(std::move(vb1));
-    shd = std::make_shared<gfx::Shader>("triangle");
+    auto vb = std::make_shared<gfx::Vb>(std::move(vb1));
+    auto shd = std::make_shared<gfx::Shader>("triangle");
 
-    matBase = std::make_shared<gfx::Material>("hello");
-    mat = gfx::material_make_inherited(matBase, "hello2");
+    auto matBase = std::make_shared<gfx::Material>("hello");
+    auto mat = gfx::material_make_inherited(matBase, "hello2");
     // mat = std::make_shared<gfx::Material>(gfx::Material("hello2", srcMat));
 
     // (shader)
@@ -173,6 +171,16 @@ void CpexApp::on_setup() {
         std::move(gfx::UniformMat4("uMatTf", glm::mat4(1.0f))),
         std::move(gfx::UniformSampler("uOverTexture", tex1, GL_LINEAR, GL_MIRRORED_REPEAT))
     );
+
+    // Model
+    model1 = std::make_shared<zmd2::Model>();
+    auto meshGroup = model1->reserve_meshgroup("hello");
+    meshGroup->material = matBase;
+    meshGroup->mesh = vb;
+
+    meshGroup = model1->reserve_meshgroup("hello2");
+    meshGroup->material = mat;
+    meshGroup->mesh = vb;
 
     // Setup ImGui
     imGuiContext = ImGui::CreateContext();
@@ -230,42 +238,32 @@ void CpexApp::on_loop_render(double dtMillis) {
     glClear(GL_COLOR_BUFFER_BIT);
     texManager.clear();
 
-    // Draw VAO with base material
-    // _logger->info("basemat");
-    matBase->apply_material(texManager);
-    if (vb) {
-        vb->submit(GL_TRIANGLES, 0);
-    }
+    auto material = model1->find_meshgroup_by_material_id("hello2")->material;
 
-    // Draw VAO with child material
-    //shd->apply_shader();
-    // _logger->info("childmat");
-    if (auto uniform = mat->get_uniform<gfx::UniformVec4>("uTint")) {
-        uniform->set_value({ (float) time, (float) time, (float) time, 1.0 });
-    }
-    if (auto uniform = mat->get_uniform<gfx::UniformMat4>("uMatTf")) {
-        auto tf = glm::rotate(
-            glm::rotate(
+    if (material) {
+        if (auto uniform = material->get_uniform<gfx::UniformVec4>("uTint")) {
+            uniform->set_value({ (float) time, (float) time, (float) time, 1.0 });
+        }
+        if (auto uniform = material->get_uniform<gfx::UniformMat4>("uMatTf")) {
+            auto tf = glm::rotate(
                 glm::rotate(
-                    glm::scale(glm::translate(glm::mat4(1.0), tfPos), tfScale),
-                    glm::radians(tfRot.x),
-                    glm::vec3(1.0, 0.0, 0.0)
+                    glm::rotate(
+                        glm::scale(glm::translate(glm::mat4(1.0), tfPos), tfScale),
+                        glm::radians(tfRot.x),
+                        glm::vec3(1.0, 0.0, 0.0)
+                    ),
+                    glm::radians(tfRot.y),
+                    glm::vec3(0.0, 1.0, 0.0)
                 ),
-                glm::radians(tfRot.y),
-                glm::vec3(0.0, 1.0, 0.0)
-            ),
-            glm::radians(tfRot.z),
-            glm::vec3(0.0, 0.0, 1.0)
-        );
-        
-        uniform->set_value(tf);
-    }
-    mat->apply_material(texManager);
-    
-    if (vb) {
-        vb->submit(GL_TRIANGLES, 0);
+                glm::radians(tfRot.z),
+                glm::vec3(0.0, 0.0, 1.0)
+            );
+            
+            uniform->set_value(tf);
+        }
     }
 
+    model1->submit(texManager);
     // assert(false);
 }
 
@@ -304,9 +302,11 @@ void CpexApp::on_loop_debug_ui(double dtMillis) {
         auto& repo = zcl::trace::StopwatchRepository::get_instance();
         auto roots = repo.get_all_splits_and_childs();
         auto frameTime = zcl::trace::stopwatch_get("frame")->calc_duration().count();
+        auto renderTime = zcl::trace::stopwatch_get("render")->calc_duration().count();
 
         ImGui::BulletText("time: %.2lf (dt: %.2lfms, FPS: %2.2lf)", time, dtMillis, (dtMillis == 0.0) ? 0 : (1000 / dtMillis));
-        ImGui::BulletText("frame time: %.2lf (FPS: %2.2lf)", frameTime, (frameTime == 0.0) ? 0 : (1000 / frameTime));
+        ImGui::BulletText("frame time: %.2lfms (%2.2lf%% | FPS: %2.2lf)", frameTime, (frameTime / 1000.0) * 100.0, (frameTime == 0.0) ? 0 : (1000 / frameTime));
+        ImGui::BulletText("render time: %.2lfms (%2.2lf%% | FPS: %2.2lf)", renderTime, (renderTime / 1000.0) * 100.0, (renderTime == 0.0) ? 0 : (1000 / renderTime));
         
         ImGui::BulletText("[STOPWATCH (%d)]", roots.size());
         for (auto&& root: roots) {
