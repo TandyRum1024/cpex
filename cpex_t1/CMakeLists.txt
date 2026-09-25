@@ -40,6 +40,8 @@ set(DIR_GFX ${CMAKE_CURRENT_SOURCE_DIR}/cpex_t1/gfx)
 list(
     APPEND
     SRC_LIBS
+    ${DIR_GFX}/transform.cpp
+    ${DIR_GFX}/math.cpp
     ${DIR_GFX}/material.cpp
     ${DIR_GFX}/shader.cpp
     ${DIR_GFX}/vb.cpp

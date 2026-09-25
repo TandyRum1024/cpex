@@ -9,6 +9,7 @@
 
 // LIBRARIES //
 #include <zap/opengl/opengl.hpp>
+#include <gfx/transform.hpp>
 #include <gfx/texture.hpp>
 #include <gfx/material.hpp>
 #include <gfx/shader.hpp>
@@ -34,19 +35,12 @@
 /** App for CPEX - T1 */
 class CpexApp: public zap::OpenGlApp {
     // Scene
-    // std::shared_ptr<gfx::Vb> vb;
-    // std::shared_ptr<gfx::Shader> shd;
-    // std::shared_ptr<gfx::Material> matBase;
-    // std::shared_ptr<gfx::Material> mat;
-
     std::shared_ptr<zmd2::Model> model1;
     std::shared_ptr<zmd2::Model> model2;
 
     double time;
 
-    glm::vec3 tfPos;
-    glm::vec3 tfRot;
-    glm::vec3 tfScale;
+    gfx::Transform tf;
 
     // ImGui
     ImGuiContext* imGuiContext = nullptr;

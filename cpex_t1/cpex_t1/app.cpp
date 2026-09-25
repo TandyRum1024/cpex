@@ -14,6 +14,8 @@
 // LIBRARIES //
 #include <zcl/zcl.hpp>
 #include <gfx/vb.hpp>
+#include <gfx/math.hpp>
+#include <gfx/transform.hpp>
 
 // EXTERNAL LIBRARIES //
 // ----------------------------
@@ -40,9 +42,7 @@ CpexApp::~CpexApp() {
 CpexApp::CpexApp(CpexApp &&other):
     OpenGlApp(std::move(other)),
     time(std::exchange(other.time, 0.0)),
-    tfPos(other.tfPos),
-    tfRot(other.tfRot),
-    tfScale(other.tfScale),
+    tf(other.tf),
     model1(std::move(other.model1)),
     model2(std::move(other.model2)),
     imGuiContext(other.imGuiContext),
@@ -60,9 +60,7 @@ CpexApp& CpexApp::operator=(CpexApp &&other) {
     }   
 
     std::swap(time, other.time);
-    std::swap(tfPos, other.tfPos);
-    std::swap(tfRot, other.tfRot);
-    std::swap(tfScale, other.tfScale);
+    std::swap(tf, other.tf);
 
     std::swap(model1, other.model1);
     std::swap(model2, other.model2);
@@ -93,13 +91,12 @@ void CpexApp::on_setup() {
 
     // Setup scene
     time = 0;
-    tfPos = glm::vec3(-0.5, 0.0, 0.0);
-    tfRot = glm::vec3(0.0);
-    tfScale = glm::vec3(1.0);
+    tf.pos = glm::vec3(-0.5, 0.0, 0.0);
+    tf.rot = glm::vec3(0.0);
+    tf.scale = glm::vec3(1.0);
 
     // vb = std::make_shared<gfx::Vb<gfx::VertPosUv>>();
     auto vb1 = gfx::Vb();
-    auto vb2 = gfx::Vb();
 
     // (model)
     auto verts = std::vector {
@@ -132,8 +129,16 @@ void CpexApp::on_setup() {
     vb1.append_buffer_indices(indices2, verts.size());
     vb1.build();
 
+    auto vb2 = std::make_shared<gfx::Vb>();
+
+    vb2->set_format(gfx::VertPosUv::format);
+    vb2->set_buffer<gfx::VertPosUv>(gfx::Vb::VB_BUFFER_VBO, verts);
+    vb2->set_buffer_indices(indices);
+    vb2->build();
+
     auto vb = std::make_shared<gfx::Vb>(std::move(vb1));
-    auto shd = std::make_shared<gfx::Shader>("triangle");
+    auto shdBase = std::make_shared<gfx::Shader>("base");
+    auto shdTest = std::make_shared<gfx::Shader>("triangle");
 
     auto matBase = std::make_shared<gfx::Material>("hello");
     auto mat = gfx::material_make_inherited(matBase, "hello2");
@@ -141,9 +146,13 @@ void CpexApp::on_setup() {
 
     // (shader)
     try {
-        shd->load_shader_from(assetPath / "triangle.vert", GL_VERTEX_SHADER);
-        shd->load_shader_from(assetPath / "triangle.frag", GL_FRAGMENT_SHADER);
-        shd->link_program();
+        shdBase->load_shader_from(assetPath / "base.vert", GL_VERTEX_SHADER);
+        shdBase->load_shader_from(assetPath / "base.frag", GL_FRAGMENT_SHADER);
+        shdBase->link_program();
+
+        shdTest->load_shader_from(assetPath / "test.vert", GL_VERTEX_SHADER);
+        shdTest->load_shader_from(assetPath / "test.frag", GL_FRAGMENT_SHADER);
+        shdTest->link_program();
     }
     catch (std::runtime_error err) {
         throw std::runtime_error("FAILED TO PREPARE SHADER!\n" + std::string(err.what()));
@@ -151,29 +160,43 @@ void CpexApp::on_setup() {
 
     // (material)
     auto    tex1 = std::make_shared<gfx::Texture>("tex1"),
-            tex2 = std::make_shared<gfx::Texture>("tex2");
+            tex2 = std::make_shared<gfx::Texture>("tex2"),
+            tex3 = std::make_shared<gfx::Texture>("tex3");
     
     gfx::texhelper::texture_load_from_file_2d(*tex1, assetPath / "textest.png");
     gfx::texhelper::texture_load_from_file_2d(*tex2, assetPath / "sprtest.png");
+    gfx::texhelper::texture_load_from_file_2d(*tex3, assetPath / "checker.png");
 
     // std::forward<gfx::UniformVec4>(gfx::UniformVec4("uTint", {1.0, 1.0, 1.0, 1.0}));
 
-    matBase->set_shader(shd);
+    matBase->set_shader(shdTest);
     matBase->add_uniforms(
-        std::move(gfx::UniformVec4("uTint", {1.0, 1.0, 1.0, 1.0})),
-        std::move(gfx::UniformMat4("uMatTf", glm::translate(glm::mat4(1.0f), glm::vec3(0.5, 0.0, 0.0)))),
-        std::move(gfx::UniformSampler("uBaseTexture", tex1)),
-        std::move(gfx::UniformSampler("uOverTexture", tex2, GL_LINEAR, GL_CLAMP_TO_BORDER))
+        gfx::UniformVec4("uTint", {1.0, 1.0, 1.0, 1.0}),
+        gfx::UniformMat4("uMatModel", glm::translate(glm::mat4(1.0f), glm::vec3(0.5, 0.0, 0.0))),
+        gfx::UniformMat4("uMatView", glm::mat4(1.0f)),
+        gfx::UniformMat4("uMatPerspective", glm::mat4(1.0f)),
+        gfx::UniformSampler("uBaseTexture", tex1),
+        gfx::UniformSampler("uOverTexture", tex2, GL_LINEAR, GL_CLAMP_TO_BORDER)
     );
 
     mat->add_uniforms(
-        std::move(gfx::UniformVec4("uTint", {0.0, 0.0, 0.0, 0.0})),
-        std::move(gfx::UniformMat4("uMatTf", glm::mat4(1.0f))),
-        std::move(gfx::UniformSampler("uOverTexture", tex1, GL_LINEAR, GL_MIRRORED_REPEAT))
+        gfx::UniformVec4("uTint", {0.0, 0.0, 0.0, 0.0}),
+        gfx::UniformMat4("uMatModel", glm::mat4(1.0f)),
+        gfx::UniformSampler("uOverTexture", tex1, GL_LINEAR, GL_MIRRORED_REPEAT)
+    );
+
+    auto matChecker = std::make_shared<gfx::Material>("base");
+    matChecker->set_shader(shdBase);
+    matChecker->add_uniforms(
+        gfx::UniformVec4("uTint", {1.0, 1.0, 1.0, 1.0}),
+        gfx::UniformMat4("uMatModel", glm::mat4(1.0f)),
+        gfx::UniformMat4("uMatView", glm::mat4(1.0f)),
+        gfx::UniformMat4("uMatPerspective", glm::mat4(1.0f)),
+        gfx::UniformSampler("uAlbedo", tex3, GL_NEAREST, GL_REPEAT)
     );
 
     // Model
-    model1 = std::make_shared<zmd2::Model>();
+    model1 = std::make_shared<zmd2::Model>("testModel");
     auto meshGroup = model1->reserve_meshgroup("hello");
     meshGroup->material = matBase;
     meshGroup->mesh = vb;
@@ -181,6 +204,11 @@ void CpexApp::on_setup() {
     meshGroup = model1->reserve_meshgroup("hello2");
     meshGroup->material = mat;
     meshGroup->mesh = vb;
+
+    model2 = std::make_shared<zmd2::Model>("floor");
+    meshGroup = model2->reserve_meshgroup("base");
+    meshGroup->material = matChecker;
+    meshGroup->mesh = vb2;
 
     // Setup ImGui
     imGuiContext = ImGui::CreateContext();
@@ -244,26 +272,16 @@ void CpexApp::on_loop_render(double dtMillis) {
         if (auto uniform = material->get_uniform<gfx::UniformVec4>("uTint")) {
             uniform->set_value({ (float) time, (float) time, (float) time, 1.0 });
         }
-        if (auto uniform = material->get_uniform<gfx::UniformMat4>("uMatTf")) {
-            auto tf = glm::rotate(
-                glm::rotate(
-                    glm::rotate(
-                        glm::scale(glm::translate(glm::mat4(1.0), tfPos), tfScale),
-                        glm::radians(tfRot.x),
-                        glm::vec3(1.0, 0.0, 0.0)
-                    ),
-                    glm::radians(tfRot.y),
-                    glm::vec3(0.0, 1.0, 0.0)
-                ),
-                glm::radians(tfRot.z),
-                glm::vec3(0.0, 0.0, 1.0)
-            );
+        if (auto uniform = material->get_uniform<gfx::UniformMat4>("uMatModel")) {
+            auto tf = this->tf.to_mat4();
             
             uniform->set_value(tf);
         }
     }
 
     model1->submit(texManager);
+
+    // model2->submit(texManager);
     // assert(false);
 }
 
@@ -315,9 +333,14 @@ void CpexApp::on_loop_debug_ui(double dtMillis) {
 
         ImGui::BulletText("TextureManager: %d/%d", texManager.get_allocated_num(), gfx::TextureManager::SLOTS_MAX);
 
-        ImGui::DragFloat3("pos", glm::value_ptr(tfPos));
-        ImGui::DragFloat3("rot", glm::value_ptr(tfRot));
-        ImGui::DragFloat3("scale", glm::value_ptr(tfScale));
+        auto rot = glm::degrees(glm::eulerAngles(tf.rot));
+
+        ImGui::DragFloat3("pos", glm::value_ptr(tf.pos));
+        if (ImGui::DragFloat3("rot", glm::value_ptr(rot))) {
+            tf.rot = glm::quat(glm::radians(rot));
+        }
+        ImGui::DragFloat3("scale", glm::value_ptr(tf.scale));
+        
     }
     ImGui::End();
 
