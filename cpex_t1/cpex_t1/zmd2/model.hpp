@@ -6,6 +6,7 @@
 #ifndef __ZMD2_MDL_GUARD
 #define __ZMD2_MDL_GUARD
 
+#include <istream>
 #include <string>
 #include <memory>
 #include <vector>
@@ -27,17 +28,24 @@ namespace zmd2 {
 
         // (a model may contain multiple meshes grouped by mesh!)
 
-        std::vector<std::shared_ptr<MeshGroup>> meshGroups;
         // std::vector<std::shared_ptr<gfx::Material>> materials;
         // std::vector<std::shared_ptr<gfx::Vb>> meshes;
 
+        std::vector<std::shared_ptr<MeshGroup>> meshGroups;
         std::map<std::string, std::shared_ptr<MeshGroup>> meshGroupsByMaterialId;
     
     public:
+        Model(std::string id);
+
+        /** Reserve and return a new meshgroup for given material ID. */
         std::shared_ptr<MeshGroup> reserve_meshgroup(const std::string &materialId);
+        /** Find and return meshgroups for given material ID. */
         std::shared_ptr<MeshGroup> find_meshgroup_by_material_id(const std::string &materialId) const;
-        void submit(gfx::TextureManager texManager) const;
+        /** Submit all meshgroups to GPU. */
+        void submit(gfx::TextureManager &texManager) const;
     };
+
+    std::shared_ptr<Model> load_model_from(std::istream in);
 }
 
 #endif

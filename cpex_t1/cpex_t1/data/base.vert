@@ -6,11 +6,11 @@ out vec2 vUv;
 
 uniform mat4 uMatModel;
 uniform mat4 uMatView;
-uniform mat4 uMatPerspective;
+uniform mat4 uMatProjection;
 
 void main() {
     vec4 vertPos = vec4(inPos.xyz, 1.0);
-    vec4 vertPosClip = uMatModel * uMatView * uMatPerspective * vertPos;
+    vec4 vertPosClip = uMatProjection * uMatView * uMatModel * vertPos;
 
     gl_Position = vertPosClip;
     vUv = inUv;

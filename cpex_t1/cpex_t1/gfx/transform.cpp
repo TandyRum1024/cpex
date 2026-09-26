@@ -16,7 +16,7 @@
 using namespace gfx;
 
 Transform::Transform():
-    Transform(glm::vec3(0.0), glm::quat(glm::vec3(0.0)), glm::vec3(0.0)) {}
+    Transform(glm::vec3(0.0), glm::quat(glm::vec3(0.0)), glm::vec3(1.0)) {}
 
 Transform::Transform(glm::vec3 pos, glm::vec3 eulerAnglesRad, glm::vec3 scale):
     Transform(pos, glm::quat(eulerAnglesRad), scale) {}

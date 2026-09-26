@@ -184,10 +184,10 @@ unsigned int TextureManager::bind_texture(const std::weak_ptr<Texture> &tex, con
         currentSlotIdx++;
     }
 
-    // zcl::logger("TEX")->info("newSlot {}", newSlot);
     slotsAllocated[newSlot] = TextureAndKey { .texture = tex, .key = key };
     slotsAllocatedTbl[key] = newSlot;
     texture->bind(GL_TEXTURE0 + newSlot);
+    // zcl::logger("TEX")->info("newSlot {} ({})", newSlot, slotsAllocated.size());
     return newSlot;
 }
 
@@ -210,6 +210,8 @@ void TextureManager::clear() {
             texture->unbind();
         }
     }
+
+    // zcl::logger("TEX")->info("clear");
 
     currentSlotIdx = 0;
     slotsAllocated.clear();

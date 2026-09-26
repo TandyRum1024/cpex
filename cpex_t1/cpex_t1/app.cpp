@@ -91,9 +91,6 @@ void CpexApp::on_setup() {
 
     // Setup scene
     time = 0;
-    tf.pos = glm::vec3(-0.5, 0.0, 0.0);
-    tf.rot = glm::vec3(0.0);
-    tf.scale = glm::vec3(1.0);
 
     // vb = std::make_shared<gfx::Vb<gfx::VertPosUv>>();
     auto vb1 = gfx::Vb();
@@ -191,7 +188,7 @@ void CpexApp::on_setup() {
         gfx::UniformVec4("uTint", {1.0, 1.0, 1.0, 1.0}),
         gfx::UniformMat4("uMatModel", glm::mat4(1.0f)),
         gfx::UniformMat4("uMatView", glm::mat4(1.0f)),
-        gfx::UniformMat4("uMatPerspective", glm::mat4(1.0f)),
+        gfx::UniformMat4("uMatProjection", glm::mat4(1.0f)),
         gfx::UniformSampler("uAlbedo", tex3, GL_NEAREST, GL_REPEAT)
     );
 
@@ -247,7 +244,7 @@ void CpexApp::on_loop_update(double dtMillis) {
     set_window_title(std::string("CT1 (DT: ") + std::to_string(dtMillis) + "ms)");
 
     time += dtMillis * 0.001;
-    time = fmod(time, 1.0);
+    // time = fmod(time, 1.0);
 }
 
 void CpexApp::on_loop_render_begin(double dtMillis) {
@@ -263,10 +260,19 @@ void CpexApp::on_loop_render_begin(double dtMillis) {
 void CpexApp::on_loop_render(double dtMillis) {
     // _logger->info("Rrender begin");
 
+    auto angle = time * glm::pi<double>();
+    auto camPos = glm::vec3(
+        glm::cos(angle) * 1,
+        glm::sin(angle) * 1,
+        1
+    );
+    auto matProj = glm::perspectiveFov(90.0, (double)windowWid, (double)windowHei, 0.001, 1024.0);
+    auto matView = glm::lookAt(camPos, glm::vec3(0.0), glm::vec3(0.0, 0.0, 1.0));
+
     glClear(GL_COLOR_BUFFER_BIT);
     texManager.clear();
 
-    auto material = model1->find_meshgroup_by_material_id("hello2")->material;
+    auto material = model2->find_meshgroup_by_material_id("base")->material;
 
     if (material) {
         if (auto uniform = material->get_uniform<gfx::UniformVec4>("uTint")) {
@@ -277,9 +283,17 @@ void CpexApp::on_loop_render(double dtMillis) {
             
             uniform->set_value(tf);
         }
+        if (auto uniform = material->get_uniform<gfx::UniformMat4>("uMatView")) {
+            uniform->set_value(matView);
+        }
+        if (auto uniform = material->get_uniform<gfx::UniformMat4>("uMatProjection")) {
+            uniform->set_value(matProj);
+        }
     }
 
-    model1->submit(texManager);
+    model2->submit(texManager);
+
+    // _logger->info("TEX: {}", texManager.get_allocated_num());
 
     // model2->submit(texManager);
     // assert(false);

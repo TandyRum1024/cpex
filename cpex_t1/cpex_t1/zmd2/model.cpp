@@ -7,6 +7,9 @@
 
 using namespace zmd2;
 
+Model::Model(std::string id):
+    id(id) {}
+
 std::shared_ptr<MeshGroup> Model::reserve_meshgroup(const std::string &materialId) {
     if (meshGroupsByMaterialId.contains(materialId)) {
         return meshGroupsByMaterialId.at(materialId);
@@ -36,7 +39,7 @@ std::shared_ptr<MeshGroup> Model::find_meshgroup_by_material_id(const std::strin
     return (*res).second;
 }
 
-void Model::submit(gfx::TextureManager texManager) const {
+void Model::submit(gfx::TextureManager &texManager) const {
     for (auto &&meshGroup: meshGroups) {
         auto material = meshGroup->material;
         auto mesh = meshGroup->mesh;
@@ -48,4 +51,10 @@ void Model::submit(gfx::TextureManager texManager) const {
         material->apply_material(texManager);
         mesh->submit(GL_TRIANGLES, 0);
     }
+}
+
+std::shared_ptr<Model> load_model_from(std::istream in) {
+    auto model = Model("hello");
+
+    return std::make_shared<Model>(model);
 }
