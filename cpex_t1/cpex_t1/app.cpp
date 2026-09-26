@@ -105,18 +105,10 @@ void CpexApp::on_setup() {
     auto shdTest = assetManager.load_shader("test");
 
     auto matBase = std::make_shared<gfx::Material>("base");
-    auto matHello = std::make_shared<gfx::Material>("hello");
-    auto matDerived = gfx::material_make_inherited(matHello, "hello2");
+    auto matCubeBase = gfx::material_make_inherited(matBase, "matCubeBase");
+    auto matCube1 = gfx::material_make_inherited(matCubeBase, "cube1");
+    auto matCube2 = gfx::material_make_inherited(matCubeBase, "cube2");
 
-    matHello->set_shader(shdTest);
-    matHello->add_uniforms(
-        gfx::UniformVec4("uTint", {1.0, 1.0, 1.0, 1.0}),
-        gfx::UniformMat4("uMatModel", glm::translate(glm::mat4(1.0f), glm::vec3(0.5, 0.0, 0.0))),
-        gfx::UniformMat4("uMatView", glm::mat4(1.0f)),
-        gfx::UniformMat4("uMatPerspective", glm::mat4(1.0f)),
-        gfx::UniformSampler("uBaseTexture", texCat2),
-        gfx::UniformSampler("uOverTexture", texCat1, GL_LINEAR, GL_CLAMP_TO_BORDER)
-    );
     matBase->set_shader(shdBase);
     matBase->add_uniforms(
         gfx::UniformVec4("uTint", {1.0, 1.0, 1.0, 1.0}),
@@ -125,31 +117,22 @@ void CpexApp::on_setup() {
         gfx::UniformMat4("uMatProjection", glm::mat4(1.0f)),
         gfx::UniformSampler("uAlbedo", texChecker, GL_NEAREST, GL_REPEAT)
     );
-    matDerived->add_uniforms(
-        gfx::UniformVec4("uTint", {0.0, 0.0, 0.0, 0.0}),
-        gfx::UniformMat4("uMatModel", glm::mat4(1.0f)),
-        gfx::UniformSampler("uOverTexture", texCat2, GL_LINEAR, GL_MIRRORED_REPEAT)
+
+    matCubeBase->add_uniforms(
+        gfx::UniformMat4("uMatModel", glm::mat4(1.0f))
+    );
+    matCube1->add_uniforms(
+        gfx::UniformSampler("uAlbedo", texFace1, GL_NEAREST, GL_MIRRORED_REPEAT)
+    );
+    matCube2->add_uniforms(
+        gfx::UniformSampler("uAlbedo", texFace2, GL_NEAREST, GL_MIRRORED_REPEAT)
     );
 
     assetManager.add_material(matBase->get_id(), matBase);
-    assetManager.add_material(matHello->get_id(), matHello);
-    assetManager.add_material(matDerived->get_id(), matDerived);
+    assetManager.add_material(matCube1->get_id(), matCube1);
+    assetManager.add_material(matCube2->get_id(), matCube2);
 
     // Build models
-    auto verts = std::vector {
-        gfx::VertPosUv({-0.5, -0.5, 0.0}, {0.0, 0.0}),
-        gfx::VertPosUv({0.5, -0.5, 0.0}, {1.0, 0.0}),
-        gfx::VertPosUv({-0.5, 0.5, 0.0}, {0.0, 1.0}),
-        gfx::VertPosUv({0.5, 0.5, 0.0}, {1.0, 1.0}),
-    };
-    
-    auto verts2 = std::vector {
-        gfx::VertPosUv({-0.2, 0.5, 0.0}, {0.0, 0.0}),
-        gfx::VertPosUv({0.2, 0.5, 0.0}, {1.0, 0.0}),
-        gfx::VertPosUv({-0.2, 0.9, 0.0}, {0.0, 1.0}),
-        gfx::VertPosUv({0.2, 0.9, 0.0}, {1.0, 1.0}),
-    };
-
     auto floorSize = 4.0;
     auto vertsFloor = std::vector {
         gfx::VertPosUv(glm::vec3(-0.5, -0.5, 0.0) * glm::vec3(floorSize), glm::vec2(0.0, 0.0) * glm::vec2(floorSize)),
@@ -163,10 +146,10 @@ void CpexApp::on_setup() {
     };
 
     auto vertsCube1 = std::vector {
-        gfx::VertPosUv({-0.5, -0.5, 0.5}, {0.0, 0.0}),
-        gfx::VertPosUv({0.5, -0.5, 0.5}, {1.0, 0.0}),
-        gfx::VertPosUv({-0.5, 0.5, 0.5}, {0.0, 1.0}),
-        gfx::VertPosUv({0.5, 0.5, 0.5}, {1.0, 1.0}),
+        gfx::VertPosUv({-0.5, -0.5, -0.5}, {0.0, 0.0}),
+        gfx::VertPosUv({0.5, -0.5, -0.5}, {1.0, 0.0}),
+        gfx::VertPosUv({-0.5, 0.5, -0.5}, {0.0, 1.0}),
+        gfx::VertPosUv({0.5, 0.5, -0.5}, {1.0, 1.0}),
 
         gfx::VertPosUv({-0.5, -0.5, -0.5}, {0.0, 0.0}),
         gfx::VertPosUv({-0.5, 0.5, -0.5}, {1.0, 0.0}),
@@ -180,10 +163,10 @@ void CpexApp::on_setup() {
     };
 
     auto vertsCube2 = std::vector {
-        gfx::VertPosUv({-0.5, -0.5, -0.5}, {0.0, 0.0}),
-        gfx::VertPosUv({0.5, -0.5, -0.5}, {1.0, 0.0}),
-        gfx::VertPosUv({-0.5, 0.5, -0.5}, {0.0, 1.0}),
-        gfx::VertPosUv({0.5, 0.5, -0.5}, {1.0, 1.0}),
+        gfx::VertPosUv({-0.5, -0.5, 0.5}, {0.0, 0.0}),
+        gfx::VertPosUv({0.5, -0.5, 0.5}, {1.0, 0.0}),
+        gfx::VertPosUv({-0.5, 0.5, 0.5}, {0.0, 1.0}),
+        gfx::VertPosUv({0.5, 0.5, 0.5}, {1.0, 1.0}),
 
         gfx::VertPosUv({-0.5, -0.5, -0.5}, {0.0, 0.0}),
         gfx::VertPosUv({0.5, -0.5, -0.5}, {1.0, 0.0}),
@@ -207,16 +190,6 @@ void CpexApp::on_setup() {
         9, 10, 11,
     };
     
-    auto vb1 = gfx::Vb();
-    
-    vb1.set_format(gfx::VertPosUv::format);
-    vb1.append_buffer<gfx::VertPosUv>(gfx::Vb::VB_BUFFER_VBO, verts);
-    vb1.append_buffer_indices(indices);
-    // vb1.clear_buffer_all();
-    vb1.append_buffer<gfx::VertPosUv>(gfx::Vb::VB_BUFFER_VBO, verts2);
-    vb1.append_buffer_indices(indices, verts.size());
-    vb1.build();
-
     auto vbChecker = std::make_shared<gfx::Vb>();
 
     vbChecker->set_format(gfx::VertPosUv::format);
@@ -236,17 +209,15 @@ void CpexApp::on_setup() {
     vbCube2->set_buffer_indices(indicesCube);
     vbCube2->build();
 
-    auto vbTest = std::make_shared<gfx::Vb>(std::move(vb1));
-
     // Model
-    model1 = std::make_shared<zmd2::Model>("testModel");
-    auto meshGroup = model1->reserve_meshgroup("hello");
-    meshGroup->material = assetManager.get_material("hello");
-    meshGroup->mesh = vbTest;
+    model1 = std::make_shared<zmd2::Model>("cube");
+    auto meshGroup = model1->reserve_meshgroup("cube1");
+    meshGroup->material = assetManager.get_material("cube1");
+    meshGroup->mesh = vbCube1;
 
-    meshGroup = model1->reserve_meshgroup("hello2");
-    meshGroup->material = assetManager.get_material("hello2");
-    meshGroup->mesh = vbTest;
+    meshGroup = model1->reserve_meshgroup("cube2");
+    meshGroup->material = assetManager.get_material("cube2");
+    meshGroup->mesh = vbCube2;
 
     model2 = std::make_shared<zmd2::Model>("floor");
     meshGroup = model2->reserve_meshgroup("base");
@@ -261,6 +232,7 @@ void CpexApp::on_setup() {
     // Misc.
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glEnable(GL_BLEND);
+    glEnable(GL_DEPTH_TEST);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     if (auto mat = assetManager.get_material("hello"); mat) {
@@ -318,16 +290,18 @@ void CpexApp::on_loop_render(double dtMillis) {
     );
     auto matProj = glm::perspectiveFov(90.0, (double)windowWid, (double)windowHei, 0.001, 1024.0);
     auto matView = glm::lookAt(camPos, glm::vec3(0.0), glm::vec3(0.0, 0.0, 1.0));
-
-    glClear(GL_COLOR_BUFFER_BIT);
+    
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     texManager.clear();
-
+    
+    // Floor
     if (auto material = model2->find_meshgroup_by_material_id("base")->material; material) {
         if (auto uniform = material->get_uniform<gfx::UniformVec4>("uTint")) {
             uniform->set_value({ (float) time, (float) time, (float) time, 1.0 });
         }
         if (auto uniform = material->get_uniform<gfx::UniformMat4>("uMatModel")) {
             auto tf = this->tf.to_mat4();
+
             uniform->set_value(tf);
         }
         if (auto uniform = material->get_uniform<gfx::UniformMat4>("uMatView")) {
@@ -337,8 +311,24 @@ void CpexApp::on_loop_render(double dtMillis) {
             uniform->set_value(matProj);
         }
     }
-    
+
     model2->submit(texManager);
+
+    // Cube
+    if (auto material = model1->find_meshgroup_by_material_id("cube1")->material; material) {
+        if (auto uniform = material->get_uniform<gfx::UniformMat4>("uMatModel")) {
+            auto tfCube = gfx::Transform(
+                glm::vec3(0, 0, 0.5),
+                glm::vec3(glm::radians(45.0), 0, time * -1.25 * glm::pi<double>()),
+                glm::vec3(0.5)
+            );
+            auto mat = tfCube.to_mat4();
+
+            uniform->set_value(mat);
+        }
+    }
+
+    model1->submit(texManager);
 
     // model2->submit(texManager);
     // assert(false);
