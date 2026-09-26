@@ -17,6 +17,7 @@
 #include <gfx/vert.hpp>
 #include <zmd2/model.hpp>
 #include <zcl/zcl.hpp>
+#include <zen/asset_manager.hpp>
 
 // EXTERNAL LIBRARIES //
 // ----------------------------
@@ -46,6 +47,7 @@ class CpexApp: public zap::OpenGlApp {
     ImGuiContext* imGuiContext = nullptr;
 
     // Renderer
+    zen::AssetManager assetManager;
     gfx::TextureManager texManager;
 
     void free_imgui();

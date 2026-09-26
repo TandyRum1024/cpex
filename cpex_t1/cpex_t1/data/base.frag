@@ -8,4 +8,5 @@ void main() {
     vec4 final = texture(uAlbedo, vUv);
     
     FragColor = final;
+    //FragColor = vec4(1.0);
 }

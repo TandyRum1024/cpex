@@ -68,7 +68,7 @@ inline void Material::process_merge() {
             GLint location = 0;
             if (mergedShd) {
                 location = mergedShd->get_uniform_location(uniform->get_name());
-                // zcl::logger("GFX")->info("{}: FROM SHADER `{}`, UNIFORM `{}`: \t {}", id, shdMerged->get_name(), uniform->get_name(), location);
+                zcl::logger("GFX")->info("{}: FROM SHADER `{}`, UNIFORM `{}`: {}", id, mergedShd->get_name(), uniform->get_name(), location);
             }
             uniformLocations.push_back(location);
 

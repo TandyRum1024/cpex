@@ -58,6 +58,13 @@ list(
     ${DIR_ZAP}/zap.cpp
     ${DIR_ZAP}/opengl/opengl.cpp
 )
+# (ZEN)
+set(DIR_ZEN ${CMAKE_CURRENT_SOURCE_DIR}/cpex_t1/zen)
+list(
+    APPEND
+    SRC_LIBS
+    ${DIR_ZEN}/asset_manager.cpp
+)
 # (ZCL)
 set(DIR_ZCL ${CMAKE_CURRENT_SOURCE_DIR}/zcl)
 list(

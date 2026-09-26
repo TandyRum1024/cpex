@@ -15,7 +15,7 @@ std::shared_ptr<MeshGroup> Model::reserve_meshgroup(const std::string &materialI
         return meshGroupsByMaterialId.at(materialId);
     }
 
-    zcl::logger("ZMD2")->trace("MODEL {} MESHGROUP RESERVING => {}", id, materialId);
+    zcl::logger("ZMD2")->warn("MODEL {} MESHGROUP RESERVING => {}", id, materialId);
 
     // Make a new meshgroup entry
     // auto mesh = std::make_shared<gfx::Vb>();
@@ -40,14 +40,23 @@ std::shared_ptr<MeshGroup> Model::find_meshgroup_by_material_id(const std::strin
 }
 
 void Model::submit(gfx::TextureManager &texManager) const {
+    // zcl::logger("ZMD2")->warn("SUBMIT MODEL {}...", id);
+
     for (auto &&meshGroup: meshGroups) {
         auto material = meshGroup->material;
         auto mesh = meshGroup->mesh;
 
         if (!material || !mesh) {
+            if (material) {
+                zcl::logger("ZMD2")->error("MODEL {} HAS NO MESH FOR MESHGROUP {}!", id, material->get_id());
+            }
+            else {
+                zcl::logger("ZMD2")->error("MODEL {} HAS NO MESH OR MATERIAL!", id);
+            }
             continue;
         }
 
+        // zcl::logger("ZMD2")->warn("MODEL {} SUBMIT! ({}, {} verts)", id, material->get_id(), mesh->get_indices_num());
         material->apply_material(texManager);
         mesh->submit(GL_TRIANGLES, 0);
     }
