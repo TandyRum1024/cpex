@@ -6,6 +6,8 @@
 #ifndef __ZCL_GUARD
 #define __ZCL_GUARD
 
+#include <ranges>
+#include <string_view>
 #include <array>
 #include <map>
 #include <exception>
@@ -20,6 +22,7 @@
 // ----------------------------
 #include <spdlog/spdlog.h>
 #include <fmt/format.h>
+#include <fmt/ranges.h>
 // ----------------------------
 // EXTERNAL LIBRARIES //
 
@@ -35,10 +38,11 @@ namespace zcl {
     namespace str {
         // Template functions needs to be declared here!!
         
-        /** Converts `std::array` to string. */
-        template <typename T, int N>
-        inline std::string to_str(std::array<T, N> arr, const char* delim = ", ") {
+        /** Converts list/vector/array/... to string. */
+        template <typename T>
+        inline std::string to_str(std::span<T> v, const char* delim = ", ") {
             //return std::string(arr.begin(), arr.end());
+            /*
             std::string res;
 
             for (auto it=arr.begin(); it!=arr.end(); it++) {
@@ -48,8 +52,10 @@ namespace zcl {
                     res += delim;
                 }
             }
-
             return res;
+            */
+            
+            return fmt::format("{}", fmt::join(v.begin(), v.end(), delim));
         }
     }
 

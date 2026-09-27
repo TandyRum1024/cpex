@@ -29,6 +29,7 @@ namespace gfx {
     class VertAttribute {
         GLuint location;
 
+    public:
         // Data layout interpretation
         GLsizei layoutStride;
         int layoutOff;
@@ -38,10 +39,12 @@ namespace gfx {
         GLenum type;
         size_t typeSize;
         GLboolean isNormalized;
-    public:
-        VertAttribute(GLuint location, int dim, GLenum type, size_t typeSize, GLsizei layoutStride, int layoutOff, GLboolean isNormalized = GL_FALSE);
+
+        VertAttribute(GLuint location, int dim, GLenum type, size_t typeSize, GLsizei layoutStride = 0, int layoutOff = 0, GLboolean isNormalized = GL_FALSE);
         
         size_t get_type_size() const;
+        void set_layout_stride(GLsizei layoutStride);
+        void set_layout_off(int layoutOff);
         void set_attribute_pointer();
     };
 

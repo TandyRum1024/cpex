@@ -20,18 +20,37 @@ VertAttribute::VertAttribute(GLuint location, int dim, GLenum type, size_t typeS
             isNormalized(isNormalized) {}
 
 size_t VertAttribute::get_type_size() const {
-    return typeSize;
+    return typeSize * dim;
+}
+
+void VertAttribute::set_layout_stride(GLsizei layoutStride) {
+    this->layoutStride = layoutStride;
+}
+
+void VertAttribute::set_layout_off(int layoutOff) {
+    this->layoutOff = layoutOff;
 }
 
 void VertAttribute::set_attribute_pointer() {
-    glVertexAttribPointer(location, dim, type, isNormalized, layoutStride * typeSize, (void*) (layoutOff * typeSize));
+    glVertexAttribPointer(location, dim, type, isNormalized, layoutStride, (void*) layoutOff);
     glEnableVertexAttribArray(location);
 }
 
 VertFormat::VertFormat(std::initializer_list<VertAttribute> attributes):
     size(0) {
+        unsigned int off = 0;
+        unsigned int stride = 0;
+
         for (auto &&attrib: attributes) {
             add_attribute(attrib);
+            stride += attrib.get_type_size();
+        }
+        
+        for (auto &&attrib: attribs) {
+            attrib.set_layout_off(off);
+            attrib.set_layout_stride(stride);
+
+            off += attrib.get_type_size();
         }
     }
 

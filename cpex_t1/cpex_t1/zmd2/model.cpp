@@ -30,10 +30,15 @@ std::string Zmd2Header::to_string() {
     std::string magicStr = std::string(magic, 4);
     std::string magicSrcStr = std::string(HEADER_MAGIC, 4);
 
-    stream << fmt::format("HEADER (MAGIC): {:4s} vs {:4s} (compare: {})", magicSrcStr, magicStr, std::strncmp(HEADER_MAGIC, magic, 4)) << std::endl;
-    stream << fmt::format("HEADER (COMPRESSED): {}", isCompressed) << std::endl;
-    stream << fmt::format("DIRECTORY: rig({0:#X}, {1}) / parts({2:#X}, {3}) / meta({4:#X}, {5}) / extra({6:#X}, {7})", dirRigOff, dirRigLen, dirPartsOff, dirPartsLen, dirMetaOff, dirMetaLen, dirExtraOff, dirExtraLen) << std::endl;
-    stream << fmt::format("NUM: bones({}) / parts({}) / materials({}) / morphs({})", numBones, numParts, numMaterials, numMorphs) << std::endl;
+    stream << "ZMD2 HEADER" << std::endl;
+    stream << fmt::format("\tMAGIC: {:4s} vs {:4s} (compare: {})", magicSrcStr, magicStr, std::strncmp(HEADER_MAGIC, magic, 4)) << std::endl;
+    stream << fmt::format("\tCOMPRESSED: {}", isCompressed) << std::endl;
+    stream << fmt::format("\tDIRECTORY: rig({0:#X}, {1}) / parts({2:#X}, {3}) / meta({4:#X}, {5}) / extra({6:#X}, {7})", dirRigOff, dirRigLen, dirPartsOff, dirPartsLen, dirMetaOff, dirMetaLen, dirExtraOff, dirExtraLen) << std::endl;
+    
+    stream << fmt::format("\tBONES ({}): {}", numBones, zcl::str::to_str<std::string>(nameBones, ", ")) << std::endl;
+    stream << fmt::format("\tPARTS ({}): {}", numParts, zcl::str::to_str<std::string>(nameParts, ", ")) << std::endl;
+    stream << fmt::format("\tMATERIALS ({}): {}", numMaterials, zcl::str::to_str<std::string>(nameMaterials, ", ")) << std::endl;
+    stream << fmt::format("\tMORPHS ({}): {}", numMorphs, zcl::str::to_str<std::string>(nameMorphs, ", ")) << std::endl;
 
     return stream.str();
 }
@@ -147,8 +152,8 @@ std::shared_ptr<Model> zmd2::load_model_from(const std::string &id, std::istream
     bytes >> header.dirExtraOff;
     bytes >> header.dirExtraLen;
 
-    // Bounding boxes (f32 * 6)
-    header.bounds = zmd2_load_bbox_from_buffer(bytes);
+    // Bounding box (f32 * 6)
+    zmd2_load_bbox_from_buffer(bytes, header.bounds);
     zcl::logger("ZMD2")->info("\tBOUNDS: min {}, max {}", glm::to_string(header.bounds.min), glm::to_string(header.bounds.max));
 
     // Number of bones, parts, materials, morphs (u32 * 4)
@@ -159,19 +164,37 @@ std::shared_ptr<Model> zmd2::load_model_from(const std::string &id, std::istream
 
     // Names of elements
     header.nameBones.resize(header.numBones);
-    for (auto i=0; i<header.numBones; i++) {
-        std::string name;
+    header.nameParts.resize(header.numParts);
+    header.nameMaterials.resize(header.numMaterials);
+    header.nameMorphs.resize(header.numMorphs);
 
-        bytes >> name;
-        header.nameBones[i] = name;
-        // zcl::logger("ZMD2")->info("\t\tBONE: {}", name);
-    }
-    std::vector<std::string> nameBones;
-    std::vector<std::string> nameParts;
-    std::vector<std::string> nameMaterials;
-    std::vector<std::string> nameMorphs;
+    zmd2_load_vector(bytes, header.nameBones);
+    zmd2_load_vector(bytes, header.nameParts);
+    zmd2_load_vector(bytes, header.nameMaterials);
+    zmd2_load_vector(bytes, header.nameMorphs);
 
     zcl::logger("ZMD2")->info("\tHEADER: \n" + header.to_string());
+
+    // Read body
+    
+    // Bones data
+    /*
+    std::map<std::string, Bone> bonesData;
+    for (auto&& boneId: header.nameBones) {
+        auto bone = bonesData[boneId];
+        
+        bone.id = boneId;
+        zmd2_load_bone_from_buffer(bytes, bone);
+    }
+    // Parts & mesh info
+    std::map<std::string, std::shared_ptr<Part>> partsData;
+    for (auto&& partId: header.nameParts) {
+        auto part = partsData[partId];
+        
+        part = zmd2_load_part_from_buffer(bytes);
+        part->id = partId;
+    }
+    */
 
     return std::make_shared<Model>(model);
 }

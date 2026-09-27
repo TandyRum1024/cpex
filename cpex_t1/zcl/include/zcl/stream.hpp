@@ -22,7 +22,7 @@ namespace zcl {
 
             /** Fetches string until null terminator. Internally uses `std::getline()`! */
             template <>
-            byteistream& operator>>(std::string &value);
+            byteistream& operator>>(std::string &value); // defined in cpp
         };
 
         // DEFINITIONS (INCLUSION MODEL FOR TEMPLATES!) //
