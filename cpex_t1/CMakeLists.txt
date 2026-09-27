@@ -178,37 +178,37 @@ target_include_directories(
 # {fmt} (https://github.com/fmtlib/fmt)
 set(VER_FMT "12.2.0")
 FetchContent_Declare(
-    fmt
+    fmtRepo
     GIT_REPOSITORY https://github.com/fmtlib/fmt
     GIT_TAG ${VER_FMT}
     GIT_SHALLOW TRUE
 )
-FetchContent_MakeAvailable(fmt)
+FetchContent_MakeAvailable(fmtRepo)
 list(APPEND EXT_LIBS fmt::fmt)
 
 # spdlog (https://github.com/gabime/spdlog)
 set(VER_SPDLOG "v1.17.0")
 FetchContent_Declare(
-    spdlog
+    spdlogRepo
     GIT_REPOSITORY https://github.com/gabime/spdlog
     GIT_TAG ${VER_SPDLOG}
     GIT_SHALLOW TRUE
 )
-FetchContent_MakeAvailable(spdlog)
-list(APPEND EXT_LIBS spdlog)
+FetchContent_MakeAvailable(spdlogRepo)
+list(APPEND EXT_LIBS spdlog::spdlog)
 
 # GLM (https://github.com/g-truc/glm)
 set(VER_GLM "1.0.3")
 FetchContent_Declare(
-    glm
+    glmRepo
 	GIT_REPOSITORY https://github.com/g-truc/glm.git
 	GIT_TAG ${VER_GLM}
     GIT_SHALLOW TRUE
 )
-FetchContent_MakeAvailable(glm)
-list(APPEND EXT_LIBS glm)
+FetchContent_MakeAvailable(glmRepo)
+list(APPEND EXT_LIBS glm::glm)
 
-# (STB - https://github.com/nothings/stb)
+# STB (https://github.com/nothings/stb)
 set(DIR_STB ${CMAKE_CURRENT_SOURCE_DIR}/../common_extern/stb)
 target_include_directories(
     ${PROJECT_NAME}
@@ -216,9 +216,28 @@ target_include_directories(
     ${DIR_STB}
 )
 
+# zlib (https://github.com/madler/zlib)
+find_package(ZLIB)
+
+if(ZLIB_FOUND)
+    set(VER_ZLIB ZLIB_VERSION)
+    target_link_libraries(${PROJECT_NAME} PUBLIC ZLIB::ZLIB)
+else()
+    set(VER_ZLIB "v1.3.2")
+    FetchContent_Declare(
+        zlib
+        GIT_REPOSITORY https://github.com/madler/zlib
+        GIT_TAG ${VER_ZLIB}
+        GIT_SHALLOW TRUE
+    )
+    FetchContent_MakeAvailable(zlib)
+    list(APPEND EXT_LIBS ZLIB::ZLIB)
+    # target_link_libraries(${PROJECT_NAME} PUBLIC zlib::zlib)
+endif()
+
 # (Windows: DbgHelp needs this!)
 if(WIN32)
-list(APPEND EXT_LIBS DbgHelp)
+    list(APPEND EXT_LIBS DbgHelp)
 endif()
 # -----------------------
 # External dependencies

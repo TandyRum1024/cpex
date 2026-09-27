@@ -132,6 +132,10 @@ void CpexApp::on_setup() {
     assetManager.add_material(matCube1->get_id(), matCube1);
     assetManager.add_material(matCube2->get_id(), matCube2);
 
+    if (auto file = std::ifstream(assetPath / "mdl_char.zmd2", std::ios_base::binary); file) {
+        zmd2::load_model_from("char", file);
+    }
+
     // Build models
     auto floorSize = 4.0;
     auto vertsFloor = std::vector {

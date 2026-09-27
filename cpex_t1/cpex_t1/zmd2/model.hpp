@@ -45,7 +45,7 @@ namespace zmd2 {
         void submit(gfx::TextureManager &texManager) const;
     };
 
-    std::shared_ptr<Model> load_model_from(std::istream in);
+    std::shared_ptr<Model> load_model_from(const std::string &id, std::istream &in, std::streampos begin = -1, std::streampos end = -1);
 }
 
 #endif
