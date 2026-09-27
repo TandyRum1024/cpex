@@ -85,7 +85,7 @@ std::string Shader::get_shader_type_name(GLenum type) {
 
 void Shader::load_shader_from(std::filesystem::path filePath, GLenum type) {
     _logger->debug("Loading shader ({}) from file `{}`...", get_shader_type_name(type), filePath.string());
-    set_shader(zcl::file::read_file_to_string(filePath), type);
+    set_shader(zcl::io::read_file_to_string(filePath), type);
 }
 
 void Shader::set_shader(const std::string &src, GLenum type) {

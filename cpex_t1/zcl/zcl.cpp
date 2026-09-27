@@ -152,7 +152,7 @@ int zlib::inflate_stream_to(std::istream &in, std::stringstream &out, std::strea
     }
 }
 
-std::string file::read_file_to_string(std::filesystem::path filePath) {
+std::string io::read_file_to_string(std::filesystem::path filePath) {
     std::string contentStr;
     auto file = std::ifstream(filePath);
     
@@ -174,7 +174,7 @@ std::string file::read_file_to_string(std::filesystem::path filePath) {
     return contentStr;
 }
 
-std::filesystem::path file::get_exec_path() {
+std::filesystem::path io::get_exec_path() {
     // https://stackoverflow.com/questions/1023306/finding-current-executables-path-without-proc-self-exe
     std::filesystem::path path;
 

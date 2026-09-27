@@ -29,6 +29,14 @@
 // EXTERNAL LIBRARIES //
 
 namespace zcl {
+    namespace io {
+        /** Reads the entire contents of given file intro a string and returns it. */
+        std::string read_file_to_string(std::filesystem::path filePath);
+
+        /** Returns path of executable. Useful for loading assets in relative path. */
+        std::filesystem::path get_exec_path();
+    }
+
     namespace zlib {
         // https://stackoverflow.com/questions/14086417/how-to-write-custom-input-stream-in-c
         // https://gist.github.com/andik/c55bb4bc49b54c424935
@@ -82,14 +90,6 @@ namespace zcl {
 
         /** Inflates given compressed stream with zlib, converts it into output stream. */
         int inflate_stream_to(std::istream &in, std::stringstream &out, std::streampos begin, std::streampos end);
-    }
-
-    namespace file {
-        /** Reads the entire contents of given file intro a string and returns it. */
-        std::string read_file_to_string(std::filesystem::path filePath);
-
-        /** Returns path of executable. Useful for loading assets in relative path. */
-        std::filesystem::path get_exec_path();
     }
 
     namespace str {

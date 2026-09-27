@@ -84,7 +84,7 @@ void CpexApp::on_setup() {
     set_vsync(true);
 
     // Relative path
-    auto assetPath = zcl::file::get_exec_path().parent_path() / "data";
+    auto assetPath = zcl::io::get_exec_path().parent_path() / "data";
     _logger->info("Detected asset path: {}", assetPath.string());
 
     // Init managers
