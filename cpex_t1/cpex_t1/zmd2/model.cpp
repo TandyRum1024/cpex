@@ -10,6 +10,8 @@
 
 // LIBRARIES //
 #include <zcl/zcl.hpp>
+#include <zcl/stream.hpp>
+#include <zcl/zlib.hpp>
 
 // EXTERNAL LIBRARIES //
 // ----------------------------
@@ -171,10 +173,10 @@ std::shared_ptr<Model> zmd2::load_model_from(const std::string &id, std::istream
     header.nameBones.resize(header.numBones);
     for (auto i=0; i<header.numBones; i++) {
         std::string name;
-        // in >> name;
+
         bytes >> name;
-        zcl::logger("ZMD2")->info("\t\tBONE: {}", name);
         header.nameBones[i] = name;
+        // zcl::logger("ZMD2")->info("\t\tBONE: {}", name);
     }
     std::vector<std::string> nameBones;
     std::vector<std::string> nameParts;

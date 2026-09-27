@@ -9,11 +9,8 @@
 #include <array>
 #include <map>
 #include <exception>
-#include <istream>
-#include <streambuf>
 #include <utility>
 #include <string>
-#include <fstream>
 #include <filesystem>
 #include <chrono>
 #include <vector>
@@ -23,9 +20,6 @@
 // ----------------------------
 #include <spdlog/spdlog.h>
 #include <fmt/format.h>
-
-// zlib
-#include <zlib.h>
 // ----------------------------
 // EXTERNAL LIBRARIES //
 
@@ -36,61 +30,6 @@ namespace zcl {
 
         /** Returns path of executable. Useful for loading assets in relative path. */
         std::filesystem::path get_exec_path();
-    }
-
-    namespace zlib {
-        // https://stackoverflow.com/questions/14086417/how-to-write-custom-input-stream-in-c
-        // https://gist.github.com/andik/c55bb4bc49b54c424935
-        // https://en.cppreference.com/cpp/io/basic_streambuf/underflow
-        /**
-         * Stupid `std::streambuf` wrapper for zlibs stream based `inflate()` function.
-         * Super lazy implementation of inflation routine. Until I make a proper stream wrapper...
-         * Until I learn more about multithreading in C++, this is NOT THREAD SAFE!!
-         **/
-        class inflated_streambuf: public std::streambuf {
-            const static int CHUNK_BYTES = 1024;
-
-            std::streambuf* src;
-            std::streampos begin;
-            std::streampos end;
-
-            z_stream stream;
-
-            bool isEnd;
-            bool isInflateDone;
-            bool isSuccess;
-            std::array<uint8_t, CHUNK_BYTES> chunkDeflated;
-            std::array<uint8_t, CHUNK_BYTES> chunkInflated;
-            size_t readSzTotal;
-            size_t readSzLeft;
-            size_t readPosBegin;
-            size_t readPosEnd;
-            size_t readChunksTotal;
-
-        public:
-            inflated_streambuf(std::streambuf* src, std::streampos begin, std::streampos end);
-            ~inflated_streambuf();
-
-            inflated_streambuf(inflated_streambuf &&other);
-            inflated_streambuf& operator=(inflated_streambuf &&other);
-
-            inflated_streambuf(const inflated_streambuf &other) = delete;
-            inflated_streambuf& operator=(const inflated_streambuf &other) = delete;
-            
-            void read_src_to_chunk();
-            unsigned int inflate_from_chunk();
-            
-        protected:
-            std::streambuf::int_type overflow(std::streambuf::int_type ch) override;
-            std::streambuf::int_type underflow() override;
-
-            std::streambuf::pos_type seekpos(std::streambuf::pos_type pos, std::ios_base::openmode which) override;
-            std::streambuf::pos_type seekoff(std::streambuf::off_type pos, std::ios_base::seekdir dir, std::ios_base::openmode which) override;
-            int sync() override;
-        };
-
-        /** Inflates given compressed stream with zlib, converts it into output stream. */
-        int inflate_stream_to(std::istream &in, std::stringstream &out, std::streampos begin, std::streampos end);
     }
 
     namespace str {
@@ -205,50 +144,6 @@ namespace zcl {
         void stopwatch_end(const std::string &id);
 
         std::string get_stack_trace(bool skipInternal = true, int skipLen = 0, int maxLen = 16);
-    }
-
-    namespace stream {
-        /** `std::istream` wrapper for easier extraction of unformatted data. */
-        class byteistream: public std::istream {
-        public:
-            byteistream(std::streambuf *sbuff);
-
-            /** Fetches value sans formatting & whitespace skipping. Internally uses `istream.read()`! */
-            template <typename T>
-            byteistream& operator>>(T &value) {
-                // zcl::logger("ZCL")->info("[BYTEISTREAM] READING {} BYTES", sizeof(T));
-                this->read(reinterpret_cast<char*>(&value), sizeof(T));
-
-                return (*this);
-            };
-
-            template <>
-            byteistream& operator>>(std::string &value) {
-                // zcl::logger("ZCL")->info("[BYTEISTREAM] STRING READING DELEGATED TO GETLINE");
-                // std::operator>><char, std::char_traits<char>, std::allocator<char>>((*this), value);
-                std::getline(*this, value, '\0');
-                return (*this);
-            };
-        };
-
-        // DEFINITIONS (INCLUSION MODEL FOR TEMPLATES!) //
-
-        // template <>
-        // byteistream& byteistream::operator>>(std::string &value) {
-        //     zcl::logger("ZCL")->info("[BYTEISTREAM] STRING READING DELEGATED TO SUPER");
-        //     std::operator>>((*this), value);
-        //     return (*this);
-        // }
-
-        // template <typename T>
-        // byteistream& byteistream::operator>>(T &value) {
-        //     zcl::logger("ZCL")->info("[BYTEISTREAM] READING {} BYTES", sizeof(T));
-        //     this->read(reinterpret_cast<char*>(&value), sizeof(T));
-
-        //     return (*this);
-        // }
-        
-        // DEFINITIONS (INCLUSION MODEL FOR TEMPLATES!) //
     }
 }
 #endif

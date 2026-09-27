@@ -71,6 +71,8 @@ list(
     APPEND
     SRC_LIBS
     ${DIR_ZCL}/zcl.cpp
+    ${DIR_ZCL}/stream.cpp
+    ${DIR_ZCL}/zlib.cpp
 )
 # (ZMD2)
 set(DIR_ZMD2 ${CMAKE_CURRENT_SOURCE_DIR}/cpex_t1/zmd2)
