@@ -30,29 +30,6 @@
 // EXTERNAL LIBRARIES //
 
 namespace zcl {
-    namespace stream {
-        /** `std::istream` wrapper for easier extraction of unformatted data. */
-        class byteistream: public std::istream {
-        public:
-            byteistream(std::streambuf *sbuff);
-
-            /** Fetches value sans formatting & whitespace skipping. Internally uses `istream.read()`! */
-            template <typename T>
-            byteistream& operator>>(T &value);
-        };
-
-        // DEFINITIONS (INCLUSION MODEL FOR TEMPLATES!) //
-
-        template <typename T>
-        byteistream& byteistream::operator>>(T &value) {
-            this->read(reinterpret_cast<char*>(&value), sizeof(T));
-
-            return (*this);
-        }
-        
-        // DEFINITIONS (INCLUSION MODEL FOR TEMPLATES!) //
-    }
-
     namespace io {
         /** Reads the entire contents of given file intro a string and returns it. */
         std::string read_file_to_string(std::filesystem::path filePath);
@@ -228,6 +205,50 @@ namespace zcl {
         void stopwatch_end(const std::string &id);
 
         std::string get_stack_trace(bool skipInternal = true, int skipLen = 0, int maxLen = 16);
+    }
+
+    namespace stream {
+        /** `std::istream` wrapper for easier extraction of unformatted data. */
+        class byteistream: public std::istream {
+        public:
+            byteistream(std::streambuf *sbuff);
+
+            /** Fetches value sans formatting & whitespace skipping. Internally uses `istream.read()`! */
+            template <typename T>
+            byteistream& operator>>(T &value) {
+                // zcl::logger("ZCL")->info("[BYTEISTREAM] READING {} BYTES", sizeof(T));
+                this->read(reinterpret_cast<char*>(&value), sizeof(T));
+
+                return (*this);
+            };
+
+            template <>
+            byteistream& operator>>(std::string &value) {
+                // zcl::logger("ZCL")->info("[BYTEISTREAM] STRING READING DELEGATED TO GETLINE");
+                // std::operator>><char, std::char_traits<char>, std::allocator<char>>((*this), value);
+                std::getline(*this, value, '\0');
+                return (*this);
+            };
+        };
+
+        // DEFINITIONS (INCLUSION MODEL FOR TEMPLATES!) //
+
+        // template <>
+        // byteistream& byteistream::operator>>(std::string &value) {
+        //     zcl::logger("ZCL")->info("[BYTEISTREAM] STRING READING DELEGATED TO SUPER");
+        //     std::operator>>((*this), value);
+        //     return (*this);
+        // }
+
+        // template <typename T>
+        // byteistream& byteistream::operator>>(T &value) {
+        //     zcl::logger("ZCL")->info("[BYTEISTREAM] READING {} BYTES", sizeof(T));
+        //     this->read(reinterpret_cast<char*>(&value), sizeof(T));
+
+        //     return (*this);
+        // }
+        
+        // DEFINITIONS (INCLUSION MODEL FOR TEMPLATES!) //
     }
 }
 #endif
