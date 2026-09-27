@@ -96,21 +96,22 @@ std::shared_ptr<Model> zmd2::load_model_from(const std::string &id, std::istream
     auto dirOff = in.tellg();
     size_t buffSz = end - dirOff;
     std::istream inflated = std::istream(in.rdbuf());
-    std::shared_ptr<zcl::zlib::inflatedstreambuf> inflatedStreamBuf = std::shared_ptr<zcl::zlib::inflatedstreambuf>(nullptr);
+    std::shared_ptr<zcl::zlib::inflated_streambuf> inflatedStreamBuf = std::shared_ptr<zcl::zlib::inflated_streambuf>(nullptr);
 
     // (inflate if needed)
     if (headerCompressed) {
         // std::stringstream tmp;
         // zcl::zlib::inflate_stream_to(in, tmp, in.tellg(), end);
-        auto sb = zcl::zlib::inflatedstreambuf(in.rdbuf(), dirOff, end);
-        // inflatedStreamBuf = std::make_shared<zcl::zlib::inflatedstreambuf>(sb);
+        auto sb = zcl::zlib::inflated_streambuf(in.rdbuf(), dirOff, end);
+        // inflatedStreamBuf = std::make_shared<zcl::zlib::inflated_streambuf>(sb);
 
         // inflated.set_rdbuf(&(*inflatedStreamBuf));
 
-        std::istream inflated2 = std::istream(&sb);
+        zcl::stream::byteistream inflated2 = zcl::stream::byteistream(&sb);
         zcl::logger("ZMD2")->warn("BEFORE READ: ({}/{})", inflated2.eof(), inflated2.fail());
         uint8_t test = 0;
-        inflated2.read(reinterpret_cast<char*>(&test), 1);
+        // inflated2.read(reinterpret_cast<char*>(&test), 1);
+        inflated2 >> test;
         zcl::logger("ZMD2")->warn("AFTER READ {}: {} ({}/{})", test, 0 + inflated2.tellg(), inflated2.eof(), inflated2.fail());
     }
     else {

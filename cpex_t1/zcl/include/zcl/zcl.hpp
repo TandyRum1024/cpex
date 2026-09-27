@@ -9,6 +9,7 @@
 #include <array>
 #include <map>
 #include <exception>
+#include <istream>
 #include <streambuf>
 #include <utility>
 #include <string>
@@ -29,6 +30,29 @@
 // EXTERNAL LIBRARIES //
 
 namespace zcl {
+    namespace stream {
+        /** `std::istream` wrapper for easier extraction of unformatted data. */
+        class byteistream: public std::istream {
+        public:
+            byteistream(std::streambuf *sbuff);
+
+            /** Fetches value sans formatting & whitespace skipping. Internally uses `istream.read()`! */
+            template <typename T>
+            byteistream& operator>>(T &value);
+        };
+
+        // DEFINITIONS (INCLUSION MODEL FOR TEMPLATES!) //
+
+        template <typename T>
+        byteistream& byteistream::operator>>(T &value) {
+            this->read(reinterpret_cast<char*>(&value), sizeof(T));
+
+            return (*this);
+        }
+        
+        // DEFINITIONS (INCLUSION MODEL FOR TEMPLATES!) //
+    }
+
     namespace io {
         /** Reads the entire contents of given file intro a string and returns it. */
         std::string read_file_to_string(std::filesystem::path filePath);
@@ -46,7 +70,7 @@ namespace zcl {
          * Super lazy implementation of inflation routine. Until I make a proper stream wrapper...
          * Until I learn more about multithreading in C++, this is NOT THREAD SAFE!!
          **/
-        class inflatedstreambuf: public std::streambuf {
+        class inflated_streambuf: public std::streambuf {
             const static int CHUNK_BYTES = 1024;
 
             std::streambuf* src;
@@ -67,14 +91,14 @@ namespace zcl {
             size_t readChunksTotal;
 
         public:
-            inflatedstreambuf(std::streambuf* src, std::streampos begin, std::streampos end);
-            ~inflatedstreambuf();
+            inflated_streambuf(std::streambuf* src, std::streampos begin, std::streampos end);
+            ~inflated_streambuf();
 
-            inflatedstreambuf(inflatedstreambuf &&other);
-            inflatedstreambuf& operator=(inflatedstreambuf &&other);
+            inflated_streambuf(inflated_streambuf &&other);
+            inflated_streambuf& operator=(inflated_streambuf &&other);
 
-            inflatedstreambuf(const inflatedstreambuf &other) = delete;
-            inflatedstreambuf& operator=(const inflatedstreambuf &other) = delete;
+            inflated_streambuf(const inflated_streambuf &other) = delete;
+            inflated_streambuf& operator=(const inflated_streambuf &other) = delete;
             
             void read_src_to_chunk();
             unsigned int inflate_from_chunk();

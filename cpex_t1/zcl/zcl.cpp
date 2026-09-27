@@ -41,6 +41,9 @@
 
 using namespace zcl;
 
+stream::byteistream::byteistream(std::streambuf *buff):
+    std::istream(buff) {}
+
 int zlib::inflate_stream_to(std::istream &in, std::stringstream &out, std::streampos begin, std::streampos end) {
     // Super lazy implementation of inflation routine. Until I make a proper stream wrapper...
     // https://zlib.net/zlib_how.html
@@ -626,7 +629,7 @@ std::string zcl::trace::get_stack_trace(bool skipInternal, int skipLen, int maxL
     return trace.str();
 }
 
-zlib::inflatedstreambuf::inflatedstreambuf(std::streambuf* src, std::streampos begin, std::streampos end):
+zlib::inflated_streambuf::inflated_streambuf(std::streambuf* src, std::streampos begin, std::streampos end):
     src(src),
     begin(begin),
     end(end),
@@ -662,12 +665,12 @@ zlib::inflatedstreambuf::inflatedstreambuf(std::streambuf* src, std::streampos b
         src->pubseekpos(begin, std::ios_base::out);
         setg(NULL, NULL, NULL);
     }
-zlib::inflatedstreambuf::~inflatedstreambuf() {
+zlib::inflated_streambuf::~inflated_streambuf() {
     zcl::logger("ZLIB")->info("(@{}: ENDING INFLATION WITH STATE {}!!)", fmt::ptr(this), fmt::ptr(&stream));
     inflateEnd(&stream);
 }
 
-zlib::inflatedstreambuf::inflatedstreambuf(inflatedstreambuf &&other):
+zlib::inflated_streambuf::inflated_streambuf(inflated_streambuf &&other):
     std::streambuf::basic_streambuf(std::move(other)),
     src(std::exchange(other.src, nullptr)),
     begin(std::exchange(other.begin, 0)),
@@ -694,7 +697,7 @@ zlib::inflatedstreambuf::inflatedstreambuf(inflatedstreambuf &&other):
         setg(NULL, NULL, NULL);
     }
 
-zlib::inflatedstreambuf& zlib::inflatedstreambuf::operator=(inflatedstreambuf &&other) {
+zlib::inflated_streambuf& zlib::inflated_streambuf::operator=(inflated_streambuf &&other) {
     zcl::logger("ZLIB")->info("(@{}: MOVE ASSIGN TO @{})", fmt::ptr(&other), fmt::ptr(this));
 
     if (this == &other) {
@@ -727,7 +730,7 @@ zlib::inflatedstreambuf& zlib::inflatedstreambuf::operator=(inflatedstreambuf &&
     return *this;
 }
 
-void zlib::inflatedstreambuf::read_src_to_chunk() {
+void zlib::inflated_streambuf::read_src_to_chunk() {
     auto chunkSz = std::min((size_t) CHUNK_BYTES, readSzLeft);
 
     if (chunkSz <= 0) {
@@ -761,7 +764,7 @@ void zlib::inflatedstreambuf::read_src_to_chunk() {
     isInflateDone = false;
 }
 
-unsigned int zlib::inflatedstreambuf::inflate_from_chunk() {
+unsigned int zlib::inflated_streambuf::inflate_from_chunk() {
     stream.next_out = chunkInflated.data();
     stream.avail_out = CHUNK_BYTES;
 
@@ -795,12 +798,12 @@ unsigned int zlib::inflatedstreambuf::inflate_from_chunk() {
     return CHUNK_BYTES - stream.avail_out;
 }
 
-std::streambuf::int_type zlib::inflatedstreambuf::overflow(std::streambuf::int_type ch) {
+std::streambuf::int_type zlib::inflated_streambuf::overflow(std::streambuf::int_type ch) {
     zcl::logger("ZLIB")->info("OVERFLOW, {}/{}, {}", readPosBegin + readSzTotal, readPosEnd, ch);
     return std::streambuf::overflow(ch);
 }
 
-std::streambuf::int_type zlib::inflatedstreambuf::underflow() {
+std::streambuf::int_type zlib::inflated_streambuf::underflow() {
     try {
         zcl::logger("ZLIB")->info("UNDERFLOW, {}/{}", readPosBegin + readSzTotal, readPosEnd);
 
@@ -836,13 +839,13 @@ std::streambuf::int_type zlib::inflatedstreambuf::underflow() {
     }
 }
 
-std::streambuf::pos_type zlib::inflatedstreambuf::seekpos(std::streambuf::pos_type pos, std::ios_base::openmode which) {
+std::streambuf::pos_type zlib::inflated_streambuf::seekpos(std::streambuf::pos_type pos, std::ios_base::openmode which) {
     zcl::logger("ZLIB")->info("(@{}: SEEK TO {})", fmt::ptr(this), 0 + pos);
     readSzLeft = readPosEnd - pos;
     return src->pubseekpos(pos, which);
 }
 
-std::streambuf::pos_type zlib::inflatedstreambuf::seekoff(std::streambuf::off_type pos, std::ios_base::seekdir dir, std::ios_base::openmode which) {
+std::streambuf::pos_type zlib::inflated_streambuf::seekoff(std::streambuf::off_type pos, std::ios_base::seekdir dir, std::ios_base::openmode which) {
     auto res = src->pubseekoff(pos, dir, which);
 
     zcl::logger("ZLIB")->info("(@{}: SEEK OFF TO {})", fmt::ptr(this), 0 + res);
@@ -850,7 +853,7 @@ std::streambuf::pos_type zlib::inflatedstreambuf::seekoff(std::streambuf::off_ty
     return res;
 }
 
-int zlib::inflatedstreambuf::sync() {
+int zlib::inflated_streambuf::sync() {
     zcl::logger("ZLIB")->info("(@{}: SYNC)", fmt::ptr(this));
     return src->pubsync();
 }
