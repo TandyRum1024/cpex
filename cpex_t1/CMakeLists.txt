@@ -80,6 +80,8 @@ list(
     APPEND
     SRC_LIBS
     ${DIR_ZMD2}/model.cpp
+    ${DIR_ZMD2}/helper.cpp
+    ${DIR_ZMD2}/types.cpp
 )
 
 # Includes

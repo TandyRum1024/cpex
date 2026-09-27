@@ -7,6 +7,8 @@
 #include <sstream>
 
 #include <zmd2/model.hpp>
+#include <zmd2/types.hpp>
+#include <zmd2/helper.hpp>
 
 // LIBRARIES //
 #include <zcl/zcl.hpp>
@@ -22,11 +24,6 @@
 // EXTERNAL LIBRARIES //
 
 using namespace zmd2;
-
-void Bbox::merge_from(Bbox &other) {
-    min = glm::min(min, other.min);
-    max = glm::max(max, other.max);
-}
 
 std::string Zmd2Header::to_string() {
     std::stringstream stream;
@@ -98,15 +95,6 @@ void Model::submit(gfx::TextureManager &texManager) const {
         material->apply_material(texManager);
         mesh->submit(GL_TRIANGLES, 0);
     }
-}
-
-
-Bbox zmd2_load_bbox_from_buffer(zcl::stream::byteistream &bytes) {
-    float  minX = 0, minY = 0, minZ = 0,
-            maxX = 0, maxY = 0, maxZ = 0;
-
-    bytes >> minX >> minY >> minZ >> maxX >> maxY >> maxZ;
-    return Bbox { glm::vec3(minX, minY, minZ), glm::vec3(maxX, maxY, maxZ) };
 }
 
 std::shared_ptr<Model> zmd2::load_model_from(const std::string &id, std::istream &in, std::streampos begin, std::streampos end) {
