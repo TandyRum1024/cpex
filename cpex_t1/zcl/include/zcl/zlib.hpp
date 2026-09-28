@@ -24,7 +24,9 @@ namespace zcl {
          * Until I learn more about multithreading in C++, this is NOT THREAD SAFE!!
          **/
         class inflated_streambuf: public std::streambuf {
-            const static int CHUNK_BYTES = 1024;
+            // const static int CHUNK_BYTES = 1024;
+            // const static int CHUNK_BYTES = 16000; // 16KB
+            const static int CHUNK_BYTES = 128000; // 128KB
 
             std::streambuf* src;
             std::streampos begin;
