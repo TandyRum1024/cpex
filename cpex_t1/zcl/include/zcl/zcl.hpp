@@ -21,8 +21,6 @@
 // EXTERNAL LIBRARIES //
 // ----------------------------
 #include <spdlog/spdlog.h>
-#include <fmt/format.h>
-#include <fmt/ranges.h>
 // ----------------------------
 // EXTERNAL LIBRARIES //
 
@@ -33,30 +31,6 @@ namespace zcl {
 
         /** Returns path of executable. Useful for loading assets in relative path. */
         std::filesystem::path get_exec_path();
-    }
-
-    namespace str {
-        // Template functions needs to be declared here!!
-        
-        /** Converts list/vector/array/... to string. */
-        template <typename T>
-        inline std::string to_str(std::span<T> v, const char* delim = ", ") {
-            //return std::string(arr.begin(), arr.end());
-            /*
-            std::string res;
-
-            for (auto it=arr.begin(); it!=arr.end(); it++) {
-                res += std::to_string(*it);
-
-                if ((it + 1) != arr.end()) {
-                    res += delim;
-                }
-            }
-            return res;
-            */
-            
-            return fmt::format("{}", fmt::join(v.begin(), v.end(), delim));
-        }
     }
 
     /** Returns a logger. */

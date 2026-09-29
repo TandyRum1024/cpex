@@ -3,78 +3,78 @@
  * ZIK@MMXXVI
  */
 
+#include <unordered_map>
+
 #include <zmd2/helper.hpp>
-#include <zmd2/types.hpp>
 
 // LIBRARIES //
 #include <zcl/zcl.hpp>
 
 // EXTERNAL LIBRARIES //
 // ----------------------------
-// GLM
-#define GLM_ENABLE_EXPERIMENTAL
-#include <glm/gtx/string_cast.hpp>
+// fmt
+#include <fmt/ranges.h>
 // ----------------------------
 // EXTERNAL LIBRARIES //
 
 using namespace zmd2;
 
-void load(zcl::stream::byteistream &bytes, glm::vec3 &out) {
-    bytes >> out.x >> out.y >> out.z;
+template <typename T>
+void load(zcl::stream::byteistream &bytes, T* out, size_t len) {
+    for (auto i=0; i<len; i++) {
+        bytes >> out[i];
+    }
 }
 
-void load(zcl::stream::byteistream &bytes, glm::vec4 &out) {
-    bytes >> out.x >> out.y >> out.z >> out.w;
+void zmd2::zmd2_load_bbox_from_buffer(zcl::stream::byteistream &bytes, BboxData &out) {
+    load(bytes, out.min, 3);
+    load(bytes, out.max, 3);
 }
 
-void load(zcl::stream::byteistream &bytes, glm::quat &out) {
-    bytes >> out.x >> out.y >> out.z >> out.w;
-}
-
-void zmd2::zmd2_load_bbox_from_buffer(zcl::stream::byteistream &bytes, Bbox &out) {
-    float  minX = 0, minY = 0, minZ = 0,
-            maxX = 0, maxY = 0, maxZ = 0;
-
-    bytes >> minX >> minY >> minZ >> maxX >> maxY >> maxZ;
-    out.min = glm::vec3(minX, minY, minZ);
-    out.max = glm::vec3(maxX, maxY, maxZ);
-}
-
-void zmd2::zmd2_load_tf_from_buffer(zcl::stream::byteistream &bytes, gfx::Transform &out) {
+void zmd2::zmd2_load_tf_from_buffer(zcl::stream::byteistream &bytes, TfData &out) {
     // Position (f32 * 3)
-    load(bytes, out.pos);
+    load(bytes, out.pos, 3);
     // Rotation (quat f32 * 4)
-    load(bytes, out.rot);
+    load(bytes, out.rotQuaternion, 4);
     // Scale (f32 * 3)
-    load(bytes, out.scale);
+    load(bytes, out.scale, 3);
 }
 
-void zmd2::zmd2_load_bone_from_buffer(zcl::stream::byteistream &bytes, Bone &out, const std::string &id) {
+void zmd2::zmd2_load_bone_from_buffer(zcl::stream::byteistream &bytes, std::shared_ptr<BoneData> &out, const std::string &id) {
+    uint32_t parentIdx;
     uint32_t childrenNum;
-
-    out.id = id;
+    std::vector<uint32_t> childrenIndices;
+    TfData tfLocal;
+    float length;
 
     // Parent bone index (u32), `0xffffffff` (-1) if none
-    bytes >> out.parentIdx;
+    bytes >> parentIdx;
 
     // Number of children bone indices (u32)
     bytes >> childrenNum;
 
     // Children bone indices (u32 each)
-    out.childrenIndices.resize(childrenNum);
-    zmd2_load_vector(bytes, out.childrenIndices);
+    childrenIndices.resize(childrenNum);
+    zmd2_load_vector(bytes, childrenIndices);
 
     // Local transform info
-    zmd2_load_tf_from_buffer(bytes, out.tfLocal);
+    zmd2_load_tf_from_buffer(bytes, tfLocal);
 
     // Length (f32)
-    bytes >> out.length;
-    zcl::logger("ZMD2")->info("\tBONE {0}: PARENT: {1}({1:#x}) ({2} CHILDS)",  out.id, out.parentIdx, childrenNum);
+    bytes >> length;
+
+    out = std::make_shared<BoneData>(
+        BoneData {
+            .id = id,
+            .parentIdx = parentIdx,
+            .childrenIndices = std::move(childrenIndices),
+            .tfLocal = tfLocal
+        }
+    );
+    // zcl::logger("ZMD2")->info("\tBONE {0}: PARENT: {1}({1:#x}) ({2} CHILDS)",  out.id, out.parentIdx, childrenNum);
 }
 
-std::shared_ptr<Part> zmd2::zmd2_load_part_from_buffer(zcl::stream::byteistream &bytes, const std::string &id) {
-    std::shared_ptr<Part> res;
-
+void zmd2::zmd2_load_part_from_buffer(zcl::stream::byteistream &bytes, std::shared_ptr<PartData> &out, const std::string &id) {
     uint8_t type;
     uint32_t parentIdx;
     uint32_t childrenNum;
@@ -90,31 +90,30 @@ std::shared_ptr<Part> zmd2::zmd2_load_part_from_buffer(zcl::stream::byteistream 
     childrenIndices.resize(childrenNum);
     zmd2_load_vector(bytes, childrenIndices);
 
-    zcl::logger("ZMD2")->info("\t\tPART: TYPE: {0}, PARENT: {1}({1:#x}), ({2} CHILDS)", type, parentIdx, childrenNum);
+    // zcl::logger("ZMD2")->info("\t\tPART: TYPE: {0}, PARENT: {1}({1:#x}), ({2} CHILDS)", type, parentIdx, childrenNum);
 
     // Type dependent data
     switch (type) {
-        case ZMD2_PART_POINT: {
-                gfx::Transform tfLocal;
-                Bbox bounds;
+        case PART_TYPE_POINT: {
+                TfData tfLocal;
+                BboxData bounds;
 
                 // Local transform info
                 zmd2_load_tf_from_buffer(bytes, tfLocal);
                 // Bounding box (f32 * 6)
                 zmd2_load_bbox_from_buffer(bytes, bounds);
                 
-                res = std::make_shared<PartPoint>(id, parentIdx, childrenIndices, tfLocal, bounds);
+                out = std::make_shared<PartPointData>(id, parentIdx, std::move(childrenIndices), tfLocal, bounds);
                 zcl::logger("ZMD2")->info("\tPART (POINT)");
             }
             break;
 
-        case ZMD2_PART_MODEL: {
-                gfx::Transform tfLocal;
-                Bbox bounds;
-                std::shared_ptr<gfx::VertFormat> meshFormat;
-                ZMD2_MODEL meshType = ZMD2_MODEL_NONE;
-                GLenum meshPrim = 0;
-                char meshTypeNameBuff[64];
+        case PART_TYPE_MODEL: {
+                TfData tfLocal;
+                BboxData bounds;
+                MODEL_TYPE meshType = MODEL_TYPE_NONE;
+                PRIM_TYPE meshPrim = PRIM_TYPE_NONE;
+                size_t meshVertStride = 0;
                 std::string meshTypeName;
                 uint8_t numMorphs = 0;
                 uint32_t numMaterials = 0;
@@ -126,23 +125,17 @@ std::shared_ptr<Part> zmd2::zmd2_load_part_from_buffer(zcl::stream::byteistream 
                 // Bounding box (f32 * 6)
                 zmd2_load_bbox_from_buffer(bytes, bounds);
                 // Mesh / vb type name (null terminated str, 64 chars max)
+                char meshTypeNameBuff[64];
+                
                 bytes.getline(meshTypeNameBuff, sizeof(meshTypeNameBuff), '\0');
                 meshTypeName = std::string(meshTypeNameBuff);
+                meshType = find_model_type_by_name(meshTypeName);
+                meshPrim = find_prim_type_by_model_type(meshType);
+                meshVertStride = find_vertex_stride_by_model_type(meshType);
 
-                if (auto foundType = ZMD2_MODEL_FROM_NAME_TBL.find(meshTypeName); foundType != ZMD2_MODEL_FROM_NAME_TBL.end()) {
-                    meshType = foundType->second;
-                }
-                if (auto foundFormat = ZMD2_MODEL_TO_FORMAT_TBL.find(meshType); foundFormat != ZMD2_MODEL_TO_FORMAT_TBL.end()) {
-                    meshFormat = foundFormat->second;
-                }
-                if (auto foundPrim = ZMD2_MODEL_TO_PRIM_TBL.find(meshType); foundPrim != ZMD2_MODEL_TO_PRIM_TBL.end()) {
-                    meshPrim = foundPrim->second;
-                }
-
-                if (meshType == ZMD2_MODEL_NONE || !meshFormat || !meshPrim) {
+                if (meshType == MODEL_TYPE_NONE || meshPrim == PRIM_TYPE_NONE || meshVertStride == 0) {
                     throw std::runtime_error(fmt::format("Unsupported mesh type ({}) '{}'!", meshTypeName.size(), meshTypeName));
                 }
-                
                 // Number of morphs (u8)
                 bytes >> numMorphs;
                 // Number of used materials (u32)
@@ -154,16 +147,14 @@ std::shared_ptr<Part> zmd2::zmd2_load_part_from_buffer(zcl::stream::byteistream 
                 materialIndices.resize(numMaterials);
                 zmd2_load_vector(bytes, materialIndices);
 
-                zcl::logger("ZMD2")->info("\t\tPART (MODEL): TYPE {} ({} MORPHS, {} MATERIALS, BOUND min {}, max {})", meshTypeName, numMorphs, numMaterials, glm::to_string(part.bounds.min), glm::to_string(part.bounds.max));
-
                 // Mesh data per material
-                auto meshGroups = std::vector<std::shared_ptr<MeshGroup>>(numMaterials);
-                auto meshGroupsByMaterialIdx = std::map<uint32_t, std::shared_ptr<MeshGroup>>();
+                auto matMeshes = std::vector<std::shared_ptr<MaterialAndMeshPair>>(numMaterials);
+                auto matMeshesByMaterialIdx = std::unordered_map<uint32_t, std::shared_ptr<MaterialAndMeshPair>>();
 
                 for (auto i=0; i<numMaterials; i++) {
                     uint32_t materialIdx = 0;
                     uint32_t numVerts = 0;
-                    std::shared_ptr<gfx::Vb> mesh = std::make_shared<gfx::Vb>();
+                    std::vector<uint8_t> vertsData;
                     
                     // Material index (u32, relative; from global model material table)
                     bytes >> materialIdx;
@@ -171,28 +162,26 @@ std::shared_ptr<Part> zmd2::zmd2_load_part_from_buffer(zcl::stream::byteistream 
                     bytes >> numVerts;
 
                     // Vertices bytes
-                    auto numBytes = numVerts * meshFormat->get_size();
-                    auto vertBytes = std::vector<char>();
+                    auto numBytes = numVerts * meshVertStride;
                     
-                    vertBytes.resize(numBytes);
-                    bytes.read(vertBytes.data(), numBytes);
-                    mesh->set_buffer<char>(gfx::Vb::VB_BUFFER_VBO, vertBytes, meshFormat->get_size());
+                    vertsData.resize(numBytes);
+                    bytes.read(reinterpret_cast<char*>(vertsData.data()), numBytes);
 
-                    auto meshGroupPtr = std::make_shared<MeshGroup>(MeshGroup { .materialIdx = materialIdx, .mesh = mesh });
-                    
-                    meshGroups[i] = meshGroupPtr;
-                    meshGroupsByMaterialIdx[materialIdx] = meshGroupPtr;
+                    auto matMeshPtr = std::make_shared<MaterialAndMeshPair>(MaterialAndMeshPair { .materialIdx = materialIdx, .verticesData = std::move(vertsData) });
 
-                    zcl::logger("ZMD2")->info("\t\tMAT {} ({} VERTS, {} BYTES, {} BYTES PER VERT)", materialIdx, numVerts, numBytes, meshFormat->get_size());
+                    matMeshes[i] = matMeshPtr;
+                    matMeshesByMaterialIdx[materialIdx] = matMeshPtr;
+
+                    zcl::logger("ZMD2")->info("\t\tMAT {} ({} VERTS, {} BYTES, {} BYTES PER VERT)", materialIdx, numVerts, numBytes, meshVertStride);
                 }
 
-                res = std::make_shared<PartModel>(id, parentIdx, childrenIndices, tfLocal, bounds, meshType, meshPrim, morphIndices, materialIndices, meshGroups, meshGroupsByMaterialIdx);
-            }    
+                out = std::make_shared<PartModelData>(id, parentIdx, std::move(childrenIndices), tfLocal, bounds, meshType, meshPrim, std::move(morphIndices), std::move(materialIndices), std::move(matMeshes), std::move(matMeshesByMaterialIdx));
+                zcl::logger("ZMD2")->info("\t\tPART (MODEL): TYPE: {} ({} MORPHS, {} MATERIALS, BOUND: (min {}, max {}))", meshTypeName, numMorphs, numMaterials, fmt::join(bounds.min, ", "), fmt::join(bounds.max, ", "));
+            }
             break;
 
         default:
             throw std::runtime_error(fmt::format("Unsupported part type {}!", type));
             break;
     }
-    return res;
 }

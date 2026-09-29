@@ -36,8 +36,8 @@
 /** App for CPEX - T1 */
 class CpexApp: public zap::OpenGlApp {
     // Scene
-    std::shared_ptr<zmd2::Model> model1;
-    std::shared_ptr<zmd2::Model> model2;
+    std::shared_ptr<zmd2::Zmd2Model> model1;
+    std::shared_ptr<zmd2::Zmd2Model> model2;
 
     double time;
 

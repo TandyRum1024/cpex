@@ -10,6 +10,7 @@
 #include <memory>
 
 #include <app.hpp>
+#include <zmd2/zmd2.hpp>
 
 // LIBRARIES //
 #include <zcl/zcl.hpp>
@@ -219,8 +220,9 @@ void CpexApp::on_setup() {
     vbCube2->build();
 
     // Model
-    model1 = std::make_shared<zmd2::Model>("cube");
+    model1 = std::make_shared<zmd2::Zmd2Model>("cube");
     auto meshGroup = model1->reserve_meshgroup("cube1");
+    /*
     meshGroup->material = assetManager.get_material("cube1");
     meshGroup->mesh = vbCube1;
 
@@ -228,11 +230,11 @@ void CpexApp::on_setup() {
     meshGroup->material = assetManager.get_material("cube2");
     meshGroup->mesh = vbCube2;
 
-    model2 = std::make_shared<zmd2::Model>("floor");
+    model2 = std::make_shared<zmd2::Zmd2Model>("floor");
     meshGroup = model2->reserve_meshgroup("base");
     meshGroup->material = assetManager.get_material("base");
     meshGroup->mesh = vbChecker;
-
+    */
     // Setup ImGui
     imGuiContext = ImGui::CreateContext();
     ImGui_ImplGlfw_InitForOpenGL(window, true);
@@ -304,6 +306,7 @@ void CpexApp::on_loop_render(double dtMillis) {
     texManager.clear();
     
     // Floor
+    /*
     if (auto material = model2->find_meshgroup_by_material_id("base")->material; material) {
         if (auto uniform = material->get_uniform<gfx::UniformVec4>("uTint")) {
             uniform->set_value({ (float) time, (float) time, (float) time, 1.0 });
@@ -320,7 +323,6 @@ void CpexApp::on_loop_render(double dtMillis) {
             uniform->set_value(matProj);
         }
     }
-
     model2->submit(texManager);
 
     // Cube
@@ -338,6 +340,7 @@ void CpexApp::on_loop_render(double dtMillis) {
     }
 
     model1->submit(texManager);
+    */
 
     // model2->submit(texManager);
     // assert(false);
