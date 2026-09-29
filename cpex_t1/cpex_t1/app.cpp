@@ -133,7 +133,12 @@ void CpexApp::on_setup() {
     assetManager.add_material(matCube2->get_id(), matCube2);
 
     if (auto file = std::ifstream(assetPath / "mdl_char.zmd2", std::ios_base::binary); file) {
+        auto time = std::chrono::steady_clock::now();
+
         zmd2::load_model_from("char", file);
+
+        std::chrono::duration<double, std::milli> duration = std::chrono::steady_clock::now() - time;
+        _logger->info("Loading took: {}ms", duration.count());
     }
 
     // Build models

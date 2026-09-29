@@ -29,6 +29,7 @@ namespace zmd2 {
     };
 
     enum ZMD2_MODEL {
+        ZMD2_MODEL_NONE = -1,
         ZMD2_MODEL_MESH = 0,
         ZMD2_MODEL_MESH_MORPH_SKINNED,
         ZMD2_MODEL_WIRE_MORPH_SKINNED
@@ -57,11 +58,11 @@ namespace zmd2 {
     struct Part {
         std::string id;
         ZMD2_PART type;
-        
-        uint32_t parentIdx;
 
+        uint32_t parentIdx;
         std::vector<uint32_t> childrenIndices;
-        uint32_t childrenNum;
+
+        Part(std::string id, ZMD2_PART type, uint32_t parentIdx, std::vector<uint32_t> childrenIndices);
     };
 
     struct PartPoint: public Part {
@@ -69,6 +70,8 @@ namespace zmd2 {
 
         gfx::Transform tfLocal;
         Bbox bounds;
+
+        PartPoint(std::string id, uint32_t parentIdx, std::vector<uint32_t> childrenIndices, gfx::Transform tfLocal, Bbox bounds);
     };
 
     struct PartModel: public Part {
@@ -78,13 +81,18 @@ namespace zmd2 {
         Bbox bounds;
 
         ZMD2_MODEL modelType;
-        ZMD2_PRIM modelPrim;
+        GLenum modelPrim;
         
         std::vector<uint32_t> morphIndices;
         std::vector<uint32_t> materialIndices;
 
         std::vector<std::shared_ptr<MeshGroup>> meshGroups;
         std::map<uint32_t, std::shared_ptr<MeshGroup>> meshGroupsByMaterialIdx;
+
+        PartModel(
+            std::string id, uint32_t parentIdx, std::vector<uint32_t> childrenIndices, gfx::Transform tfLocal, Bbox bounds,
+            ZMD2_MODEL modelType, ZMD2_PRIM modelPrim, std::vector<uint32_t> morphIndices, std::vector<uint32_t> materialIndices, std::vector<std::shared_ptr<MeshGroup>> meshGroups, std::map<uint32_t, std::shared_ptr<MeshGroup>> meshGroupsByMaterialIdx
+        );
     };
 
     /** Bone. */
@@ -94,11 +102,30 @@ namespace zmd2 {
         uint32_t parentIdx;
 
         std::vector<uint32_t> childrenIndices;
-        uint32_t childrenNum;
 
-        double length;
+        float length;
         gfx::Transform tfLocal;
     };
+
+    /** Vertex */
+    #pragma pack(push, 1)
+    struct VertMesh {
+        glm::vec3 pos;
+        glm::vec2 uv;
+        glm::vec3 normal;
+        glm::u8vec3 col;
+    };
+
+    struct VertMeshMorphSkinned {
+        glm::vec3 pos;
+        glm::vec2 uv;
+        glm::vec3 normal;
+        glm::u8vec3 col;
+        float partIdx;
+        glm::vec4 boneIndices;
+        glm::vec4 boneWeight;
+    };
+    #pragma pack(pop)
 
     /** Header for `.zmd2` file. */
     struct Zmd2Header {

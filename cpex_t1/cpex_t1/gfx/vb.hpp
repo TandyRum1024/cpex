@@ -29,7 +29,6 @@ namespace gfx {
     class VertAttribute {
         GLuint location;
 
-    public:
         // Data layout interpretation
         GLsizei layoutStride;
         int layoutOff;
@@ -39,7 +38,8 @@ namespace gfx {
         GLenum type;
         size_t typeSize;
         GLboolean isNormalized;
-
+    
+    public:
         VertAttribute(GLuint location, int dim, GLenum type, size_t typeSize, GLsizei layoutStride = 0, int layoutOff = 0, GLboolean isNormalized = GL_FALSE);
         
         size_t get_type_size() const;
@@ -109,12 +109,12 @@ namespace gfx {
         void clear_buffer_all();
         /** Sets buffer data. */
         template <typename V>
-        void set_buffer(VB_BUFFER target, const std::span<V> &data);
+        void set_buffer(VB_BUFFER target, const std::span<V> &data, size_t typeSize = 0);
         /** Sets indices data. Specialized case of `set_buffer()` */
         void set_buffer_indices(const std::span<unsigned int> &indices);
         /** Appends buffer data. */
         template <typename V>
-        void append_buffer(VB_BUFFER target, const std::span<V> &data);
+        void append_buffer(VB_BUFFER target, const std::span<V> &data, size_t typeSize = 0);
         /** Appends indices data. Specialized case of `append_buffer()` */
         void append_buffer_indices(const std::span<unsigned int> &indices, unsigned int appendBase = 0);
         /** Returns number of vertices. */
@@ -132,23 +132,24 @@ namespace gfx {
     // DEFINITIONS (INCLUSION MODEL FOR TEMPLATES!) //
 
     template <typename V>
-    void Vb::set_buffer(VB_BUFFER target, const std::span<V> &data) {
+    void Vb::set_buffer(VB_BUFFER target, const std::span<V> &data, size_t typeSize) {
         clear_buffer(target);
-        append_buffer(target, data);
+        append_buffer(target, data, typeSize);
     }
 
     template <typename V>
-    void Vb::append_buffer(VB_BUFFER target, const std::span<V> &data) {
-        auto& buff = buffers[target];
-        bufferElementSizes[target] += data.size();
+    void Vb::append_buffer(VB_BUFFER target, const std::span<V> &data, size_t typeSize) {
+        typeSize = (typeSize == 0) ? sizeof(V) : typeSize;
 
         // Copy to internal buffer
         // `std::memcpy()` could be used, but apparently we can just use `reinterpret_cast`
+        auto& buff = buffers[target];
         auto dataBytes = reinterpret_cast<uint8_t*>(data.data());
-        auto dataBytesSz = data.size() * sizeof(V);
+        auto dataBytesSz = data.size_bytes();
         auto prevSz = buff.size();
         auto newSz = prevSz + dataBytesSz;
 
+        bufferElementSizes[target] += dataBytesSz / typeSize;
         buff.resize(newSz);
         std::copy(dataBytes, dataBytes + dataBytesSz, buff.begin() + prevSz);
     }

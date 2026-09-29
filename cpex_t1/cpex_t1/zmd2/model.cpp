@@ -132,14 +132,10 @@ std::shared_ptr<Model> zmd2::load_model_from(const std::string &id, std::istream
 
     // (replace to inflating stream if compressed flag is set)
     std::shared_ptr<zcl::zlib::inflated_streambuf> inflatedStreamBuf = std::shared_ptr<zcl::zlib::inflated_streambuf>(nullptr);
-    auto dirOff = in.tellg();
 
     if (header.isCompressed) {
-        inflatedStreamBuf = std::make_shared<zcl::zlib::inflated_streambuf>(zcl::zlib::inflated_streambuf(in.rdbuf(), dirOff, end));
+        inflatedStreamBuf = std::make_shared<zcl::zlib::inflated_streambuf>(zcl::zlib::inflated_streambuf(in.rdbuf(), in.tellg(), end));
         bytes.set_rdbuf(&(*inflatedStreamBuf));
-    }
-    else {
-        dirOff = 0;
     }
 
     // Read offsets and sizes for each directories (u32 each)
@@ -152,6 +148,8 @@ std::shared_ptr<Model> zmd2::load_model_from(const std::string &id, std::istream
     bytes >> header.dirExtraOff;
     bytes >> header.dirExtraLen;
 
+    // zcl::logger("ZMD2")->info("\t(SEEKPOS: {})", 0 + bytes.tellg());
+
     // Bounding box (f32 * 6)
     zmd2_load_bbox_from_buffer(bytes, header.bounds);
     zcl::logger("ZMD2")->info("\tBOUNDS: min {}, max {}", glm::to_string(header.bounds.min), glm::to_string(header.bounds.max));
@@ -161,6 +159,8 @@ std::shared_ptr<Model> zmd2::load_model_from(const std::string &id, std::istream
     bytes >> header.numParts;
     bytes >> header.numMaterials;
     bytes >> header.numMorphs;
+
+    // zcl::logger("ZMD2")->info("\t(SEEKPOS: {})", 0 + bytes.tellg());
 
     // Names of elements
     header.nameBones.resize(header.numBones);
@@ -178,23 +178,31 @@ std::shared_ptr<Model> zmd2::load_model_from(const std::string &id, std::istream
     // Read body
     
     // Bones data
-    /*
     std::map<std::string, Bone> bonesData;
+
+    zcl::logger("ZMD2")->info("\tREADING BONES");
+    // bytes.seekg(header.dirRigOff, std::ios_base::beg);
     for (auto&& boneId: header.nameBones) {
         auto bone = bonesData[boneId];
         
-        bone.id = boneId;
-        zmd2_load_bone_from_buffer(bytes, bone);
+        zmd2_load_bone_from_buffer(bytes, bone, boneId);
     }
+    
     // Parts & mesh info
     std::map<std::string, std::shared_ptr<Part>> partsData;
+
+    zcl::logger("ZMD2")->info("\tREADING PARTS");
+    // bytes.seekg(header.dirPartsOff, std::ios_base::beg);
+
     for (auto&& partId: header.nameParts) {
         auto part = partsData[partId];
         
-        part = zmd2_load_part_from_buffer(bytes);
-        part->id = partId;
+        part = zmd2_load_part_from_buffer(bytes, partId);
+        // zcl::logger("ZMD2")->info("\tPART {}", part.id);
     }
-    */
+
+    // Metadata
+    
 
     return std::make_shared<Model>(model);
 }
