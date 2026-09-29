@@ -4,7 +4,7 @@
  */
 
 #ifndef __ZEN_ASSETMGR_GUARD
-#define __ZEN_ASSETMGR_GUARD__ZEN_ASSETMGR_GUARD
+#define __ZEN_ASSETMGR_GUARD
 
 #include <string>
 #include <filesystem>

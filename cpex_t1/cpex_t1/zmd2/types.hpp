@@ -107,19 +107,13 @@ namespace zmd2 {
         { MODEL_TYPE_MESH_MORPH_SKINNED, PRIM_TYPE_TRIANGLE_LIST },
         { MODEL_TYPE_WIRE_MORPH_SKINNED, PRIM_TYPE_LINE_LIST },
     };
-    // Table to convert model type to vertex strite.
+    // Table to convert model type to vertex stride.
     const static std::unordered_map<MODEL_TYPE, size_t> ZMD2_VERT_STRIDE_BY_NAME_TBL = {
         { MODEL_TYPE_MESH, sizeof(VertMesh) },
         { MODEL_TYPE_MESH_MORPH_SKINNED, sizeof(VertMeshMorphSkinned) },
         { MODEL_TYPE_WIRE_MORPH_SKINNED, sizeof(VertMeshMorphSkinned) },
     };
-    // Table to convert model type to vertex format.
-    // const static std::unordered_map<MODEL_TYPE, std::shared_ptr<gfx::VertFormat>> ZMD2_MODEL_TO_FORMAT_TBL = {
-    //     { MODEL_TYPE_MESH, ZMD2_VERT_FORMAT_MESH },
-    //     { MODEL_TYPE_MESH_MORPH_SKINNED, ZMD2_VERT_FORMAT_MESH_MORPH_SKINNED },
-    //     { MODEL_TYPE_WIRE_MORPH_SKINNED, ZMD2_VERT_FORMAT_MESH_MORPH_SKINNED },
-    // };
-
+    
     /** Returns `MODEL_TYPE` from given name. `MODEL_TYPE_NONE` if not found. */
     MODEL_TYPE find_model_type_by_name(const std::string &name);
 

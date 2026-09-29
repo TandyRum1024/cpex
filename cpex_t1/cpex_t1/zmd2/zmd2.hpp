@@ -1,5 +1,5 @@
 /**
- * zmd2 - Zmd2 file format.
+ * zmd2 - `.zmd2` file format.
  * ZIK@MMXXVI
  */
 

@@ -100,7 +100,7 @@ std::shared_ptr<Model> zmd2::load_model_from(const std::string &id, std::istream
     std::unordered_map<std::string, std::shared_ptr<BoneData>> bonesDataById;
     std::vector<std::shared_ptr<BoneData>> bonesData;
 
-    zcl::logger("ZMD2")->info("\tREADING BONES");
+    // zcl::logger("ZMD2")->info("\tREADING BONES");
     // bytes.seekg(header.dirRigOff, std::ios_base::beg);
     bonesData.resize(header.numBones);
     for (auto i=0; i<header.numBones; i++) {
@@ -115,7 +115,7 @@ std::shared_ptr<Model> zmd2::load_model_from(const std::string &id, std::istream
     std::unordered_map<std::string, std::shared_ptr<PartData>> partsDataById;
     std::vector<std::shared_ptr<PartData>> partsData;
 
-    zcl::logger("ZMD2")->info("\tREADING PARTS");
+    // zcl::logger("ZMD2")->info("\tREADING PARTS");
     // bytes.seekg(header.dirPartsOff, std::ios_base::beg);
     partsData.resize(header.numParts);
     for (auto i=0; i<header.numParts; i++) {

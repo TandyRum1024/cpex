@@ -34,6 +34,7 @@ set(
     SRC_MAIN
     cpex_t1/main.cpp
     cpex_t1/app.cpp
+    cpex_t1/zmd2_model.cpp
 )
 # (GFX)
 set(DIR_GFX ${CMAKE_CURRENT_SOURCE_DIR}/cpex_t1/gfx)
@@ -79,7 +80,6 @@ set(DIR_ZMD2 ${CMAKE_CURRENT_SOURCE_DIR}/cpex_t1/zmd2)
 list(
     APPEND
     SRC_LIBS
-    ${DIR_ZMD2}/model.cpp
     ${DIR_ZMD2}/helper.cpp
     ${DIR_ZMD2}/types.cpp
     ${DIR_ZMD2}/zmd2.cpp

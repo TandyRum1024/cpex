@@ -44,8 +44,7 @@ CpexApp::CpexApp(CpexApp &&other):
     OpenGlApp(std::move(other)),
     time(std::exchange(other.time, 0.0)),
     tf(other.tf),
-    model1(std::move(other.model1)),
-    model2(std::move(other.model2)),
+    model(std::move(other.model)),
     imGuiContext(other.imGuiContext),
     texManager(gfx::TextureManager())
     {
@@ -63,8 +62,7 @@ CpexApp& CpexApp::operator=(CpexApp &&other) {
     std::swap(time, other.time);
     std::swap(tf, other.tf);
 
-    std::swap(model1, other.model1);
-    std::swap(model2, other.model2);
+    std::swap(model, other.model);
     std::swap(imGuiContext, other.imGuiContext);
 
     OpenGlApp::operator=(std::move(other));
@@ -220,21 +218,27 @@ void CpexApp::on_setup() {
     vbCube2->build();
 
     // Model
-    model1 = std::make_shared<zmd2::Zmd2Model>("cube");
-    auto meshGroup = model1->reserve_meshgroup("cube1");
-    /*
-    meshGroup->material = assetManager.get_material("cube1");
-    meshGroup->mesh = vbCube1;
+    model = std::make_shared<gfx::zmd2mdl::Model>("test");
+    auto partCube = std::make_shared<gfx::zmd2mdl::PartModel>("cube");
+    auto partFloor = std::make_shared<gfx::zmd2mdl::PartModel>("floor");
 
-    meshGroup = model1->reserve_meshgroup("cube2");
-    meshGroup->material = assetManager.get_material("cube2");
-    meshGroup->mesh = vbCube2;
+    matBase = assetManager.get_material("base");
+    matCube1 = assetManager.get_material("cube1");
+    matCube2 = assetManager.get_material("cube2");
 
-    model2 = std::make_shared<zmd2::Zmd2Model>("floor");
-    meshGroup = model2->reserve_meshgroup("base");
-    meshGroup->material = assetManager.get_material("base");
-    meshGroup->mesh = vbChecker;
-    */
+    auto matMeshCube1 = partCube->reserve_matmesh("cube1", matCube1);
+    auto matMeshCube2 = partCube->reserve_matmesh("cube2", matCube2);
+    
+    matMeshCube1->mesh = vbCube1;
+    matMeshCube2->mesh = vbCube2;
+    
+    auto matMeshFloor = partFloor->reserve_matmesh("base", matBase);
+
+    matMeshFloor->mesh = vbChecker;
+    
+    model->add_part(partCube);
+    model->add_part(partFloor);
+    
     // Setup ImGui
     imGuiContext = ImGui::CreateContext();
     ImGui_ImplGlfw_InitForOpenGL(window, true);
@@ -306,41 +310,42 @@ void CpexApp::on_loop_render(double dtMillis) {
     texManager.clear();
     
     // Floor
-    /*
-    if (auto material = model2->find_meshgroup_by_material_id("base")->material; material) {
-        if (auto uniform = material->get_uniform<gfx::UniformVec4>("uTint")) {
-            uniform->set_value({ (float) time, (float) time, (float) time, 1.0 });
-        }
-        if (auto uniform = material->get_uniform<gfx::UniformMat4>("uMatModel")) {
-            auto tf = this->tf.to_mat4();
-
-            uniform->set_value(tf);
-        }
-        if (auto uniform = material->get_uniform<gfx::UniformMat4>("uMatView")) {
-            uniform->set_value(matView);
-        }
-        if (auto uniform = material->get_uniform<gfx::UniformMat4>("uMatProjection")) {
-            uniform->set_value(matProj);
+    if (auto part = model->find_part_by_id<gfx::zmd2mdl::PartModel>("floor")) {
+        if (auto material = part->find_matmesh_by_material_id("base")->material; material) {
+            if (auto uniform = material->get_uniform<gfx::UniformVec4>("uTint")) {
+                uniform->set_value({ (float) time, (float) time, (float) time, 1.0 });
+            }
+            if (auto uniform = material->get_uniform<gfx::UniformMat4>("uMatModel")) {
+                auto tf = this->tf.to_mat4();
+    
+                uniform->set_value(tf);
+            }
+            if (auto uniform = material->get_uniform<gfx::UniformMat4>("uMatView")) {
+                uniform->set_value(matView);
+            }
+            if (auto uniform = material->get_uniform<gfx::UniformMat4>("uMatProjection")) {
+                uniform->set_value(matProj);
+            }
         }
     }
-    model2->submit(texManager);
 
     // Cube
-    if (auto material = model1->find_meshgroup_by_material_id("cube1")->material; material) {
-        if (auto uniform = material->get_uniform<gfx::UniformMat4>("uMatModel")) {
-            auto tfCube = gfx::Transform(
-                glm::vec3(0, 0, 0.5),
-                glm::vec3(glm::radians(45.0), 0, time * -1.25 * glm::pi<double>()),
-                glm::vec3(0.5)
-            );
-            auto mat = tfCube.to_mat4();
+    if (auto part = model->find_part_by_id<gfx::zmd2mdl::PartModel>("cube")) {
+        if (auto material = part->find_matmesh_by_material_id("cube1")->material; material) {
+            if (auto uniform = material->get_uniform<gfx::UniformMat4>("uMatModel")) {
+                auto tfCube = gfx::Transform(
+                    glm::vec3(0, 0, 0.5),
+                    glm::vec3(glm::radians(45.0), 0, time * -1.25 * glm::pi<double>()),
+                    glm::vec3(0.5)
+                );
+                auto mat = tfCube.to_mat4();
 
-            uniform->set_value(mat);
+                uniform->set_value(mat);
+            }
         }
     }
 
-    model1->submit(texManager);
-    */
+    model->submit(texManager);
 
     // model2->submit(texManager);
     // assert(false);

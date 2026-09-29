@@ -7,6 +7,8 @@
 #include <fstream>
 #include <string>
 
+#include <zmd2_model.hpp>
+
 // LIBRARIES //
 #include <zap/opengl/opengl.hpp>
 #include <gfx/transform.hpp>
@@ -15,7 +17,6 @@
 #include <gfx/shader.hpp>
 #include <gfx/vb.hpp>
 #include <gfx/vert.hpp>
-#include <zmd2/model.hpp>
 #include <zcl/zcl.hpp>
 #include <zen/asset_manager.hpp>
 
@@ -36,8 +37,8 @@
 /** App for CPEX - T1 */
 class CpexApp: public zap::OpenGlApp {
     // Scene
-    std::shared_ptr<zmd2::Zmd2Model> model1;
-    std::shared_ptr<zmd2::Zmd2Model> model2;
+    std::shared_ptr<gfx::zmd2mdl::Model> model;
+    // std::shared_ptr<gfx::zmd2mdl::Model> model2;
 
     double time;
 

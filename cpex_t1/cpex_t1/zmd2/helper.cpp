@@ -104,7 +104,7 @@ void zmd2::zmd2_load_part_from_buffer(zcl::stream::byteistream &bytes, std::shar
                 zmd2_load_bbox_from_buffer(bytes, bounds);
                 
                 out = std::make_shared<PartPointData>(id, parentIdx, std::move(childrenIndices), tfLocal, bounds);
-                zcl::logger("ZMD2")->info("\tPART (POINT)");
+                // zcl::logger("ZMD2")->info("\tPART (POINT)");
             }
             break;
 
@@ -172,11 +172,11 @@ void zmd2::zmd2_load_part_from_buffer(zcl::stream::byteistream &bytes, std::shar
                     matMeshes[i] = matMeshPtr;
                     matMeshesByMaterialIdx[materialIdx] = matMeshPtr;
 
-                    zcl::logger("ZMD2")->info("\t\tMAT {} ({} VERTS, {} BYTES, {} BYTES PER VERT)", materialIdx, numVerts, numBytes, meshVertStride);
+                    // zcl::logger("ZMD2")->info("\t\tMAT {} ({} VERTS, {} BYTES, {} BYTES PER VERT)", materialIdx, numVerts, numBytes, meshVertStride);
                 }
 
                 out = std::make_shared<PartModelData>(id, parentIdx, std::move(childrenIndices), tfLocal, bounds, meshType, meshPrim, std::move(morphIndices), std::move(materialIndices), std::move(matMeshes), std::move(matMeshesByMaterialIdx));
-                zcl::logger("ZMD2")->info("\t\tPART (MODEL): TYPE: {} ({} MORPHS, {} MATERIALS, BOUND: (min {}, max {}))", meshTypeName, numMorphs, numMaterials, fmt::join(bounds.min, ", "), fmt::join(bounds.max, ", "));
+                // zcl::logger("ZMD2")->info("\t\tPART (MODEL): TYPE: {} ({} MORPHS, {} MATERIALS, BOUND: (min {}, max {}))", meshTypeName, numMorphs, numMaterials, fmt::join(bounds.min, ", "), fmt::join(bounds.max, ", "));
             }
             break;
 
