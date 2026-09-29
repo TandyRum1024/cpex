@@ -198,6 +198,8 @@ FetchContent_Declare(
     GIT_TAG ${VER_SPDLOG}
     GIT_SHALLOW TRUE
 )
+# (make sure to use the fmt above instead of internal fmt from spdlog)
+set(SPDLOG_FMT_EXTERNAL TRUE)
 FetchContent_MakeAvailable(spdlogRepo)
 list(APPEND EXT_LIBS spdlog::spdlog)
 
@@ -238,6 +240,17 @@ else()
     list(APPEND EXT_LIBS ZLIB::ZLIB)
     # target_link_libraries(${PROJECT_NAME} PUBLIC zlib::zlib)
 endif()
+
+# nlohmann JSON for modern C++ (https://github.com/nlohmann/json)
+set(VER_JSON "v3.12.0")
+
+FetchContent_Declare(
+    json
+    URL https://github.com/nlohmann/json/releases/download/${VER_JSON}/json.tar.xz
+)
+FetchContent_MakeAvailable(json)
+
+list(APPEND EXT_LIBS nlohmann_json::nlohmann_json)
 
 # (Windows: DbgHelp needs this!)
 if(WIN32)
