@@ -69,6 +69,19 @@ void VertFormat::set_attribute_pointers() {
     }
 }
 
+void VertFormat::set_buffer_from_bytes(const std::span<uint8_t> &bytes, Vb *out, size_t verts) const {
+    auto copyBytes = size * verts;
+    auto window = bytes.subspan(0, copyBytes);
+
+    assert(copyBytes < window.size() && "Byte array has not enough data!");
+
+    // out.resize(verts);
+    // std::memcpy(out.data(), bytes.data(), copyBytes);
+    // assert(verts == out.size() && "What");
+
+    out->set_buffer(Vb::VB_BUFFER_VBO, window, size);
+}
+
 Vb::Vb():
     vao(0),
     format(nullptr),
@@ -245,12 +258,17 @@ void Vb::submit(GLenum mode, int indicesStartOff, GLsizei indicesCount) {
         return;
     }
 
-    auto totalCount = (indicesCount == -1) ? (get_indices_num() - indicesStartOff) : indicesCount;
-
     glBindVertexArray(vao);
-    // byte offset (https://stackoverflow.com/questions/23177229/how-to-cast-int-to-const-glvoid)
-    glDrawElements(mode, totalCount, GL_UNSIGNED_INT, (char*)(0) + (indicesStartOff * sizeof(unsigned int)));
-    // glDrawArrays(mode, startOff, vertsNum);
+
+    if (bufferHandles[VB_BUFFER_EBO]) {
+        // EBO available
+        auto totalCount = (indicesCount == -1) ? (get_indices_num() - indicesStartOff) : indicesCount;
+        // byte offset (https://stackoverflow.com/questions/23177229/how-to-cast-int-to-const-glvoid)
+        glDrawElements(mode, totalCount, GL_UNSIGNED_INT, (char*)(0) + (indicesStartOff * sizeof(unsigned int)));
+    }
+    else {
+        glDrawArrays(mode, indicesStartOff, get_buffer_size(VB_BUFFER_VBO));
+    }
 }
 
 void Vb::submit() {

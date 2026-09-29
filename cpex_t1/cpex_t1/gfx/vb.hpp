@@ -48,6 +48,8 @@ namespace gfx {
         void set_attribute_pointer();
     };
 
+    class Vb;
+
     /** List of VertAttribute, stored in order of locations in vertex shader. */
     class VertFormat {
         std::vector<VertAttribute> attribs;
@@ -61,6 +63,8 @@ namespace gfx {
 
         void add_attribute(VertAttribute attrib);
         void set_attribute_pointers();
+
+        void set_buffer_from_bytes(const std::span<uint8_t> &bytes, Vb *out, size_t verts) const;
     };
 
     /** Contains all the neccessary informations to render a mesh. */
@@ -85,7 +89,6 @@ namespace gfx {
         void release_resources();
         
     public:
-        // `Vb() = default;` does not work since its template / generic class, it will give deleted constructor as a default one
         Vb();
         ~Vb();
 

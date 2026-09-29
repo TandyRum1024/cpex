@@ -144,7 +144,8 @@ namespace zmd2 {
     /** Pair of material index with vertices data for mesh. */
     struct MaterialAndMeshPair {
         uint32_t materialIdx;
-        std::vector<uint8_t> verticesData;
+        std::vector<uint8_t> meshData;
+        uint32_t verticesNum;
         // std::shared_ptr<gfx::Material> material;
     };
 

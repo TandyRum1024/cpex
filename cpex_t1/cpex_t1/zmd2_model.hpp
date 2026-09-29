@@ -24,11 +24,20 @@
 // ----------------------------
 // GLM
 #include <glm/vec3.hpp>
+// JSON
+#include <nlohmann/json.hpp>
 // ----------------------------
 // EXTERNAL LIBRARIES //
 
+using json = nlohmann::json;
+
 namespace gfx {
     namespace zmd2mdl {
+
+        // (forward decls)
+
+        class Model;
+
         const static std::shared_ptr<gfx::VertFormat> ZMD2_VERT_FORMAT_MESH = std::make_shared<gfx::VertFormat>(
                 gfx::VertFormat({
                     gfx::VertAttribute(0, 3, GL_FLOAT, sizeof(float)), // POS
@@ -67,7 +76,10 @@ namespace gfx {
         };
 
         /** Returns OpenGL primitive mode from given primitive type. `0` if not found. */
-        GLenum find_gl_prim_by_prim(const zmd2::PRIM_TYPE &type);
+        GLenum find_gl_prim_by_prim_type(const zmd2::PRIM_TYPE &type);
+
+        /** Returns vertex format from given model type. `nullptr` if not found. */
+        std::shared_ptr<gfx::VertFormat> find_vert_format_by_model_type(const zmd2::MODEL_TYPE &type);
         
         /** ZMD2: Pair of material index with vertices data for mesh. */
         struct MaterialAndMeshPair {
@@ -82,7 +94,7 @@ namespace gfx {
             glm::vec3 max;
             
             // Helper constructor.
-            Bbox(zmd2::BboxData src);
+            Bbox(zmd2::BboxData *src);
             Bbox();
 
             void merge_from(Bbox &other);
@@ -102,8 +114,11 @@ namespace gfx {
             std::vector<std::shared_ptr<Part>> children;
 
             // Helper constructor.
-            Part(zmd2::PartData src);
+            Part(zmd2::PartData *src);
             Part(std::string id, zmd2::PART_TYPE type);
+
+            /** Updates internal references from given model which contains the fully loaded data. */
+            virtual void update_refs(Model *mdl);
         };
 
         /** ZMD2: Part (point) */
@@ -112,8 +127,10 @@ namespace gfx {
             Bbox bounds;
 
             // Helper constructor.
-            PartPoint(zmd2::PartPointData src);
+            PartPoint(zmd2::PartPointData *src);
             PartPoint(std::string id);
+
+            // void update_refs(Model *mdl);
         };
 
         /** ZMD2: Part (model) */
@@ -124,6 +141,7 @@ namespace gfx {
             zmd2::MODEL_TYPE modelType;
             zmd2::PRIM_TYPE modelPrim;
             GLenum modelPrimGl;
+            std::shared_ptr<gfx::VertFormat> modelVertFormat;
             
             std::vector<uint32_t> morphIndices;
             std::vector<uint32_t> materialIndices;
@@ -138,7 +156,7 @@ namespace gfx {
             std::unordered_map<std::string, std::shared_ptr<MaterialAndMeshPair>> matMeshesByMaterialId;
 
             /** Helper constructor. */
-            PartModel(zmd2::PartModelData src);
+            PartModel(zmd2::PartModelData *src);
             PartModel(std::string id);
 
             /** Reserve and return a new MaterialAndMeshPair for given material ID. */
@@ -146,6 +164,8 @@ namespace gfx {
 
             /** Find and return MaterialAndMeshPair for given material ID. */
             std::shared_ptr<MaterialAndMeshPair> find_matmesh_by_material_id(const std::string &materialId) const;
+
+            void update_refs(Model *mdl);
         };
 
         /** ZMD2: Bone. */
@@ -165,35 +185,37 @@ namespace gfx {
             std::vector<std::shared_ptr<Bone>> children;
         
             /** Helper constructor. */
-            Bone(zmd2::BoneData src);
+            Bone(zmd2::BoneData *src);
+
+            /** Updates internal data from given bone table. */
+            void update_refs(Model *mdl);
         };
 
         /** Embedded Material: Parameters. */
         struct MaterialParams {
             // TODO //
-            // boolean alphaTest = false;
-            // boolean cull = 0;
+            bool alphaTest = false;
+            bool cull = 0;
         };
 
         /** Embedded Material: Uniforms. */
         struct MaterialUniform {
             // TODO //
-            // boolean alphaTest = false;
-            // boolean cull = 0;
+            std::string name = "";
         };
 
         /** ZMD2 Metadata: Embedded material info. */
-        struct MetaMaterial {
-            std::string name;
-            std::string baseTextureId;
-            std::vector<std::string> textureIds;
-            std::string shaderId;
-            MaterialParams params;
-            std::vector<MaterialUniform> uniforms;
+        struct MetaEmbeddedMaterial {
+            std::string name = "";
+            std::string baseTextureId = "";
+            std::vector<std::string> textureIds = {};
+            std::string shaderId = "";
+            MaterialParams params = {};
+            std::vector<MaterialUniform> uniforms = {};
         };
 
         /** ZMD2 Metadata: Embedded texture info. */
-        struct MetaTexture {
+        struct MetaEmbeddedTexture {
             std::string name = "";
             bool isEmbedded = false;
             uint32_t width = 0;
@@ -222,16 +244,18 @@ namespace gfx {
             std::vector<uint8_t> extraBytes;
 
             // (Metadata) Embedded materials
-            std::vector<MetaMaterial> embeddedMaterials;
+            std::vector<MetaEmbeddedMaterial> embeddedMaterials;
             // (Metadata) Embedded textures
-            std::vector<MetaTexture> embeddedTextures;
+            std::vector<MetaEmbeddedTexture> embeddedTextures;
 
             // Internal cache
-            std::vector<std::shared_ptr<gfx::Material>> linkedMaterials;
+            std::vector<std::shared_ptr<gfx::Material>> materials;
             std::unordered_map<std::string, std::shared_ptr<Part>> partsById;
             std::unordered_map<std::string, std::shared_ptr<Bone>> bonesById;
         
         public:
+            // Helper constructor.
+            Model(zmd2::Model *src);
             Model(std::string id);
 
             void load_embedded_materials(const zen::AssetManager &manager);
@@ -253,6 +277,18 @@ namespace gfx {
             /** Find and return bone for given ID. */
             std::shared_ptr<Bone> find_bone_by_id(const std::string &id) const;
 
+            /** Returns span to (immutable) internal bones list that can be iterated and etc. */
+            std::span<const std::shared_ptr<Bone>> all_bones() const;
+
+            /** Returns span to (immutable) internal parts list that can be iterated and etc. */
+            std::span<const std::shared_ptr<Part>> all_parts() const;
+
+            /** Returns span to (immutable) internal morph names list that can be iterated and etc. */
+            std::span<const std::string> all_morph_names() const;
+
+            /** Returns span to (immutable) internal materials list that can be iterated and etc. */
+            std::span<const std::shared_ptr<gfx::Material>> all_materials() const;
+
             /** Submit all meshgroups to GPU. */
             void submit(gfx::TextureManager &texManager) const;
         };
@@ -273,6 +309,13 @@ namespace gfx {
 
             return casted;
         };
+
+        // JSON deserialization implementations
+        // https://json.nlohmann.me/features/arbitrary_types/
+
+        void from_json(const json &src, MaterialParams &val);
+        void from_json(const json &src, MaterialUniform &val);
+        void from_json(const json &src, MetaEmbeddedMaterial &val);
     }
 }
 

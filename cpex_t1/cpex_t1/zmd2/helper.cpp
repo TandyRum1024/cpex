@@ -167,7 +167,7 @@ void zmd2::zmd2_load_part_from_buffer(zcl::stream::byteistream &bytes, std::shar
                     vertsData.resize(numBytes);
                     bytes.read(reinterpret_cast<char*>(vertsData.data()), numBytes);
 
-                    auto matMeshPtr = std::make_shared<MaterialAndMeshPair>(MaterialAndMeshPair { .materialIdx = materialIdx, .verticesData = std::move(vertsData) });
+                    auto matMeshPtr = std::make_shared<MaterialAndMeshPair>(MaterialAndMeshPair { .materialIdx = materialIdx, .meshData = std::move(vertsData), .verticesNum = numVerts });
 
                     matMeshes[i] = matMeshPtr;
                     matMeshesByMaterialIdx[materialIdx] = matMeshPtr;

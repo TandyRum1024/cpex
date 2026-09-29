@@ -42,6 +42,7 @@ void BboxData::merge_from(BboxData &other) {
     }
 }
 
+// (assuming that this constructor is being called from loading routine; i.e. all the parameters are temporary/throwaway, therefore move semantics are preferred for preventing redudant copy.)
 PartData::PartData(std::string id, PART_TYPE type, uint32_t parentIdx, std::vector<uint32_t> childrenIndices):
     id(id),
     type(type),

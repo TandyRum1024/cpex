@@ -134,10 +134,12 @@ void CpexApp::on_setup() {
     if (auto file = std::ifstream(assetPath / "mdl_char.zmd2", std::ios_base::binary); file) {
         auto time = std::chrono::steady_clock::now();
 
-        zmd2::load_model_from("char", file);
+        auto mdl = zmd2::load_model_from("char", file);
 
         std::chrono::duration<double, std::milli> duration = std::chrono::steady_clock::now() - time;
         _logger->info("Loading took: {}ms", duration.count());
+
+        auto mdlConverted = gfx::zmd2mdl::Model(&(*mdl));
     }
 
     // Build models
