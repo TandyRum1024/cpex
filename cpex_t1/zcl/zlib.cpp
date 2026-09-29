@@ -207,7 +207,7 @@ std::streambuf::int_type zlib::inflated_streambuf::underflow() {
 
             auto chunkPtr = reinterpret_cast<char*>(chunkInflated.data());
             setg(chunkPtr, chunkPtr, chunkPtr + totalWriteSz);
-            // zcl::logger("ZLIB")->info("\tSETG {}-{} ({} BYTES)", fmt::ptr(chunkPtr), fmt::ptr(chunkPtr + totalWriteSz), totalWriteSz);
+            // zcl::logger("ZLIB")->info("\tSETG {}-{} ({} BYTES, EOF: {})", fmt::ptr(chunkPtr), fmt::ptr(chunkPtr + totalWriteSz), totalWriteSz,  gptr() == egptr());
         }
 
         
@@ -236,7 +236,7 @@ std::streambuf::pos_type zlib::inflated_streambuf::seekpos(std::streambuf::pos_t
 std::streambuf::pos_type zlib::inflated_streambuf::seekoff(std::streambuf::off_type pos, std::ios_base::seekdir dir, std::ios_base::openmode which) {
     auto res = src->pubseekoff(pos, dir, which);
 
-    zcl::logger("ZLIB")->trace("(@{}: SEEK OFF TO {})", fmt::ptr(this), 0 + res);
+    zcl::logger("ZLIB")->trace("(@{}: SEEK OFF TO {} -> {})", fmt::ptr(this), 0 + pos, 0 + res);
     readSzLeft = readPosEnd - res;
     return res;
 }

@@ -32,6 +32,10 @@ namespace zcl {
             // zcl::logger("ZCL")->info("[BYTEISTREAM] READING {} BYTES", sizeof(T));
             this->read(reinterpret_cast<char*>(&value), sizeof(T));
 
+            if (!this->good()) {
+                throw std::runtime_error("Failed to read from bytestream!");
+            }
+
             return (*this);
         }
         
