@@ -97,8 +97,8 @@ void CpexApp::on_setup() {
     auto texChecker = assetManager.load_texture("checker.png");
     auto texCat1 = assetManager.load_texture("sprtest.png");
     auto texCat2 = assetManager.load_texture("tex_test.png");
-    auto texFace1 = assetManager.load_texture("tex_face1.png");
-    auto texFace2 = assetManager.load_texture("tex_face2.png");
+    auto texFace1 = assetManager.load_texture("tex_test1.png");
+    auto texFace2 = assetManager.load_texture("tex_test2.png");
 
     auto shdBase = assetManager.load_shader("base");
     auto shdTest = assetManager.load_shader("test");
