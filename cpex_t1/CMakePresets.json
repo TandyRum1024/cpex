@@ -13,6 +13,19 @@
                 "CMAKE_INSTALL_PREFIX": "${sourceDir}/out/install",
                 "CMAKE_CXX_COMPILER": "cl.exe"
             }
+        },
+        {
+            "name": "CPEX_x64_26",
+            "displayName": "Visual Studio Build Tools 2026 Release - amd64",
+            "description": "Using compilers for Visual Studio 18 2026 (x64 architecture)",
+            "generator": "Visual Studio 18 2026",
+            "toolset": "host=x64",
+            "architecture": "x64",
+            "binaryDir": "${sourceDir}/out/build/${presetName}",
+            "cacheVariables": {
+                "CMAKE_INSTALL_PREFIX": "${sourceDir}/out/install/${presetName}",
+                "CMAKE_CXX_COMPILER": "cl.exe"
+            }
         }
     ],
     "buildPresets": [
@@ -26,6 +39,18 @@
             "name": "CPEX_x64-release",
             "displayName": "Visual Studio Community 2022 Release - amd64 - Release",
             "configurePreset": "CPEX_x64",
+            "configuration": "Release"
+        },
+        {
+            "name": "CPEX_x64_26-debug",
+            "displayName": "Visual Studio Build Tools 2026 Release - amd64 - Debug",
+            "configurePreset": "CPEX_x64_26",
+            "configuration": "Debug"
+        },
+        {
+            "name": "CPEX_x64_26-release",
+            "displayName": "Visual Studio Build Tools 2026 Release - amd64 - Release",
+            "configurePreset": "CPEX_x64_26",
             "configuration": "Release"
         }
     ]
