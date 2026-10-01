@@ -275,6 +275,7 @@ gfx::Texture MetaEmbeddedTexture::to_texture(zen::AssetManager &manager, const s
     auto internalFmt = find_gl_tex_base_format_by_tex_format(format);
     auto dataFmt = find_gl_tex_data_format_by_tex_format(format);
 
+    // zcl::logger("ZMD2")->info("TEX {} ({}x{})", name, width, height);
     newTex.set_format(internalFmt);
     newTex.load_from_buffer_2d(blobSpan.data(), width, height, dataFmt, GL_UNSIGNED_BYTE);
 
