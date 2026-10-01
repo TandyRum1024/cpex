@@ -140,6 +140,9 @@ void CpexApp::on_setup() {
         _logger->info("Loading took: {}ms", duration.count());
 
         auto mdlConverted = gfx::zmd2mdl::Model(&(*mdl));
+
+        mdlConverted.load_and_find_embedded_assets(assetManager, matBase, texChecker);
+        mdlConverted.update_refs();
     }
 
     // Build models

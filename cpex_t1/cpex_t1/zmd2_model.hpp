@@ -6,6 +6,13 @@
 #ifndef __ZMD2_MDL_GUARD
 #define __ZMD2_MDL_GUARD
 
+// JSON deserialization helpers
+// in form of `src.at("<name>").get_to(val.<name>);`
+#define __ZMD2_TO_JSON_V(src, val, name) src.at(#name).get_to(val.name)
+#define __ZMD2_TO_JSON_NULL(src, val, name) json_get_to(src, #name, val.name)
+
+#include <variant>
+#include <sstream>
 #include <istream>
 #include <string>
 #include <memory>
@@ -24,6 +31,7 @@
 // ----------------------------
 // GLM
 #include <glm/vec3.hpp>
+#include <glm/gtc/type_ptr.hpp>
 // JSON
 #include <nlohmann/json.hpp>
 // ----------------------------
@@ -33,6 +41,60 @@ using json = nlohmann::json;
 
 namespace gfx {
     namespace zmd2mdl {
+        /** Material parameter: backface culling mode. */
+        enum ZMD2_CULL {
+            ZMD2_CULL_NOCULLING,        // cull_noculling
+            ZMD2_CULL_CLOCKWISE,        // cull_clockwise
+            ZMD2_CULL_COUNTERCLOCKWISE, // cull_counterclockwise
+        };
+
+        /** Material parameter: ztest equation. */
+        enum ZMD2_ZFUNC {
+            ZMD2_ZFUNC_NEVER,           // cmpfunc_never
+            ZMD2_ZFUNC_LESS,            // cmpfunc_less
+            ZMD2_ZFUNC_EQUAL,           // cmpfunc_equal
+            ZMD2_ZFUNC_LESSEQUAL,       // cmpfunc_lessequal
+            ZMD2_ZFUNC_GREATER,         // cmpfunc_greater
+            ZMD2_ZFUNC_NOTEQUAL,        // cmpfunc_notequal
+            ZMD2_ZFUNC_GREATEREQUAL,    // cmpfunc_greaterequal
+            ZMD2_ZFUNC_ALWAYS,          // cmpfunc_always
+        };
+
+        /** Material parameter: blendmode. */
+        enum ZMD2_BM {
+            ZMD2_BM_ZERO,           // bm_zero
+            ZMD2_BM_ONE,            // bm_one
+            ZMD2_BM_SRC_COL,        // bm_src_colour
+            ZMD2_BM_INV_SRC_COL,    // bm_inv_src_colour
+            ZMD2_BM_SRC_ALPHA,      // bm_src_alpha
+            ZMD2_BM_INV_SRC_ALPHA,  // bm_inv_src_alpha
+            ZMD2_BM_DST_COL,        // bm_dest_colour
+            ZMD2_BM_INV_DST_COL,    // bm_inv_dest_colour
+            ZMD2_BM_DST_ALPHA,      // bm_dest_alpha
+            ZMD2_BM_INV_DST_ALPHA,  // bm_inv_dest_alpha
+            ZMD2_BM_SRC_ALPHA_SAT,  // bm_src_alpha_sat
+        };
+
+        /** Material parameter: blendmode equation. */
+        enum ZMD2_BM_EQ {
+            ZMD2_BM_EQ_ADD,                 // bm_eq_add
+            ZMD2_BM_EQ_SUBTRACT,            // bm_eq_subtract
+            ZMD2_BM_EQ_REVERSE_SUBTRACT,    // bm_eq_reverse_subtract
+            ZMD2_BM_EQ_MIN,                 // bm_eq_min
+            ZMD2_BM_EQ_MAX,                 // bm_eq_max
+        };
+
+        /** Texture: format. */
+        enum ZMD2_TEX_FORMAT {
+            ZMD2_TEX_FORMAT_RGBA8_UNORM,    // surface_rgba8unorm
+            ZMD2_TEX_FORMAT_R8_UNORM,       // surface_r8unorm
+            ZMD2_TEX_FORMAT_RG8_UNORM,      // surface_rg8unorm
+            ZMD2_TEX_FORMAT_RGBA4_UNORM,    // surface_rgba4unorm
+            ZMD2_TEX_FORMAT_RGBA16_FLOAT,   // surface_rgba16float
+            ZMD2_TEX_FORMAT_R16_FLOAT,      // surface_r16float
+            ZMD2_TEX_FORMAT_RGBA32_FLOAT,   // surface_rgba32float
+            ZMD2_TEX_FORMAT_R32_FLOAT,      // surface_r32float
+        };
 
         // (forward decls)
 
@@ -74,12 +136,40 @@ namespace gfx {
             { zmd2::PRIM_TYPE_TRIANGLE_LIST, GL_TRIANGLES },
             { zmd2::PRIM_TYPE_LINE_LIST, GL_LINES },
         };
+        // Table to convert texture format to OpenGL BASE INTERNAL texture format.
+        const static std::unordered_map<ZMD2_TEX_FORMAT, GLenum> ZMD2_TEX_FORMAT_TO_GL_TEX_INTERNAL_FORMAT_TBL = {
+            { ZMD2_TEX_FORMAT_RGBA8_UNORM, GL_RGBA8 },
+            { ZMD2_TEX_FORMAT_R8_UNORM, GL_R8 },
+            { ZMD2_TEX_FORMAT_RG8_UNORM, GL_RG8 },
+            { ZMD2_TEX_FORMAT_RGBA4_UNORM, GL_RGBA4 },
+            { ZMD2_TEX_FORMAT_RGBA16_FLOAT, GL_RGBA16F },
+            { ZMD2_TEX_FORMAT_R16_FLOAT, GL_R16 },
+            { ZMD2_TEX_FORMAT_RGBA32_FLOAT, GL_RGBA32F },
+            { ZMD2_TEX_FORMAT_R32_FLOAT, GL_R32F },
+        };
+        // Table to convert texture format to OpenGL PIXEL DATA texture format.
+        const static std::unordered_map<ZMD2_TEX_FORMAT, GLenum> ZMD2_TEX_FORMAT_TO_GL_TEX_FORMAT_TBL = {
+            { ZMD2_TEX_FORMAT_RGBA8_UNORM, GL_RGBA },
+            { ZMD2_TEX_FORMAT_R8_UNORM, GL_RED },
+            { ZMD2_TEX_FORMAT_RG8_UNORM, GL_RG },
+            { ZMD2_TEX_FORMAT_RGBA4_UNORM, GL_RGBA },
+            { ZMD2_TEX_FORMAT_RGBA16_FLOAT, GL_RGBA },
+            { ZMD2_TEX_FORMAT_R16_FLOAT, GL_RED },
+            { ZMD2_TEX_FORMAT_RGBA32_FLOAT, GL_RGBA },
+            { ZMD2_TEX_FORMAT_R32_FLOAT, GL_RED },
+        };
 
         /** Returns OpenGL primitive mode from given primitive type. `0` if not found. */
         GLenum find_gl_prim_by_prim_type(const zmd2::PRIM_TYPE &type);
 
         /** Returns vertex format from given model type. `nullptr` if not found. */
         std::shared_ptr<gfx::VertFormat> find_vert_format_by_model_type(const zmd2::MODEL_TYPE &type);
+
+        /** Returns OpenGL texture format from given texture format. `GL_RGBA8` if not found. */
+        GLenum find_gl_tex_base_format_by_tex_format(const ZMD2_TEX_FORMAT &type);
+
+        /** Returns OpenGL INTERNAL texture format from given texture format. `GL_RGBA8` if not found. */
+        GLenum find_gl_tex_data_format_by_tex_format(const ZMD2_TEX_FORMAT &type);
         
         /** ZMD2: Pair of material index with vertices data for mesh. */
         struct MaterialAndMeshPair {
@@ -192,37 +282,110 @@ namespace gfx {
         };
 
         /** Embedded Material: Parameters. */
-        struct MaterialParams {
-            // TODO //
-            bool alphaTest = false;
-            bool cull = 0;
+        struct MetaMaterialParams {
+            ZMD2_CULL cull = ZMD2_CULL_NOCULLING;
+            bool zwrite = true;
+            bool ztest = true;
+            ZMD2_ZFUNC zfunc = ZMD2_ZFUNC_LESS;
+            bool alphatest = false;
+            int alphatestRef = 0;
+            bool baseTexfilter = false;
+            bool baseTexrepeat = false;
+            std::string chainMaterialNext = "";
+            std::string shadowPassMaterial = "";
+            bool shadowPassMaterialCopy = true;
+            std::string shadowPassMaterialCopyShader = "";
+            bool transparent = false;
+            ZMD2_BM blendmodeSrc = ZMD2_BM_SRC_ALPHA;
+            ZMD2_BM blendmodeDst = ZMD2_BM_INV_SRC_ALPHA;
+            ZMD2_BM_EQ blendmodeEq = ZMD2_BM_EQ_ADD;
+
+            std::string to_string() const;
         };
 
         /** Embedded Material: Uniforms. */
-        struct MaterialUniform {
-            // TODO //
+        struct MetaUniform {
             std::string name = "";
+            std::string type = "";
+
+            virtual std::string to_string() const;
         };
+
+        struct MetaUniformSampler: public MetaUniform {
+            std::string value = "";
+            bool samplerTexfilter = false;
+            bool samplerTexrepeat = false;
+
+            std::string to_string() const;
+        };
+        struct MetaUniformCol: public MetaUniform {
+            std::array<float, 4> value = { 0.0 };
+
+            std::string to_string() const;
+        };
+        struct MetaUniformFloat: public MetaUniform {
+            float value = 0.0;
+
+            std::string to_string() const;
+        };
+        struct MetaUniformInt: public MetaUniform {
+            float value = 0.0;
+
+            std::string to_string() const;
+        };
+        struct MetaUniformVec: public MetaUniform {
+            std::vector<float> value = { 0.0 };
+
+            std::string to_string() const;
+        };
+        struct MetaUniformIvec: public MetaUniform {
+            std::vector<int> value = { 0 };
+
+            std::string to_string() const;
+        };
+        struct MetaUniformMat4: public MetaUniform {
+            glm::mat4 value = glm::mat4(1.0);
+
+            std::string to_string() const;
+        };
+
+        using MetaUniformAny = std::variant<
+                MetaUniformSampler,
+                MetaUniformCol,
+                MetaUniformFloat,
+                MetaUniformInt,
+                MetaUniformVec,
+                MetaUniformIvec,
+                MetaUniformMat4
+            >;
 
         /** ZMD2 Metadata: Embedded material info. */
         struct MetaEmbeddedMaterial {
             std::string name = "";
-            std::string baseTextureId = "";
-            std::vector<std::string> textureIds = {};
-            std::string shaderId = "";
-            MaterialParams params = {};
-            std::vector<MaterialUniform> uniforms = {};
+            std::string shader = "";
+            std::string baseTexture = "";
+            std::vector<std::string> textures = {};
+            MetaMaterialParams params = {};
+            std::vector<MetaUniformAny> uniforms = {};
+
+            std::string to_string() const;
+            /** Converts loaded data into actual material */
+            gfx::Material to_material(zen::AssetManager &manager) const;
         };
 
         /** ZMD2 Metadata: Embedded texture info. */
         struct MetaEmbeddedTexture {
             std::string name = "";
-            bool isEmbedded = false;
+            bool embedded = false;
             uint32_t width = 0;
             uint32_t height = 0;
-            GLenum format = GL_RGBA8;
+            ZMD2_TEX_FORMAT format = ZMD2_TEX_FORMAT_RGBA8_UNORM;
             size_t blobOffset = 0;
             size_t blobSize = 0;
+
+            std::string to_string() const;
+            /** Converts loaded data into actual texture */
+            gfx::Texture to_texture(zen::AssetManager &manager, const std::span<uint8_t> &bytes) const;
         };
 
         /** ZMD2: Model. */
@@ -258,17 +421,17 @@ namespace gfx {
             Model(zmd2::Model *src);
             Model(std::string id);
 
-            void load_embedded_materials(const zen::AssetManager &manager);
-            
-            void load_embedded_textures(const zen::AssetManager &manager);
+            void load_and_find_embedded_assets(zen::AssetManager &manager, const std::shared_ptr<gfx::Material> &fallbackMaterial, const std::shared_ptr<gfx::Texture> &fallbackTexture);
 
-            void link_material(const std::string materialId, const std::shared_ptr<gfx::Material> &material);
+            void update_refs();
 
             // void add_material(const std::shared_ptr<gfx::Material> &material);
 
             void add_part(const std::shared_ptr<Part> &part);
 
             void add_bone(const std::shared_ptr<Bone> &bone);
+
+            void link_material(const std::string materialId, const std::shared_ptr<gfx::Material> &material);
 
             /** Find and return part for given ID. */
             template <typename T>
@@ -313,10 +476,109 @@ namespace gfx {
         // JSON deserialization implementations
         // https://json.nlohmann.me/features/arbitrary_types/
 
-        void from_json(const json &src, MaterialParams &val);
-        void from_json(const json &src, MaterialUniform &val);
+        void from_json(const json &src, MetaUniformAny &val);
+        void from_json(const json &src, MetaMaterialParams &val);
         void from_json(const json &src, MetaEmbeddedMaterial &val);
+
+        NLOHMANN_JSON_SERIALIZE_ENUM(ZMD2_CULL, {
+            {ZMD2_CULL_NOCULLING,        "cull_noculling"},
+            {ZMD2_CULL_CLOCKWISE,        "cull_clockwise"},
+            {ZMD2_CULL_COUNTERCLOCKWISE, "cull_counterclockwise"},
+        })
+        NLOHMANN_JSON_SERIALIZE_ENUM(ZMD2_ZFUNC, {
+            {ZMD2_ZFUNC_NEVER,           "cmpfunc_never"},
+            {ZMD2_ZFUNC_LESS,            "cmpfunc_less"},
+            {ZMD2_ZFUNC_EQUAL,           "cmpfunc_equal"},
+            {ZMD2_ZFUNC_LESSEQUAL,       "cmpfunc_lessequal"},
+            {ZMD2_ZFUNC_GREATER,         "cmpfunc_greater"},
+            {ZMD2_ZFUNC_NOTEQUAL,        "cmpfunc_notequal"},
+            {ZMD2_ZFUNC_GREATEREQUAL,    "cmpfunc_greaterequal"},
+            {ZMD2_ZFUNC_ALWAYS,          "cmpfunc_always"},
+        })
+        NLOHMANN_JSON_SERIALIZE_ENUM(ZMD2_BM, {
+            {ZMD2_BM_ZERO,           "bm_zero"},
+            {ZMD2_BM_ONE,            "bm_one"},
+            {ZMD2_BM_SRC_COL,        "bm_src_colour"},
+            {ZMD2_BM_INV_SRC_COL,    "bm_inv_src_colour"},
+            {ZMD2_BM_SRC_ALPHA,      "bm_src_alpha"},
+            {ZMD2_BM_INV_SRC_ALPHA,  "bm_inv_src_alpha"},
+            {ZMD2_BM_DST_COL,        "bm_dest_colour"},
+            {ZMD2_BM_INV_DST_COL,    "bm_inv_dest_colour"},
+            {ZMD2_BM_DST_ALPHA,      "bm_dest_alpha"},
+            {ZMD2_BM_INV_DST_ALPHA,  "bm_inv_dest_alpha"},
+            {ZMD2_BM_SRC_ALPHA_SAT,  "bm_src_alpha_sat"},
+        })
+        NLOHMANN_JSON_SERIALIZE_ENUM(ZMD2_BM_EQ, {
+            {ZMD2_BM_EQ_ADD,                 "bm_eq_add"},
+            {ZMD2_BM_EQ_SUBTRACT,            "bm_eq_subtract"},
+            {ZMD2_BM_EQ_REVERSE_SUBTRACT,    "bm_eq_reverse_subtract"},
+            {ZMD2_BM_EQ_MIN,                 "bm_eq_min"},
+            {ZMD2_BM_EQ_MAX,                 "bm_eq_max"},
+        })
+        NLOHMANN_JSON_SERIALIZE_ENUM(ZMD2_TEX_FORMAT, {
+            {ZMD2_TEX_FORMAT_RGBA8_UNORM, "surface_rgba8unorm"},
+            {ZMD2_TEX_FORMAT_R8_UNORM, "surface_r8unorm"},
+            {ZMD2_TEX_FORMAT_RG8_UNORM, "surface_rg8unorm"},
+            {ZMD2_TEX_FORMAT_RGBA4_UNORM, "surface_rgba4unorm"},
+            {ZMD2_TEX_FORMAT_RGBA16_FLOAT, "surface_rgba16float"},
+            {ZMD2_TEX_FORMAT_R16_FLOAT, "surface_r16float"},
+            {ZMD2_TEX_FORMAT_RGBA32_FLOAT, "surface_rgba32float"},
+            {ZMD2_TEX_FORMAT_R32_FLOAT, "surface_r32float"},
+        })
+
+        // NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(MetaMaterialParams, cull, zwrite, ztest, zfunc, alphatest, alphatestRef, baseTexfilter, baseTexrepeat, chainMaterialNext, shadowPassMaterial, shadowPassMaterialCopy, shadowPassMaterialCopyShader, transparent, blendmodeSrc, blendmodeDst, blendmodeEq)
+        NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_ONLY_SERIALIZE(MetaMaterialParams, cull, zwrite, ztest, zfunc, alphatest, alphatestRef, baseTexfilter, baseTexrepeat, chainMaterialNext, shadowPassMaterial, shadowPassMaterialCopy, shadowPassMaterialCopyShader, transparent, blendmodeSrc, blendmodeDst, blendmodeEq)
+        NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(MetaUniform, name, type)
+        NLOHMANN_DEFINE_DERIVED_TYPE_NON_INTRUSIVE(MetaUniformSampler, MetaUniform, value, samplerTexfilter, samplerTexrepeat)
+        NLOHMANN_DEFINE_DERIVED_TYPE_NON_INTRUSIVE(MetaUniformCol, MetaUniform, value)
+        NLOHMANN_DEFINE_DERIVED_TYPE_NON_INTRUSIVE(MetaUniformFloat, MetaUniform, value)
+        NLOHMANN_DEFINE_DERIVED_TYPE_NON_INTRUSIVE(MetaUniformInt, MetaUniform, value)
+        NLOHMANN_DEFINE_DERIVED_TYPE_NON_INTRUSIVE(MetaUniformVec, MetaUniform, value)
+        NLOHMANN_DEFINE_DERIVED_TYPE_NON_INTRUSIVE(MetaUniformIvec, MetaUniform, value)
+        NLOHMANN_DEFINE_DERIVED_TYPE_NON_INTRUSIVE(MetaUniformMat4, MetaUniform, value)
+        // NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(MetaEmbeddedMaterial, name, shader, textures, params, uniforms)
+        NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_ONLY_SERIALIZE(MetaEmbeddedMaterial, name, shader, textures, params, uniforms)
+
+        NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(MetaEmbeddedTexture, name, embedded, width, height, format, blobOffset, blobSize)
+    
+        // For {fmt}
+        std::string format_as(MetaEmbeddedTexture val);
+        std::string format_as(MetaEmbeddedMaterial val);
+        std::string format_as(MetaMaterialParams val);
+        std::string format_as(MetaUniformSampler val);
+        std::string format_as(MetaUniformCol val);
+        std::string format_as(MetaUniformFloat val);
+        std::string format_as(MetaUniformInt val);
+        std::string format_as(MetaUniformVec val);
+        std::string format_as(MetaUniformIvec val);
+        std::string format_as(MetaUniformMat4 val);
     }
 }
+
+// Third party (GLM types) conversion definitions
+
+NLOHMANN_JSON_NAMESPACE_BEGIN
+
+template <>
+struct adl_serializer<glm::mat4> {
+    static void from_json(const json &src, glm::mat4 &val) {
+        auto uniformsSz = src.size();
+        
+        assert(uniformsSz == 16 && "MAT4 UNIFORMS MUST BE 16 VALUED ARRAY");
+        
+        auto values = src.get<std::array<float, 16>>();
+
+        val = glm::make_mat4(values.data());
+    };
+
+    static void to_json(json &src, const glm::mat4 &val) {
+        std::array<float, 16> flattened;
+
+        std::copy(glm::value_ptr(val), glm::value_ptr(val) + 16, flattened.begin());
+        src = json { flattened };
+    };
+};
+
+NLOHMANN_JSON_NAMESPACE_END
 
 #endif

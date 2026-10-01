@@ -25,7 +25,7 @@
 namespace gfx {
     /** Texture abstraction. */
     class Texture {
-        std::string name;
+        std::string id;
         
         // OpenGL object refs
         GLuint texId;
@@ -52,7 +52,10 @@ namespace gfx {
         Texture& operator=(Texture &&other);
 
         /** Returns OpenGL texture ID. */
-        GLuint get_texture_id() const;
+        GLuint get_gl_texture_id() const;
+
+        /** Returns (internal) ID. */
+        std::string get_id() const;
 
         /** Frees OpenGL resources. */
         void free_resources();

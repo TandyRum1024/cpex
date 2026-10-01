@@ -55,10 +55,16 @@ namespace gfx {
         void set_shader(std::shared_ptr<Shader> shd);
         /** Adds an uniform. */
         template <typename T>
-        void add_uniform(T &&uniform);
+        void add_uniforms(T &&uniform);
+        /** Adds an uniform. */
+        template <typename T>
+        void add_uniforms_ptr(std::shared_ptr<T> &uniformPtr);
         /** Adds uniforms. */
-        template <typename...T>
-        void add_uniforms(T&&... uniform);
+        template <typename U, typename... T>
+        void add_uniforms(U &&uniform, T&&... uniformArgs);
+        /** Adds uniforms. */
+        template <typename U, typename... T>
+        void add_uniforms_ptr(std::shared_ptr<U> &uniformPtr, std::shared_ptr<T>&... uniformPtrArgs);
         /** Returns an uniform with given name and type. `nullptr` if not found or wrong type. */
         template <typename T>
         std::shared_ptr<T> get_uniform(const std::string name);
@@ -77,14 +83,31 @@ namespace gfx {
     // DEFINITIONS (INCLUSION MODEL FOR TEMPLATES!) //
 
     template <typename T>
-    void Material::add_uniform(T &&uniform) {
-        uniforms.add_uniform(std::forward<T>(uniform));
+    void Material::add_uniforms(T &&uniform) {
+        uniforms.add_uniforms(std::forward<T>(uniform));
         set_merge_required();
     }
 
-    template <typename... T>
-    void Material::add_uniforms(T&&... uniform) {
-        (add_uniform<T>(std::forward<T>(uniform)), ...);
+    template <typename T>
+    void Material::add_uniforms_ptr(std::shared_ptr<T> &uniformPtr) {
+        uniforms.add_uniforms(uniformPtr);
+        set_merge_required();
+    }
+
+    template <typename U, typename... T>
+    void Material::add_uniforms(U &&uniform, T&&... uniformArgs) {
+        uniforms.add_uniforms(std::forward<U>(uniform));
+        set_merge_required();
+
+        add_uniforms(std::forward<T>(uniformArgs)...);
+    }
+
+    template <typename U, typename... T>
+    void Material::add_uniforms_ptr(std::shared_ptr<U> &uniformPtr, std::shared_ptr<T>&... uniformPtrArgs) {
+        uniforms.add_uniforms(uniformPtr);
+        set_merge_required();
+
+        add_uniforms<T>(uniformPtrArgs...);
     }
 
     template <typename T>

@@ -12,8 +12,12 @@
 // spdlog
 #include <spdlog/spdlog.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
+// JSON
+#include <nlohmann/json.hpp>
 // ----------------------------
 // EXTERNAL LIBRARIES //
+
+using json = nlohmann::json;
 
 int main() {
     CpexApp app("CT1", true);
@@ -35,6 +39,12 @@ int main() {
             else {
                 logger->error("(NO EXCEPTION DATA WAS FOUND!)");
             }
+        }
+        catch (json::parse_error e) {
+            logger->error(fmt::format("JSON parse error {} (at {})", e.what(), e.byte));
+        }
+        catch (json::exception e) {
+            logger->error(fmt::format("JSON error: {}", e.what()));
         }
         catch (std::exception e) {
             logger->error(fmt::format("exception: {}", e.what()));

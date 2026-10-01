@@ -31,36 +31,36 @@ Texture::Texture(std::string name):
 }
 
 Texture::Texture(std::string name, GLenum texTarget):
-    name(name),
+    id(name),
     texId(0),
     texTarget(texTarget),
     texUnit(GL_TEXTURE0),
     fmtInternal(GL_RGBA8)
     {
-    // zcl::logger("TEX")->info("TEXTURE {} CREATED", name);
+    // zcl::logger("TEX")->info("TEXTURE {} CREATED", id);
 }
 
 Texture::~Texture() {
-    // zcl::logger("TEX")->info("TEXTURE {} DESTROYED", name);
+    // zcl::logger("TEX")->info("TEXTURE {} DESTROYED", id);
     free_resources();
 }
 
 Texture::Texture(Texture &&other):
-    name(std::move(other.name)),
+    id(std::move(other.id)),
     texId(std::exchange(other.texId, 0)),
     texTarget(std::exchange(other.texTarget, 0)),
     texUnit(std::exchange(other.texUnit, 0)),
     fmtInternal(std::exchange(other.fmtInternal, 0)) {}
 
 Texture& Texture::operator=(Texture &&other) {
-    // zcl::logger("TEX")->info("TEXTURE {}<-{} MOVED", name, other.name);
+    // zcl::logger("TEX")->info("TEXTURE {}<-{} MOVED", id, other.id);
 
     if (this == &other) {
         // Self assignment, no need to move
         return *this;
     }
 
-    std::swap(name, other.name);
+    std::swap(id, other.id);
     std::swap(texId, other.texId);
     std::swap(texTarget, other.texTarget);
     std::swap(texUnit, other.texUnit);
@@ -70,12 +70,16 @@ Texture& Texture::operator=(Texture &&other) {
     return *this;
 }
 
-GLuint Texture::get_texture_id() const {
+GLuint Texture::get_gl_texture_id() const {
     return texId;
 }
 
+std::string Texture::get_id() const {
+    return id;
+}
+
 void Texture::free_resources() {
-    // zcl::logger("TEX")->info("TEXTURE {}: free_resources()", name);
+    // zcl::logger("TEX")->info("TEXTURE {}: free_resources()", id);
     if (texId) {
         glDeleteTextures(1, &texId);
         texId = 0;
@@ -156,7 +160,7 @@ unsigned int TextureManager::bind_texture(const std::weak_ptr<Texture> &tex, con
     }
 
     // Check for already bound texture
-    GLuint texId = texture->get_texture_id();
+    GLuint texId = texture->get_gl_texture_id();
 
     // TODO: this is only possible on 64bit machines as texId is 32bit -> making key only possible with 64bit values
     int64_t key = (texId << sizeof(GLuint)) | keySalt;

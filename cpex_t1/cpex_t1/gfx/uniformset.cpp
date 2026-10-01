@@ -21,26 +21,9 @@ std::vector<std::shared_ptr<Uniform>>::const_iterator UniformSet::end() {
     return uniforms.cend();
 }
 
-void UniformSet::add_uniform(const std::shared_ptr<Uniform> &uniformPtr) {
-    auto name = uniformPtr->get_name();
-    
-    // Override if needed
-    if (uniformsByName.contains(name)) {
-        auto& entry = uniformsByName[name];
-        auto idx = entry.first;
-        uniforms[idx] = uniformPtr;
-        entry.second = uniformPtr;
-    }
-    else {
-        size_t idx = uniforms.size();
-        uniforms.push_back(uniformPtr);
-        uniformsByName[name] = std::pair(idx, uniformPtr);
-    }
-}
-
 void UniformSet::add_uniforms_from(const UniformSet &other) {
-    for (auto&& uniform: other.uniforms) {
-        add_uniform(uniform);
+    for (auto uniform: other.uniforms) {
+        add_uniforms_ptr(uniform);
     }
 }
 

@@ -127,7 +127,7 @@ namespace gfx {
     template <>
     void UniformIvec2::apply_uniform(GLint location) const;
     /** ivec3 uniform. */
-    using UniformIvec3 = UniformTemplated<glm::ivec3> const;
+    using UniformIvec3 = UniformTemplated<glm::ivec3>;
     template <>
     void UniformIvec3::apply_uniform(GLint location) const;
     /** ivec4 uniform. */
