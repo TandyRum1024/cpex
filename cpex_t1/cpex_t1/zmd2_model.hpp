@@ -385,7 +385,7 @@ namespace gfx {
 
             std::string to_string() const;
             /** Converts loaded data into actual texture */
-            gfx::Texture to_texture(zen::AssetManager &manager, const std::span<uint8_t> &bytes) const;
+            gfx::Texture to_texture(const std::span<uint8_t> &bytes) const;
         };
 
         /** ZMD2: Model. */

@@ -102,6 +102,7 @@ void Texture::load_from_buffer_2d(const void* pixels, int wid, int hei, GLenum d
                         ? ( 1 + floor(std::log2(std::fmax(wid, hei))) )
                         : mipmapLevels;
 
+        // zcl::logger("GFX")->error("TEX ({}x{}, level: {})", wid, hei, mipmapLevels);
         glTexStorage2D(texTarget, mipmapLevels, fmtInternal, wid, hei);
         glTexSubImage2D(texTarget, 0, 0, 0, wid, hei, dataFormat, dataType, pixels);
     #else

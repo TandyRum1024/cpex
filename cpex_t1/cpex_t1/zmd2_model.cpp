@@ -268,7 +268,7 @@ gfx::Material MetaEmbeddedMaterial::to_material(zen::AssetManager &manager) cons
     return newMat;
 }
 
-gfx::Texture MetaEmbeddedTexture::to_texture(zen::AssetManager &manager, const std::span<uint8_t> &bytes) const {
+gfx::Texture MetaEmbeddedTexture::to_texture(const std::span<uint8_t> &bytes) const {
     auto newTexName = name;
     auto newTex = gfx::Texture(newTexName, GL_TEXTURE_2D);
     auto blobSpan = bytes.subspan(blobOffset, blobSize);
@@ -350,9 +350,11 @@ void Model::load_and_find_embedded_assets(zen::AssetManager &manager, const std:
             continue;
         }
 
-        auto newTex = texInfo.to_texture(manager, extraBytes);
-
-        manager.add_texture(newTex.get_id(), std::make_shared<gfx::Texture>(std::move(newTex)));
+        // zcl::logger("ZMD2")->error("MODEL {}: EMBEDDED TEX {} ({}x{})", id, texInfo.name, texInfo.width, texInfo.height);
+        auto newTex = texInfo.to_texture(extraBytes);
+        auto newTexPath = newTex.get_id();
+        // zcl::logger("ZMD2")->error("\t(EMBEDDED TEX {} FIN)", texInfo.name);
+        manager.add_texture(newTexPath, std::make_shared<gfx::Texture>(std::move(newTex)));
     }
 
     for (auto&& matInfo: embeddedMaterials) {
