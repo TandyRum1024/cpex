@@ -3,6 +3,8 @@
  * ZIK@MMXXVI
  */
 
+#define DEBUG_INIT_AND_QUIT true
+
 #include <iostream>
 #include <fstream>
 #include <string>
@@ -270,6 +272,10 @@ void CpexApp::on_setup() {
     }
 
     _logger->info("Setup done");
+    
+    if (DEBUG_INIT_AND_QUIT) {
+        exit(0);
+    }
     // assert(false);
 }
 

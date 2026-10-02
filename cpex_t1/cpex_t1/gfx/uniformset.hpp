@@ -32,13 +32,13 @@ namespace gfx {
         /** Adds an uniform. */
         template <typename T>
         void add_uniforms(T &&uniform);
-        /** Adds an uniform. */
+        /** Adds an uniform wrapped in a pointer. */
         template <typename T>
         void add_uniforms_ptr(std::shared_ptr<T> &uniformPtr);
-        /** Adds uniforms. */
+        /** Adds multiple uniforms. */
         template <typename U, typename...T>
         void add_uniforms(U &&uniform, T&&... uniformArgs);
-        /** Adds uniforms. */
+        /** Adds multiple uniforms wrapped in a pointer. */
         template <typename U, typename...T>
         void add_uniforms_ptr(std::shared_ptr<U> &uniformPtr, std::shared_ptr<T>&... uniformPtrArgs);
         /** Adds uniforms from other uniformset. */
@@ -105,45 +105,13 @@ namespace gfx {
 
     template <typename U, typename...T>
     void UniformSet::add_uniforms(U &&uniform, T&&... uniformArgs) {
-        static_assert(std::is_base_of<Uniform, U>::value, "U must be type of Uniform!");
-        
-        std::shared_ptr<U> ptr = std::make_shared<U>(std::forward<U>(uniform));
-        auto name = uniform.get_name();
-
-        // Override if needed
-        if (uniformsByName.contains(name)) {
-            auto entry = uniformsByName[name];
-            auto idx = entry.first;
-            uniforms[idx] = ptr;
-            entry.second = ptr;
-        }
-        else {
-            size_t idx = uniforms.size();
-            uniforms.push_back(ptr);
-            uniformsByName[name] = std::pair(idx, ptr);
-        }
-
-        add_uniforms(uniform);
+        add_uniforms(std::forward<U>(uniform));
+        add_uniforms(std::forward<T>(uniformArgs)...);
     }
 
     template <typename U, typename...T>
     void UniformSet::add_uniforms_ptr(std::shared_ptr<U> &uniformPtr, std::shared_ptr<T>&... uniformPtrArgs) {
-        static_assert(std::is_base_of<Uniform, U>::value, "U must be type of Uniform!");
-        auto name = uniformPtr->get_name();
-
-        // Override if needed
-        if (uniformsByName.contains(name)) {
-            auto entry = uniformsByName[name];
-            auto idx = entry.first;
-            uniforms[idx] = uniformPtr;
-            entry.second = uniformPtr;
-        }
-        else {
-            size_t idx = uniforms.size();
-            uniforms.push_back(uniformPtr);
-            uniformsByName[name] = std::pair(idx, uniformPtr);
-        }
-
+        add_uniforms_ptr(uniformPtr);
         add_uniforms_ptr(uniformPtrArgs);
     }
 

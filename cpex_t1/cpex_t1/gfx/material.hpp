@@ -56,13 +56,13 @@ namespace gfx {
         /** Adds an uniform. */
         template <typename T>
         void add_uniforms(T &&uniform);
-        /** Adds an uniform. */
+        /** Adds an uniform wrapped in a pointer. */
         template <typename T>
         void add_uniforms_ptr(std::shared_ptr<T> &uniformPtr);
-        /** Adds uniforms. */
+        /** Adds multiple uniforms. */
         template <typename U, typename... T>
         void add_uniforms(U &&uniform, T&&... uniformArgs);
-        /** Adds uniforms. */
+        /** Adds multiple uniforms wrapped in a pointer. */
         template <typename U, typename... T>
         void add_uniforms_ptr(std::shared_ptr<U> &uniformPtr, std::shared_ptr<T>&... uniformPtrArgs);
         /** Returns an uniform with given name and type. `nullptr` if not found or wrong type. */
@@ -90,24 +90,20 @@ namespace gfx {
 
     template <typename T>
     void Material::add_uniforms_ptr(std::shared_ptr<T> &uniformPtr) {
-        uniforms.add_uniforms(uniformPtr);
+        uniforms.add_uniforms_ptr(uniformPtr);
         set_merge_required();
     }
 
     template <typename U, typename... T>
     void Material::add_uniforms(U &&uniform, T&&... uniformArgs) {
-        uniforms.add_uniforms(std::forward<U>(uniform));
-        set_merge_required();
-
+        add_uniforms(std::forward<U>(uniform));
         add_uniforms(std::forward<T>(uniformArgs)...);
     }
 
     template <typename U, typename... T>
     void Material::add_uniforms_ptr(std::shared_ptr<U> &uniformPtr, std::shared_ptr<T>&... uniformPtrArgs) {
-        uniforms.add_uniforms(uniformPtr);
-        set_merge_required();
-
-        add_uniforms<T>(uniformPtrArgs...);
+        add_uniforms_ptr(uniformPtr);
+        add_uniforms_ptr(uniformPtrArgs...);
     }
 
     template <typename T>

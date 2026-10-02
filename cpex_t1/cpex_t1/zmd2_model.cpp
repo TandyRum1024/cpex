@@ -479,7 +479,10 @@ void gfx::zmd2mdl::from_json(const json &src, MetaUniformAny &val) {
 
     // TODO: this is idiotic. use a table to look up lambdas that reads appropriate types maybe
     // For now use "dumb" pseudo switch and pray that compilers will recognize my woes
-    if (uniformType == "FLOAT") {
+    if (uniformType == "COL") {
+        val = src.get<MetaUniformCol>();
+    }
+    else if (uniformType == "FLOAT") {
         val = src.get<MetaUniformFloat>();
     }
     else if (uniformType == "INT") {
@@ -496,6 +499,9 @@ void gfx::zmd2mdl::from_json(const json &src, MetaUniformAny &val) {
     }
     else if (uniformType == "MAT4") {
         val = src.get<MetaUniformMat4>();
+    }
+    else {
+        throw std::runtime_error(fmt::format("Invalid uniform type `{}`!", uniformType));
     }
 }
 
@@ -582,7 +588,8 @@ std::string MetaEmbeddedMaterial::to_string() const {
                 [](MetaUniformInt val){ return val.to_string(); },
                 [](MetaUniformVec val){ return val.to_string(); },
                 [](MetaUniformIvec val){ return val.to_string(); },
-                [](MetaUniformMat4 val){ return val.to_string(); }
+                [](MetaUniformMat4 val){ return val.to_string(); },
+                [](MetaUniform val){ return fmt::format("<`{}`: Unknown uniform type `{}`!!>", val.name, val.type); }
             },
             uniform
         );
