@@ -4,11 +4,13 @@
  */
 
 #include <memory>
+#include <ifstream>
 
 #include <zen/asset_manager.hpp>
 
 // LIBRARIES //
 #include <gfx/texture.hpp>
+#include <zmd2/zmd2.hpp>
 
 using namespace zen;
 
@@ -118,4 +120,46 @@ std::shared_ptr<gfx::Material> AssetManager::get_material(const std::string &rel
 
 void AssetManager::add_material(const std::string &relPath, const std::shared_ptr<gfx::Material> &data) {
     loadedMaterials[relPath] = data;
+}
+
+std::shared_ptr<mdl::zmd2::Model> AssetManager::get_model_zmd2(const std::string &relPath) { 
+    if (auto cache = loadedModelsZmd2.find(relPath); cache != loadedModelsZmd2.end()) {
+        // Cache hit
+        return cache->second;
+    }
+
+    return nullptr;
+}
+
+std::shared_ptr<mdl::zmd2::Model> AssetManager::load_model_zmd2(const std::string relPath, bool forceReload = false) { 
+    if (auto mdl = get_model_zmd2(relPath); !forceReload && shd) {
+        return mdl;
+    }
+
+    auto mdlPtr = std::shared_ptr<mdl::zmd2::Model>(nullptr);
+
+    try {
+        if (auto file = std::ifstream(basePath/ relPath, std::ios_base::binary); file) {
+            auto mdl = zmd2::load_model_from(relPath, relPath);
+            auto mdlConverted = mdl::zmd2::Model(mdl);
+
+            mdlConverted.load_and_find_embedded_assets(assetManager, matBase, texChecker);
+            mdlConverted.update_refs();
+            mdlPtr = std::make_shared<mdl::zmd2::Model>(mdlConverted);
+            loadedModelsZmd2[relPath] = mdlPtr;
+        }
+        else {
+            throw std::runtime_error(fmt::format("Model `{}` does not exist!", relPath));
+        }        
+    }
+    catch (std::runtime_error err) {
+        zcl::logger("ASSET")->error("FAILED TO LOAD MODEL!\n{}", std::string(err.what()));
+        throw std::runtime_error(fmt::format("FAILED TO LOAD MODEL!\n{}", std::string(err.what())));
+    }
+
+    return mdlPtr;
+}
+
+void AssetManager::add_model_zmd2(const std::string &relPath, const std::shared_ptr<mdl::zmd2::Model> &data) { 
+    loadedModelsZmd2[relPath] = data;
 }

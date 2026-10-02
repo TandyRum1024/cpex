@@ -30,11 +30,11 @@
 // ----------------------------
 // EXTERNAL LIBRARIES //
 
-using namespace gfx::zmd2mdl;
+using namespace mdl::zmd2;
 using json = nlohmann::json;
 
 // Constants definitions
-const extern std::shared_ptr<gfx::VertFormat> gfx::zmd2mdl::ZMD2_VERT_FORMAT_MESH = std::make_shared<gfx::VertFormat>(
+const extern std::shared_ptr<gfx::VertFormat> mdl::zmd2::ZMD2_VERT_FORMAT_MESH = std::make_shared<gfx::VertFormat>(
         gfx::VertFormat({
             gfx::VertAttribute(0, 3, GL_FLOAT, sizeof(float)), // POS
             gfx::VertAttribute(1, 2, GL_FLOAT, sizeof(float)), // UV
@@ -43,7 +43,7 @@ const extern std::shared_ptr<gfx::VertFormat> gfx::zmd2mdl::ZMD2_VERT_FORMAT_MES
         })
     );
 
-const extern std::shared_ptr<gfx::VertFormat> gfx::zmd2mdl::ZMD2_VERT_FORMAT_MESH_MORPH_SKINNED = std::make_shared<gfx::VertFormat>(
+const extern std::shared_ptr<gfx::VertFormat> mdl::zmd2::ZMD2_VERT_FORMAT_MESH_MORPH_SKINNED = std::make_shared<gfx::VertFormat>(
         gfx::VertFormat({
             gfx::VertAttribute(0, 3, GL_FLOAT, sizeof(float)), // POS
             gfx::VertAttribute(1, 2, GL_FLOAT, sizeof(float)), // UV
@@ -61,18 +61,18 @@ const extern std::shared_ptr<gfx::VertFormat> gfx::zmd2mdl::ZMD2_VERT_FORMAT_MES
         })
     );
 
-const extern std::unordered_map<zmd2::MODEL_TYPE, std::shared_ptr<gfx::VertFormat>> gfx::zmd2mdl::ZMD2_FORMAT_BY_MODEL_TBL = {
-        { zmd2::MODEL_TYPE_MESH, ZMD2_VERT_FORMAT_MESH },
-        { zmd2::MODEL_TYPE_MESH_MORPH_SKINNED, ZMD2_VERT_FORMAT_MESH_MORPH_SKINNED },
-        { zmd2::MODEL_TYPE_WIRE_MORPH_SKINNED, ZMD2_VERT_FORMAT_MESH_MORPH_SKINNED },
+const extern std::unordered_map<zmd2::MODEL_TYPE, std::shared_ptr<gfx::VertFormat>> mdl::zmd2::ZMD2_FORMAT_BY_MODEL_TBL = {
+        { ::zmd2::MODEL_TYPE_MESH, ZMD2_VERT_FORMAT_MESH },
+        { ::zmd2::MODEL_TYPE_MESH_MORPH_SKINNED, ZMD2_VERT_FORMAT_MESH_MORPH_SKINNED },
+        { ::zmd2::MODEL_TYPE_WIRE_MORPH_SKINNED, ZMD2_VERT_FORMAT_MESH_MORPH_SKINNED },
     };
 
-const extern std::unordered_map<zmd2::PRIM_TYPE, GLenum> gfx::zmd2mdl::ZMD2_GL_PRIM_BY_PRIM_TBL = {
-        { zmd2::PRIM_TYPE_TRIANGLE_LIST, GL_TRIANGLES },
-        { zmd2::PRIM_TYPE_LINE_LIST, GL_LINES },
+const extern std::unordered_map<zmd2::PRIM_TYPE, GLenum> mdl::zmd2::ZMD2_GL_PRIM_BY_PRIM_TBL = {
+        { ::zmd2::PRIM_TYPE_TRIANGLE_LIST, GL_TRIANGLES },
+        { ::zmd2::PRIM_TYPE_LINE_LIST, GL_LINES },
     };
 
-const extern std::unordered_map<ZMD2_TEX_FORMAT, GLenum> gfx::zmd2mdl::ZMD2_TEX_FORMAT_TO_GL_TEX_INTERNAL_FORMAT_TBL = {
+const extern std::unordered_map<ZMD2_TEX_FORMAT, GLenum> mdl::zmd2::ZMD2_TEX_FORMAT_TO_GL_TEX_INTERNAL_FORMAT_TBL = {
         { ZMD2_TEX_FORMAT_RGBA8_UNORM, GL_RGBA8 },
         { ZMD2_TEX_FORMAT_R8_UNORM, GL_R8 },
         { ZMD2_TEX_FORMAT_RG8_UNORM, GL_RG8 },
@@ -83,7 +83,7 @@ const extern std::unordered_map<ZMD2_TEX_FORMAT, GLenum> gfx::zmd2mdl::ZMD2_TEX_
         { ZMD2_TEX_FORMAT_R32_FLOAT, GL_R32F },
     };
 
-const extern std::unordered_map<ZMD2_TEX_FORMAT, GLenum> gfx::zmd2mdl::ZMD2_TEX_FORMAT_TO_GL_TEX_FORMAT_TBL = {
+const extern std::unordered_map<ZMD2_TEX_FORMAT, GLenum> mdl::zmd2::ZMD2_TEX_FORMAT_TO_GL_TEX_FORMAT_TBL = {
         { ZMD2_TEX_FORMAT_RGBA8_UNORM, GL_RGBA },
         { ZMD2_TEX_FORMAT_R8_UNORM, GL_RED },
         { ZMD2_TEX_FORMAT_RG8_UNORM, GL_RG },
@@ -100,7 +100,7 @@ struct overloads: Ts... {
     using Ts::operator()...;
 };
 
-void gfx::zmd2mdl::init(zen::AssetManager &manager, const std::filesystem::path &assetPath) {
+void mdl::zmd2::init(zen::AssetManager &manager, const std::filesystem::path &assetPath) {
     auto shd = manager.load_shader(ZMD2_ASSET_BASE_MATERIAL_SHADER);
     auto mat = std::make_shared<gfx::Material>(ZMD2_ASSET_BASE_MATERIAL);
     auto tex = std::make_shared<gfx::Texture>(ZMD2_ASSET_FALLBACK_TEXTURE);
@@ -118,28 +118,28 @@ void gfx::zmd2mdl::init(zen::AssetManager &manager, const std::filesystem::path 
     manager.add_texture(ZMD2_ASSET_FALLBACK_TEXTURE, tex);
 }
 
-GLenum gfx::zmd2mdl::find_gl_prim_by_prim_type(const zmd2::PRIM_TYPE &type) {
+GLenum mdl::zmd2::find_gl_prim_by_prim_type(const ::zmd2::PRIM_TYPE &type) {
     if (auto found = ZMD2_GL_PRIM_BY_PRIM_TBL.find(type); found != ZMD2_GL_PRIM_BY_PRIM_TBL.end()) {
         return found->second;
     }
     return 0;
 }
 
-std::shared_ptr<gfx::VertFormat> gfx::zmd2mdl::find_vert_format_by_model_type(const zmd2::MODEL_TYPE &type) {
+std::shared_ptr<gfx::VertFormat> mdl::zmd2::find_vert_format_by_model_type(const ::zmd2::MODEL_TYPE &type) {
     if (auto found = ZMD2_FORMAT_BY_MODEL_TBL.find(type); found != ZMD2_FORMAT_BY_MODEL_TBL.end()) {
         return found->second;
     }
     return 0;
 }
 
-GLenum gfx::zmd2mdl::find_gl_tex_base_format_by_tex_format(const ZMD2_TEX_FORMAT &type) {
+GLenum mdl::zmd2::find_gl_tex_base_format_by_tex_format(const ZMD2_TEX_FORMAT &type) {
     if (auto found = ZMD2_TEX_FORMAT_TO_GL_TEX_INTERNAL_FORMAT_TBL.find(type); found != ZMD2_TEX_FORMAT_TO_GL_TEX_INTERNAL_FORMAT_TBL.end()) {
         return found->second;
     }
     return GL_RGBA8;
 }
 
-GLenum gfx::zmd2mdl::find_gl_tex_data_format_by_tex_format(const ZMD2_TEX_FORMAT &type) {
+GLenum mdl::zmd2::find_gl_tex_data_format_by_tex_format(const ZMD2_TEX_FORMAT &type) {
     if (auto found = ZMD2_TEX_FORMAT_TO_GL_TEX_FORMAT_TBL.find(type); found != ZMD2_TEX_FORMAT_TO_GL_TEX_FORMAT_TBL.end()) {
         return found->second;
     }
@@ -150,7 +150,7 @@ Bbox::Bbox():
     min(0),
     max(0) {}
 
-Bbox::Bbox(zmd2::BboxData *src):
+Bbox::Bbox(::zmd2::BboxData *src):
     min(glm::make_vec3(src->min)),
     max(glm::make_vec3(src->max)) {}
 
@@ -159,13 +159,13 @@ void Bbox::merge_from(Bbox &other) {
     max = glm::max(max, other.max);
 }
 
-Part::Part(zmd2::PartData *src):
+Part::Part(::zmd2::PartData *src):
     id(src->id),
     type(src->type),
     parentIdx(src->parentIdx),
     childrenIndices(src->childrenIndices) {}
 
-Part::Part(std::string id, zmd2::PART_TYPE type):
+Part::Part(std::string id, ::zmd2::PART_TYPE type):
     id(id),
     type(type),
     parentIdx(-1) {}
@@ -182,15 +182,15 @@ void Part::update_refs(Model *mdl) {
     }
 }
 
-PartPoint::PartPoint(zmd2::PartPointData *src):
+PartPoint::PartPoint(::zmd2::PartPointData *src):
     Part(src),
     tfLocal(glm::make_vec3(src->tfLocal.pos), glm::make_vec4(src->tfLocal.rotQuaternion), glm::make_vec3(src->tfLocal.scale)),
     bounds(&src->bounds) {}
 
 PartPoint::PartPoint(std::string id):
-    Part(id, zmd2::PART_TYPE_POINT) {}
+    Part(id, ::zmd2::PART_TYPE_POINT) {}
 
-PartModel::PartModel(zmd2::PartModelData *src):
+PartModel::PartModel(::zmd2::PartModelData *src):
     Part(src),
     tfLocal(glm::make_vec3(src->tfLocal.pos), glm::make_vec4(src->tfLocal.rotQuaternion), glm::make_vec3(src->tfLocal.scale)),
     bounds(&src->bounds),
@@ -231,9 +231,9 @@ void PartModel::update_refs(Model *mdl) {
 }
 
 PartModel::PartModel(std::string id):
-    Part(id, zmd2::PART_TYPE_MODEL),
-    modelType(zmd2::MODEL_TYPE_MESH),
-    modelPrim(zmd2::PRIM_TYPE_TRIANGLE_LIST),
+    Part(id, ::zmd2::PART_TYPE_MODEL),
+    modelType(::zmd2::MODEL_TYPE_MESH),
+    modelPrim(::zmd2::PRIM_TYPE_TRIANGLE_LIST),
     modelPrimGl(find_gl_prim_by_prim_type(modelPrim)) {}
 
 std::shared_ptr<MaterialAndMeshPair> PartModel::reserve_matmesh(const std::string &materialId, std::shared_ptr<gfx::Material> &material) {
@@ -266,7 +266,7 @@ std::shared_ptr<MaterialAndMeshPair> PartModel::find_matmesh_by_material_id(cons
     return (*res).second;
 }
 
-Bone::Bone(zmd2::BoneData *src):
+Bone::Bone(::zmd2::BoneData *src):
     id(src->id),
     parentIdx(src->parentIdx),
     childrenIndices(src->childrenIndices),
@@ -370,7 +370,7 @@ gfx::Texture MetaEmbeddedTexture::to_texture(const std::span<uint8_t> &bytes) co
     return newTex;
 }
 
-Model::Model(zmd2::Model *src):
+Model::Model(::zmd2::Model *src):
     id(src->id),
     bounds(&src->bounds),
     materialIds(src->materialNames),
@@ -380,17 +380,17 @@ Model::Model(zmd2::Model *src):
         parts.resize(src->parts.size());
 
         // Convert bones
-        std::transform(src->bones.begin(), src->bones.end(), bones.begin(), [](std::shared_ptr<zmd2::BoneData> bone){
+        std::transform(src->bones.begin(), src->bones.end(), bones.begin(), [](std::shared_ptr<::zmd2::BoneData> bone){
             return std::make_shared<Bone>(&(*bone));
         });
         // Convert parts
-        std::transform(src->parts.begin(), src->parts.end(), parts.begin(), [](std::shared_ptr<zmd2::PartData> part){
+        std::transform(src->parts.begin(), src->parts.end(), parts.begin(), [](std::shared_ptr<::zmd2::PartData> part){
             std::shared_ptr<Part> conv;
 
-            if (auto partPoint = std::static_pointer_cast<zmd2::PartPointData>(part)) {
+            if (auto partPoint = std::static_pointer_cast<::zmd2::PartPointData>(part)) {
                 conv = std::make_shared<PartPoint>(&(*partPoint));
             }
-            else if (auto partModel = std::static_pointer_cast<zmd2::PartModelData>(part)) {
+            else if (auto partModel = std::static_pointer_cast<::zmd2::PartModelData>(part)) {
                 conv = std::make_shared<PartModel>(&(*partModel));
             }
 
@@ -575,7 +575,7 @@ void json_get_to(const json &src, const char key[], T &dst) {
     }
 }
 
-void gfx::zmd2mdl::from_json(const json &src, MetaUniformAny &val) {
+void mdl::zmd2::from_json(const json &src, MetaUniformAny &val) {
     std::string uniformType = src.at("type").get<std::string>();
 
     // TODO: this is idiotic. use a table to look up lambdas that reads appropriate types maybe
@@ -606,7 +606,7 @@ void gfx::zmd2mdl::from_json(const json &src, MetaUniformAny &val) {
     }
 }
 
-void gfx::zmd2mdl::from_json(const json &src, MetaMaterialParams &val) {
+void mdl::zmd2::from_json(const json &src, MetaMaterialParams &val) {
     // Take care of nullable types
     __ZMD2_TO_JSON_V(src, val, cull);
     __ZMD2_TO_JSON_V(src, val, zwrite);
@@ -626,7 +626,7 @@ void gfx::zmd2mdl::from_json(const json &src, MetaMaterialParams &val) {
     __ZMD2_TO_JSON_V(src, val, blendmodeEq);
 }
 
-void gfx::zmd2mdl::from_json(const json &src, MetaEmbeddedMaterial &val) {
+void mdl::zmd2::from_json(const json &src, MetaEmbeddedMaterial &val) {
     // Take care of nullable types
     __ZMD2_TO_JSON_V(src, val, name);
     __ZMD2_TO_JSON_V(src, val, shader);
@@ -717,13 +717,13 @@ std::string MetaEmbeddedTexture::to_string() const {
     return str;
 }
 
-std::string gfx::zmd2mdl::format_as(MetaEmbeddedTexture val) { return val.to_string(); };
-std::string gfx::zmd2mdl::format_as(MetaEmbeddedMaterial val) { return val.to_string(); };
-std::string gfx::zmd2mdl::format_as(MetaMaterialParams val) { return val.to_string(); };
-std::string gfx::zmd2mdl::format_as(MetaUniformSampler val) { return val.to_string(); };
-std::string gfx::zmd2mdl::format_as(MetaUniformCol val) { return val.to_string(); };
-std::string gfx::zmd2mdl::format_as(MetaUniformFloat val) { return val.to_string(); };
-std::string gfx::zmd2mdl::format_as(MetaUniformInt val) { return val.to_string(); };
-std::string gfx::zmd2mdl::format_as(MetaUniformVec val) { return val.to_string(); };
-std::string gfx::zmd2mdl::format_as(MetaUniformIvec val) { return val.to_string(); };
-std::string gfx::zmd2mdl::format_as(MetaUniformMat4 val) { return val.to_string(); };
+std::string mdl::zmd2::format_as(MetaEmbeddedTexture val) { return val.to_string(); };
+std::string mdl::zmd2::format_as(MetaEmbeddedMaterial val) { return val.to_string(); };
+std::string mdl::zmd2::format_as(MetaMaterialParams val) { return val.to_string(); };
+std::string mdl::zmd2::format_as(MetaUniformSampler val) { return val.to_string(); };
+std::string mdl::zmd2::format_as(MetaUniformCol val) { return val.to_string(); };
+std::string mdl::zmd2::format_as(MetaUniformFloat val) { return val.to_string(); };
+std::string mdl::zmd2::format_as(MetaUniformInt val) { return val.to_string(); };
+std::string mdl::zmd2::format_as(MetaUniformVec val) { return val.to_string(); };
+std::string mdl::zmd2::format_as(MetaUniformIvec val) { return val.to_string(); };
+std::string mdl::zmd2::format_as(MetaUniformMat4 val) { return val.to_string(); };

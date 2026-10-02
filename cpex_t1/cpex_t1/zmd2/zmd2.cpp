@@ -26,7 +26,7 @@
 using namespace zmd2;
 using json = nlohmann::json;
 
-std::shared_ptr<Model> zmd2::load_model_from(const std::string &id, std::istream &in, std::streampos begin, std::streampos end) {
+Model zmd2::load_model_from(const std::string &id, std::istream &in, std::streampos begin, std::streampos end) {
     Header header = {};
     auto seekPrev = in.tellg();
     
@@ -180,5 +180,5 @@ std::shared_ptr<Model> zmd2::load_model_from(const std::string &id, std::istream
     // Seet to previous position
     in.seekg(seekPrev);
 
-    return std::make_shared<Model>(model);
+    return model;
 }

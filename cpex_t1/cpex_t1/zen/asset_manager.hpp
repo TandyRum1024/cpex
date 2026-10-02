@@ -14,6 +14,7 @@
 #include <gfx/texture.hpp>
 #include <gfx/material.hpp>
 #include <gfx/shader.hpp>
+#include <zmd2_model.hpp>
 
 namespace zen {
     class AssetManager {
@@ -24,6 +25,7 @@ namespace zen {
         std::unordered_map<std::string, std::shared_ptr<gfx::Texture>> loadedTextures;
         std::unordered_map<std::string, std::shared_ptr<gfx::Shader>> loadedShaders;
         std::unordered_map<std::string, std::shared_ptr<gfx::Material>> loadedMaterials;
+        std::unordered_map<std::string, std::shared_ptr<mdl::zmd2::Model>> loadedModelsZmd2;
 
     public:
         AssetManager();
@@ -52,6 +54,10 @@ namespace zen {
         std::shared_ptr<gfx::Material> get_material(const std::string &relPath);
         //std::shared_ptr<gfx::Material> load_material(const std::string relPath, bool forceReload = false);
         void add_material(const std::string &relPath, const std::shared_ptr<gfx::Material> &data);
+
+        std::shared_ptr<mdl::zmd2::Model> get_model_zmd2(const std::string &relPath);
+        std::shared_ptr<mdl::zmd2::Model> load_model_zmd2(const std::string relPath, bool forceReload = false);
+        void add_model_zmd2(const std::string &relPath, const std::shared_ptr<mdl::zmd2::Model> &data);
     };
 }
 
