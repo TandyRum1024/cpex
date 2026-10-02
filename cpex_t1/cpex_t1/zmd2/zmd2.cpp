@@ -41,7 +41,7 @@ std::shared_ptr<Model> zmd2::load_model_from(const std::string &id, std::istream
         end = bytes.tellg();
     }
     bytes.seekg(begin, std::ios_base::beg);
-    zcl::logger("ZMD2")->warn("FILE SZ: {} ({}-{})", end - begin, 0 + begin, 0 + end);
+    // zcl::logger("ZMD2")->warn("FILE SZ: {} ({}-{})", end - begin, 0 + begin, 0 + end);
 
     // Read header
     bytes.read(header.magic, 4);
@@ -153,29 +153,29 @@ std::shared_ptr<Model> zmd2::load_model_from(const std::string &id, std::istream
         .extraBytes = std::move(blobBytes),
     };
 
-    zcl::logger("ZMD2")->info("HEADER: \n" + header.to_string());
-    zcl::logger("ZMD2")->info("BODY:");
-    zcl::logger("ZMD2")->info("\tBONES:");
-    for (auto&& bone: model.bones) {
-        zcl::logger("ZMD2")->info("\t\t{0}: PARENT: {1}({1:#x}) ({2} CHILDS)",  bone->id, bone->parentIdx, bone->childrenIndices.size());
-    }
-    zcl::logger("ZMD2")->info("\tPARTS:");
-    for (auto&& part: model.parts) {
-        zcl::logger("ZMD2")->info("\t\t{0}: TYPE: {1}, PARENT: {2}({2:#x}), ({2} CHILDS)", part->id, static_cast<int>(part->type), part->parentIdx, part->childrenIndices.size());
+    // zcl::logger("ZMD2")->info("HEADER: \n" + header.to_string());
+    // zcl::logger("ZMD2")->info("BODY:");
+    // zcl::logger("ZMD2")->info("\tBONES:");
+    // for (auto&& bone: model.bones) {
+    //     zcl::logger("ZMD2")->info("\t\t{0}: PARENT: {1}({1:#x}) ({2} CHILDS)",  bone->id, bone->parentIdx, bone->childrenIndices.size());
+    // }
+    // zcl::logger("ZMD2")->info("\tPARTS:");
+    // for (auto&& part: model.parts) {
+    //     zcl::logger("ZMD2")->info("\t\t{0}: TYPE: {1}, PARENT: {2}({2:#x}), ({2} CHILDS)", part->id, static_cast<int>(part->type), part->parentIdx, part->childrenIndices.size());
         
-        switch (part->type) {
-            case PART_TYPE_POINT: 
-                zcl::logger("ZMD2")->info("\t\t(TYPE POINT)");
-                break;
-            case PART_TYPE_MODEL:
-                if (auto partModel = std::static_pointer_cast<PartModelData>(part)) {
-                    zcl::logger("ZMD2")->info("\t\t(TYPE MODEL) MESH TYPE: {} ({} MORPHS, {} MATERIALS, BOUND: (min {}, max {}))", static_cast<int>(partModel->modelType), partModel->morphIndices.size(), partModel->materialIndices.size(), fmt::join(partModel->bounds.min, ", "), fmt::join(partModel->bounds.max, ", "));
-                }
-                break;
-        }
-    }
-    zcl::logger("ZMD2")->info("METADATA: {}", model.metadata.dump(1));
-    zcl::logger("ZMD2")->info("EXTRA BYTES: ({} bytes)", model.extraBytes.size());
+    //     switch (part->type) {
+    //         case PART_TYPE_POINT: 
+    //             zcl::logger("ZMD2")->info("\t\t(TYPE POINT)");
+    //             break;
+    //         case PART_TYPE_MODEL:
+    //             if (auto partModel = std::static_pointer_cast<PartModelData>(part)) {
+    //                 zcl::logger("ZMD2")->info("\t\t(TYPE MODEL) MESH TYPE: {} ({} MORPHS, {} MATERIALS, BOUND: (min {}, max {}))", static_cast<int>(partModel->modelType), partModel->morphIndices.size(), partModel->materialIndices.size(), fmt::join(partModel->bounds.min, ", "), fmt::join(partModel->bounds.max, ", "));
+    //             }
+    //             break;
+    //     }
+    // }
+    // zcl::logger("ZMD2")->info("METADATA: {}", model.metadata.dump(1));
+    // zcl::logger("ZMD2")->info("EXTRA BYTES: ({} bytes)", model.extraBytes.size());
 
     // Seet to previous position
     in.seekg(seekPrev);

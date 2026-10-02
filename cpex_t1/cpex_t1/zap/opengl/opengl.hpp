@@ -73,6 +73,8 @@ namespace zap {
         virtual void on_loop_debug_ui(double dtMillis) {};
 
     public:
+        /** Updates current windows size. */
+        void set_window_size(int width, int height);
         /** Updates current windows title. */
         void set_window_title(const std::string windowTitle);
         /** Sets V-Sync. */

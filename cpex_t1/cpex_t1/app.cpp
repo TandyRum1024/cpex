@@ -3,7 +3,7 @@
  * ZIK@MMXXVI
  */
 
-#define DEBUG_INIT_AND_QUIT true
+#define DEBUG_INIT_AND_QUIT false
 
 #include <iostream>
 #include <fstream>
@@ -91,6 +91,7 @@ void CpexApp::on_setup() {
     // Init managers
     gfx::TextureManager::init();
     assetManager.set_base_path(assetPath);
+    gfx::zmd2mdl::init(assetManager, assetPath);
 
     // Setup scene
     time = 0;
@@ -141,10 +142,15 @@ void CpexApp::on_setup() {
         std::chrono::duration<double, std::milli> duration = std::chrono::steady_clock::now() - time;
         _logger->info("Loading took: {}ms", duration.count());
 
+        time = std::chrono::steady_clock::now();
+
         auto mdlConverted = gfx::zmd2mdl::Model(&(*mdl));
 
         mdlConverted.load_and_find_embedded_assets(assetManager, matBase, texChecker);
         mdlConverted.update_refs();
+
+        duration = std::chrono::steady_clock::now() - time;
+        _logger->info("Converting and updating took: {}ms", duration.count());
     }
 
     // Build models

@@ -229,6 +229,10 @@ unsigned int TextureManager::get_allocated_num() const {
 }
 
 void texhelper::texture_load_from_file_2d(Texture& tex, std::filesystem::path file, GLint formatOverride) {
+    if (!std::filesystem::exists(file)) {
+        throw std::runtime_error(fmt::format("File `{}` does not exist!", file.string()));
+    }
+
     stbi_set_flip_vertically_on_load(true);
 
     int wid, hei, channels;

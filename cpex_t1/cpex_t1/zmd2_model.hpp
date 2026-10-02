@@ -6,6 +6,19 @@
 #ifndef __ZMD2_MDL_GUARD
 #define __ZMD2_MDL_GUARD
 
+// Debug
+#define ZMD2_DEBUG_TRACE false
+#define ZMD2_DEBUG_TRACE_FUNC(level, ...) if (ZMD2_DEBUG_TRACE) { zcl::logger("ZMD2")->level(__VA_ARGS__); }
+
+// Fallback asset IDs
+#define ZMD2_ASSET_BASE_MATERIAL "__zmd2_base"
+#define ZMD2_ASSET_BASE_MATERIAL_SHADER "shd_z3d_zmd2_morph_skinned"
+#define ZMD2_ASSET_FALLBACK_TEXTURE "__fallback"
+#define ZMD2_ASSET_FALLBACK_TEXTURE_PATH "checker.png"
+
+// Known uniform names
+#define ZMD2_UNIFORM_NAME_BASE_TEXTURE "uAlbedo"
+
 // JSON deserialization helpers
 // in form of `src.at("<name>").get_to(val.<name>);`
 #define __ZMD2_TO_JSON_V(src, val, name) src.at(#name).get_to(val.name)
@@ -17,6 +30,7 @@
 #include <string>
 #include <memory>
 #include <vector>
+#include <filesystem>
 #include <map>
 
 // LIBRARIES //
@@ -100,64 +114,20 @@ namespace gfx {
 
         class Model;
 
-        const static std::shared_ptr<gfx::VertFormat> ZMD2_VERT_FORMAT_MESH = std::make_shared<gfx::VertFormat>(
-                gfx::VertFormat({
-                    gfx::VertAttribute(0, 3, GL_FLOAT, sizeof(float)), // POS
-                    gfx::VertAttribute(1, 2, GL_FLOAT, sizeof(float)), // UV
-                    gfx::VertAttribute(2, 3, GL_FLOAT, sizeof(float)), // NORMAL
-                    gfx::VertAttribute(3, 4, GL_UNSIGNED_BYTE, sizeof(uint8_t)), // COL
-                })
-            );
-        const static std::shared_ptr<gfx::VertFormat> ZMD2_VERT_FORMAT_MESH_MORPH_SKINNED = std::make_shared<gfx::VertFormat>(
-                gfx::VertFormat({
-                    gfx::VertAttribute(0, 3, GL_FLOAT, sizeof(float)), // POS
-                    gfx::VertAttribute(1, 2, GL_FLOAT, sizeof(float)), // UV
-                    gfx::VertAttribute(2, 3, GL_FLOAT, sizeof(float)), // NORMAL
-                    gfx::VertAttribute(3, 4, GL_UNSIGNED_BYTE, sizeof(uint8_t)), // COL
-
-                    gfx::VertAttribute(4, 1, GL_FLOAT, sizeof(float)), // PART IDX
-                    gfx::VertAttribute(5, 4, GL_FLOAT, sizeof(float)), // BONE INDICES
-                    gfx::VertAttribute(6, 4, GL_FLOAT, sizeof(float)), // BONE WEIGHTS
-
-                    gfx::VertAttribute(7, 3, GL_FLOAT, sizeof(float)), // MORPH 1 POS OFF
-                    gfx::VertAttribute(8, 3, GL_FLOAT, sizeof(float)), // MORPH 1 NORMAL OFF
-                    gfx::VertAttribute(9, 3, GL_FLOAT, sizeof(float)), // MORPH 2 POS OFF
-                    gfx::VertAttribute(10, 3, GL_FLOAT, sizeof(float)), // MORPH 2 NORMAL OFF
-                })
-            );
+        // Default vertex formats
+        const extern std::shared_ptr<gfx::VertFormat> ZMD2_VERT_FORMAT_MESH;
+        const extern std::shared_ptr<gfx::VertFormat> ZMD2_VERT_FORMAT_MESH_MORPH_SKINNED;
         // Table to convert model type to vertex format.
-        const static std::unordered_map<zmd2::MODEL_TYPE, std::shared_ptr<gfx::VertFormat>> ZMD2_FORMAT_BY_MODEL_TBL = {
-            { zmd2::MODEL_TYPE_MESH, ZMD2_VERT_FORMAT_MESH },
-            { zmd2::MODEL_TYPE_MESH_MORPH_SKINNED, ZMD2_VERT_FORMAT_MESH_MORPH_SKINNED },
-            { zmd2::MODEL_TYPE_WIRE_MORPH_SKINNED, ZMD2_VERT_FORMAT_MESH_MORPH_SKINNED },
-        };
+        const extern std::unordered_map<zmd2::MODEL_TYPE, std::shared_ptr<gfx::VertFormat>> ZMD2_FORMAT_BY_MODEL_TBL;
         // Table to convert primitive type to OpenGL primitive mode.
-        const static std::unordered_map<zmd2::PRIM_TYPE, GLenum> ZMD2_GL_PRIM_BY_PRIM_TBL = {
-            { zmd2::PRIM_TYPE_TRIANGLE_LIST, GL_TRIANGLES },
-            { zmd2::PRIM_TYPE_LINE_LIST, GL_LINES },
-        };
+        const extern std::unordered_map<zmd2::PRIM_TYPE, GLenum> ZMD2_GL_PRIM_BY_PRIM_TBL;
         // Table to convert texture format to OpenGL BASE INTERNAL texture format.
-        const static std::unordered_map<ZMD2_TEX_FORMAT, GLenum> ZMD2_TEX_FORMAT_TO_GL_TEX_INTERNAL_FORMAT_TBL = {
-            { ZMD2_TEX_FORMAT_RGBA8_UNORM, GL_RGBA8 },
-            { ZMD2_TEX_FORMAT_R8_UNORM, GL_R8 },
-            { ZMD2_TEX_FORMAT_RG8_UNORM, GL_RG8 },
-            { ZMD2_TEX_FORMAT_RGBA4_UNORM, GL_RGBA4 },
-            { ZMD2_TEX_FORMAT_RGBA16_FLOAT, GL_RGBA16F },
-            { ZMD2_TEX_FORMAT_R16_FLOAT, GL_R16 },
-            { ZMD2_TEX_FORMAT_RGBA32_FLOAT, GL_RGBA32F },
-            { ZMD2_TEX_FORMAT_R32_FLOAT, GL_R32F },
-        };
+        const extern std::unordered_map<ZMD2_TEX_FORMAT, GLenum> ZMD2_TEX_FORMAT_TO_GL_TEX_INTERNAL_FORMAT_TBL;
         // Table to convert texture format to OpenGL PIXEL DATA texture format.
-        const static std::unordered_map<ZMD2_TEX_FORMAT, GLenum> ZMD2_TEX_FORMAT_TO_GL_TEX_FORMAT_TBL = {
-            { ZMD2_TEX_FORMAT_RGBA8_UNORM, GL_RGBA },
-            { ZMD2_TEX_FORMAT_R8_UNORM, GL_RED },
-            { ZMD2_TEX_FORMAT_RG8_UNORM, GL_RG },
-            { ZMD2_TEX_FORMAT_RGBA4_UNORM, GL_RGBA },
-            { ZMD2_TEX_FORMAT_RGBA16_FLOAT, GL_RGBA },
-            { ZMD2_TEX_FORMAT_R16_FLOAT, GL_RED },
-            { ZMD2_TEX_FORMAT_RGBA32_FLOAT, GL_RGBA },
-            { ZMD2_TEX_FORMAT_R32_FLOAT, GL_RED },
-        };
+        const extern std::unordered_map<ZMD2_TEX_FORMAT, GLenum> ZMD2_TEX_FORMAT_TO_GL_TEX_FORMAT_TBL;
+
+        /** Run this on init */
+        void init(zen::AssetManager &manager, const std::filesystem::path &assetPath);
 
         /** Returns OpenGL primitive mode from given primitive type. `0` if not found. */
         GLenum find_gl_prim_by_prim_type(const zmd2::PRIM_TYPE &type);
@@ -421,7 +391,7 @@ namespace gfx {
             Model(zmd2::Model *src);
             Model(std::string id);
 
-            void load_and_find_embedded_assets(zen::AssetManager &manager, const std::shared_ptr<gfx::Material> &fallbackMaterial, const std::shared_ptr<gfx::Texture> &fallbackTexture);
+            void load_and_find_embedded_assets(zen::AssetManager &manager, const std::shared_ptr<gfx::Material> &fallbackMaterial = nullptr, const std::shared_ptr<gfx::Texture> &fallbackTexture = nullptr);
 
             void update_refs();
 

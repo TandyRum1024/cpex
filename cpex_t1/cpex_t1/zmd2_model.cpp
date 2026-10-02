@@ -33,11 +33,90 @@
 using namespace gfx::zmd2mdl;
 using json = nlohmann::json;
 
+// Constants definitions
+const extern std::shared_ptr<gfx::VertFormat> gfx::zmd2mdl::ZMD2_VERT_FORMAT_MESH = std::make_shared<gfx::VertFormat>(
+        gfx::VertFormat({
+            gfx::VertAttribute(0, 3, GL_FLOAT, sizeof(float)), // POS
+            gfx::VertAttribute(1, 2, GL_FLOAT, sizeof(float)), // UV
+            gfx::VertAttribute(2, 3, GL_FLOAT, sizeof(float)), // NORMAL
+            gfx::VertAttribute(3, 4, GL_UNSIGNED_BYTE, sizeof(uint8_t)), // COL
+        })
+    );
+
+const extern std::shared_ptr<gfx::VertFormat> gfx::zmd2mdl::ZMD2_VERT_FORMAT_MESH_MORPH_SKINNED = std::make_shared<gfx::VertFormat>(
+        gfx::VertFormat({
+            gfx::VertAttribute(0, 3, GL_FLOAT, sizeof(float)), // POS
+            gfx::VertAttribute(1, 2, GL_FLOAT, sizeof(float)), // UV
+            gfx::VertAttribute(2, 3, GL_FLOAT, sizeof(float)), // NORMAL
+            gfx::VertAttribute(3, 4, GL_UNSIGNED_BYTE, sizeof(uint8_t)), // COL
+
+            gfx::VertAttribute(4, 1, GL_FLOAT, sizeof(float)), // PART IDX
+            gfx::VertAttribute(5, 4, GL_FLOAT, sizeof(float)), // BONE INDICES
+            gfx::VertAttribute(6, 4, GL_FLOAT, sizeof(float)), // BONE WEIGHTS
+
+            gfx::VertAttribute(7, 3, GL_FLOAT, sizeof(float)), // MORPH 1 POS OFF
+            gfx::VertAttribute(8, 3, GL_FLOAT, sizeof(float)), // MORPH 1 NORMAL OFF
+            gfx::VertAttribute(9, 3, GL_FLOAT, sizeof(float)), // MORPH 2 POS OFF
+            gfx::VertAttribute(10, 3, GL_FLOAT, sizeof(float)), // MORPH 2 NORMAL OFF
+        })
+    );
+
+const extern std::unordered_map<zmd2::MODEL_TYPE, std::shared_ptr<gfx::VertFormat>> gfx::zmd2mdl::ZMD2_FORMAT_BY_MODEL_TBL = {
+        { zmd2::MODEL_TYPE_MESH, ZMD2_VERT_FORMAT_MESH },
+        { zmd2::MODEL_TYPE_MESH_MORPH_SKINNED, ZMD2_VERT_FORMAT_MESH_MORPH_SKINNED },
+        { zmd2::MODEL_TYPE_WIRE_MORPH_SKINNED, ZMD2_VERT_FORMAT_MESH_MORPH_SKINNED },
+    };
+
+const extern std::unordered_map<zmd2::PRIM_TYPE, GLenum> gfx::zmd2mdl::ZMD2_GL_PRIM_BY_PRIM_TBL = {
+        { zmd2::PRIM_TYPE_TRIANGLE_LIST, GL_TRIANGLES },
+        { zmd2::PRIM_TYPE_LINE_LIST, GL_LINES },
+    };
+
+const extern std::unordered_map<ZMD2_TEX_FORMAT, GLenum> gfx::zmd2mdl::ZMD2_TEX_FORMAT_TO_GL_TEX_INTERNAL_FORMAT_TBL = {
+        { ZMD2_TEX_FORMAT_RGBA8_UNORM, GL_RGBA8 },
+        { ZMD2_TEX_FORMAT_R8_UNORM, GL_R8 },
+        { ZMD2_TEX_FORMAT_RG8_UNORM, GL_RG8 },
+        { ZMD2_TEX_FORMAT_RGBA4_UNORM, GL_RGBA4 },
+        { ZMD2_TEX_FORMAT_RGBA16_FLOAT, GL_RGBA16F },
+        { ZMD2_TEX_FORMAT_R16_FLOAT, GL_R16 },
+        { ZMD2_TEX_FORMAT_RGBA32_FLOAT, GL_RGBA32F },
+        { ZMD2_TEX_FORMAT_R32_FLOAT, GL_R32F },
+    };
+
+const extern std::unordered_map<ZMD2_TEX_FORMAT, GLenum> gfx::zmd2mdl::ZMD2_TEX_FORMAT_TO_GL_TEX_FORMAT_TBL = {
+        { ZMD2_TEX_FORMAT_RGBA8_UNORM, GL_RGBA },
+        { ZMD2_TEX_FORMAT_R8_UNORM, GL_RED },
+        { ZMD2_TEX_FORMAT_RG8_UNORM, GL_RG },
+        { ZMD2_TEX_FORMAT_RGBA4_UNORM, GL_RGBA },
+        { ZMD2_TEX_FORMAT_RGBA16_FLOAT, GL_RGBA },
+        { ZMD2_TEX_FORMAT_R16_FLOAT, GL_RED },
+        { ZMD2_TEX_FORMAT_RGBA32_FLOAT, GL_RGBA },
+        { ZMD2_TEX_FORMAT_R32_FLOAT, GL_RED },
+    };
+
 // (helper struct for using `std::visitor`)
 template<class... Ts>
 struct overloads: Ts... {
     using Ts::operator()...;
 };
+
+void gfx::zmd2mdl::init(zen::AssetManager &manager, const std::filesystem::path &assetPath) {
+    auto shd = manager.load_shader(ZMD2_ASSET_BASE_MATERIAL_SHADER);
+    auto mat = std::make_shared<gfx::Material>(ZMD2_ASSET_BASE_MATERIAL);
+    auto tex = std::make_shared<gfx::Texture>(ZMD2_ASSET_FALLBACK_TEXTURE);
+
+    gfx::texhelper::texture_load_from_file_2d(*tex, assetPath / ZMD2_ASSET_FALLBACK_TEXTURE_PATH);
+
+    mat->set_shader(shd);
+    mat->add_uniforms(
+        gfx::UniformMat4("uMatModel", glm::mat4(1.0f)),
+        gfx::UniformMat4("uMatView", glm::mat4(1.0f)),
+        gfx::UniformMat4("uMatProjection", glm::mat4(1.0f)),
+        gfx::UniformSampler(ZMD2_UNIFORM_NAME_BASE_TEXTURE, tex, GL_NEAREST, GL_REPEAT)
+    );
+    manager.add_material(ZMD2_ASSET_BASE_MATERIAL, mat);
+    manager.add_texture(ZMD2_ASSET_FALLBACK_TEXTURE, tex);
+}
 
 GLenum gfx::zmd2mdl::find_gl_prim_by_prim_type(const zmd2::PRIM_TYPE &type) {
     if (auto found = ZMD2_GL_PRIM_BY_PRIM_TBL.find(type); found != ZMD2_GL_PRIM_BY_PRIM_TBL.end()) {
@@ -94,10 +173,12 @@ Part::Part(std::string id, zmd2::PART_TYPE type):
 void Part::update_refs(Model *mdl) {
     auto allParts = mdl->all_parts();
 
-    parent = allParts[parentIdx];
+    parent = (parentIdx != -1) ? allParts[parentIdx] : nullptr;
     children.resize(childrenIndices.size());
     for (auto i=0; i<childrenIndices.size(); i++) {
-        children[i] = allParts[childrenIndices[i]];
+        auto childIdx = childrenIndices[i];
+
+        children[i] = (childIdx != -1) ? allParts[childIdx] : nullptr;
     }
 }
 
@@ -162,7 +243,7 @@ std::shared_ptr<MaterialAndMeshPair> PartModel::reserve_matmesh(const std::strin
         return foundMatMesh->second;
     }
 
-    zcl::logger("ZMD2")->warn("PART {} MESHGROUP RESERVING => {}", id, materialId);
+    ZMD2_DEBUG_TRACE_FUNC(warn, "PART {} MESHGROUP RESERVING => {}", id, materialId);
 
     // Make a new meshgroup entry
     auto matMesh = std::make_shared<MaterialAndMeshPair>(MaterialAndMeshPair { .materialIdx = 0, .material = material, .mesh = nullptr });
@@ -195,10 +276,12 @@ Bone::Bone(zmd2::BoneData *src):
 void Bone::update_refs(Model *mdl) {
     auto allBones = mdl->all_bones();
 
-    parent = allBones[parentIdx];
+    parent = (parentIdx != -1) ? allBones[parentIdx] : nullptr;
     children.resize(childrenIndices.size());
     for (auto i=0; i<childrenIndices.size(); i++) {
-        children[i] = allBones[childrenIndices[i]];
+        auto childIdx = childrenIndices[i];
+
+        children[i] = (childIdx != -1) ? allBones[childIdx] : nullptr;
     }
 }
 
@@ -206,7 +289,12 @@ gfx::Material MetaEmbeddedMaterial::to_material(zen::AssetManager &manager) cons
     auto newMatName = name;
     auto newMat = gfx::Material(newMatName);
 
+    // Shader
     newMat.set_shader(manager.load_shader(shader, false));
+
+    // Base texture (for now, use `uAlbedo` uniform)
+
+    // Uniforms
     for (auto&& uniformInfo: uniforms) {
         std::visit(
             overloads {
@@ -275,7 +363,7 @@ gfx::Texture MetaEmbeddedTexture::to_texture(const std::span<uint8_t> &bytes) co
     auto internalFmt = find_gl_tex_base_format_by_tex_format(format);
     auto dataFmt = find_gl_tex_data_format_by_tex_format(format);
 
-    // zcl::logger("ZMD2")->info("TEX {} ({}x{})", name, width, height);
+    // ZMD2_DEBUG_TRACE_FUNC(info, "TEX {} ({}x{})", name, width, height);
     newTex.set_format(internalFmt);
     newTex.load_from_buffer_2d(blobSpan.data(), width, height, dataFmt, GL_UNSIGNED_BYTE);
 
@@ -314,27 +402,27 @@ Model::Model(zmd2::Model *src):
         auto meta = src->metadata;
 
         // (embedded materials)
-        // zcl::logger("ZMD2")->info("MODEL {}: EMBEDDED MAT", id);
+        // ZMD2_DEBUG_TRACE_FUNC(info, "MODEL {}: EMBEDDED MAT", id);
         if (auto metaMaterialsFound = meta.find("embedded_materials"); metaMaterialsFound != meta.end()) {
             auto metaMaterials = *metaMaterialsFound;
 
             embeddedMaterials.reserve(metaMaterials.size());
             for (auto matJson: metaMaterials) {
                 auto mat = matJson.get<MetaEmbeddedMaterial>();
-                // zcl::logger("ZMD2")->info("{}", mat);
+                // ZMD2_DEBUG_TRACE_FUNC(info, "{}", mat);
                 embeddedMaterials.push_back(mat);
             }
         }
 
         // (embedded textures)
-        // zcl::logger("ZMD2")->info("MODEL {}: EMBEDDED TEX", id);
+        // ZMD2_DEBUG_TRACE_FUNC(info, "MODEL {}: EMBEDDED TEX", id);
         if (auto metaTexturesFound = meta.find("textures"); metaTexturesFound != meta.end()) {
             auto metaTextures = *metaTexturesFound;
 
             embeddedTextures.reserve(metaTextures.size());
             for (auto texJson: metaTextures) {
                 auto tex = texJson.get<MetaEmbeddedTexture>();
-                // zcl::logger("ZMD2")->info("{}", tex);
+                // ZMD2_DEBUG_TRACE_FUNC(info, "{}", tex);
                 embeddedTextures.push_back(tex);
             }
         }
@@ -350,10 +438,10 @@ void Model::load_and_find_embedded_assets(zen::AssetManager &manager, const std:
             continue;
         }
 
-        // zcl::logger("ZMD2")->error("MODEL {}: EMBEDDED TEX {} ({}x{})", id, texInfo.name, texInfo.width, texInfo.height);
+        // ZMD2_DEBUG_TRACE_FUNC(error, "MODEL {}: EMBEDDED TEX {} ({}x{})", id, texInfo.name, texInfo.width, texInfo.height);
         auto newTex = texInfo.to_texture(extraBytes);
         auto newTexPath = newTex.get_id();
-        // zcl::logger("ZMD2")->error("\t(EMBEDDED TEX {} FIN)", texInfo.name);
+        // ZMD2_DEBUG_TRACE_FUNC(error, "\t(EMBEDDED TEX {} FIN)", texInfo.name);
         manager.add_texture(newTexPath, std::make_shared<gfx::Texture>(std::move(newTex)));
     }
 
@@ -368,25 +456,36 @@ void Model::load_and_find_embedded_assets(zen::AssetManager &manager, const std:
     }
 
     // Link assets
-    // materials.resize(materialIds.size());
-    // for (auto&& matId: materialIds) {
-    //     // Reuse materials defined in asset manager if possible
-    //     auto mat = manager.get_material(matId);
+    materials.reserve(materialIds.size());
+    for (auto&& matId: materialIds) {
+        auto mat = manager.get_material(matId);
 
-    //     if (!mat) {
-    //         continue;
-    //     }
-    // }
+        if (!mat) {
+            if (fallbackMaterial) {
+                materials.push_back(fallbackMaterial);
+            }
+            else {
+                materials.push_back(manager.get_material(ZMD2_ASSET_BASE_MATERIAL));
+            }
+            continue;
+        }
+
+        materials.push_back(mat);
+    }
 }
 
 void Model::update_refs() {
     // Process bones
+    bonesById.clear();
     std::for_each(bones.begin(), bones.end(), [this](std::shared_ptr<Bone> bone){
+        bonesById[bone->id] = bone;
         bone->update_refs(this);
     });
     
     // Process parts
+    partsById.clear();
     std::for_each(parts.begin(), parts.end(), [this](std::shared_ptr<Part> part){
+        partsById[part->id] = part;
         part->update_refs(this);
     });
 }
@@ -440,15 +539,15 @@ void Model::submit(gfx::TextureManager &texManager) const {
 
                 if (!material || !mesh) {
                     if (material) {
-                        zcl::logger("ZMD2")->error("MODEL {}: PART {} HAS NO MESH FOR MESHGROUP {}!", id, partModel->id, material->get_id());
+                        ZMD2_DEBUG_TRACE_FUNC(error, "MODEL {}: PART {} HAS NO MESH FOR MESHGROUP {}!", id, partModel->id, material->get_id());
                     }
                     else {
-                        zcl::logger("ZMD2")->error("MODEL {}: PART {} HAS NO MESH OR MATERIAL!", id, partModel->id);
+                        ZMD2_DEBUG_TRACE_FUNC(error, "MODEL {}: PART {} HAS NO MESH OR MATERIAL!", id, partModel->id);
                     }
                     continue;
                 }
                 if (!partModel->modelPrimGl) {
-                    zcl::logger("ZMD2")->error("MODEL {}: PART {} HAS INVALID PRIMITIVE TYPE {}!", id, partModel->id, static_cast<int>(partModel->modelPrim));
+                    ZMD2_DEBUG_TRACE_FUNC(error, "MODEL {}: PART {} HAS INVALID PRIMITIVE TYPE {}!", id, partModel->id, static_cast<int>(partModel->modelPrim));
                 }
 
                 material->apply_material(texManager);

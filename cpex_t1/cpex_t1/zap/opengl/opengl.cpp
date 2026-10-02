@@ -279,6 +279,17 @@ void OpenGlApp::set_vsync(bool isVsync) {
     glfwSwapInterval(isVsync ? 1 : 0);
 }
 
+void OpenGlApp::set_window_size(int width, int height) {
+    assert(width > 0 && height > 0 && "Invalid window size!");
+
+    windowWid = width;
+    windowHei = height;
+
+    if (window) {
+        glfwSetWindowSize(window, width, height);
+    }
+}
+
 void OpenGlApp::set_window_title(const std::string windowTitle) {
     this->windowTitle = windowTitle;
     glfwSetWindowTitle(window, windowTitle.c_str());

@@ -21,6 +21,7 @@ using json = nlohmann::json;
 
 int main() {
     CpexApp app("CT1", true);
+    app.set_window_size(128, 128);
 
     spdlog::stdout_color_mt("PRG");
     auto logger = zcl::logger("PRG");
