@@ -73,7 +73,7 @@ void VertFormat::set_buffer_from_bytes(const std::span<uint8_t> &bytes, Vb *out,
     auto copyBytes = size * verts;
     auto window = bytes.subspan(0, copyBytes);
 
-    assert(copyBytes < window.size() && "Byte array has not enough data!");
+    assert(copyBytes <= window.size() && "Byte array has not enough data!");
 
     // out.resize(verts);
     // std::memcpy(out.data(), bytes.data(), copyBytes);

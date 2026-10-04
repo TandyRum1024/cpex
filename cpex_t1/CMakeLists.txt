@@ -34,7 +34,6 @@ set(
     SRC_MAIN
     cpex_t1/main.cpp
     cpex_t1/app.cpp
-    cpex_t1/zmd2_model.cpp
 )
 # (GFX)
 set(DIR_GFX ${CMAKE_CURRENT_SOURCE_DIR}/cpex_t1/gfx)
@@ -50,6 +49,9 @@ list(
     ${DIR_GFX}/texture.cpp
     ${DIR_GFX}/uniform.cpp
     ${DIR_GFX}/uniformset.cpp
+    ${DIR_GFX}/zmd2/model.cpp
+    ${DIR_GFX}/zmd2/loader.cpp
+    ${DIR_GFX}/zmd2/utils.cpp
 )
 # (ZAP)
 set(DIR_ZAP ${CMAKE_CURRENT_SOURCE_DIR}/cpex_t1/zap)

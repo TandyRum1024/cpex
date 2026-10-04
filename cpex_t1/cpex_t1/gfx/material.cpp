@@ -20,7 +20,7 @@ const std::string Material::get_id() const {
     return id;
 }
 
-const std::vector<std::shared_ptr<Uniform>>& Material::get_uniforms() {
+std::span<const std::shared_ptr<Uniform>> Material::get_uniforms() {
     process_merge();
     return mergedUniforms.get_uniforms();
 }
@@ -118,7 +118,7 @@ void Material::apply_material(TextureManager &texManager) {
     }
     
     // Apply all uniforms
-    auto& allUniforms = mergedUniforms.get_uniforms();
+    auto allUniforms = mergedUniforms.get_uniforms();
     for (size_t i = 0; i < allUniforms.size(); i++) {
         auto& uniform = allUniforms[i];
         auto& location = uniformLocations[i];

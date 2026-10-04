@@ -14,10 +14,7 @@
 #include <app.hpp>
 
 // LIBRARIES //
-#include <zcl/zcl.hpp>
-#include <gfx/vb.hpp>
 #include <gfx/math.hpp>
-#include <gfx/transform.hpp>
 #include <zmd2/zmd2.hpp>
 
 // EXTERNAL LIBRARIES //
@@ -34,8 +31,6 @@
 #include <stb_image.h>
 // ----------------------------
 // EXTERNAL LIBRARIES //
-
-using Zmd2 = mdl::zmd2::Model;
 
 CpexApp::CpexApp(const std::string windowTitle, bool isGlDebug):
     zap::OpenGlApp(windowTitle, isGlDebug) {}
@@ -93,7 +88,7 @@ void CpexApp::on_setup() {
     // Init managers
     gfx::TextureManager::init();
     assetManager.set_base_path(assetPath);
-    mdl::zmd2::init(assetManager, assetPath);
+    gfx::zmd2::init(assetManager, assetPath);
 
     // Setup scene
     time = 0;
@@ -136,7 +131,7 @@ void CpexApp::on_setup() {
     assetManager.add_material(matCube1->get_id(), matCube1);
     assetManager.add_material(matCube2->get_id(), matCube2);
 
-    // assetManager.load_model_zmd2("mdl_char.zmd2");
+    assetManager.load_model_zmd2("mdl_char.zmd2");
     /*
     if (auto file = std::ifstream(assetPath / "mdl_char.zmd2", std::ios_base::binary); file) {
         auto time = std::chrono::steady_clock::now();
@@ -236,9 +231,9 @@ void CpexApp::on_setup() {
     vbCube2->build();
 
     // Model
-    model = std::make_shared<Zmd2>("test");
-    auto partCube = std::make_shared<mdl::zmd2::PartModel>("cube");
-    auto partFloor = std::make_shared<mdl::zmd2::PartModel>("floor");
+    model = std::make_shared<gfx::zmd2::Model>("test");
+    auto partCube = std::make_shared<gfx::zmd2::PartModel>("cube");
+    auto partFloor = std::make_shared<gfx::zmd2::PartModel>("floor");
 
     matBase = assetManager.get_material("base");
     matCube1 = assetManager.get_material("cube1");
@@ -334,7 +329,7 @@ void CpexApp::on_loop_render(double dtMillis) {
     texManager.clear();
     
     // Floor
-    if (auto part = model->find_part_by_id<mdl::zmd2::PartModel>("floor")) {
+    if (auto part = model->find_part_by_id<gfx::zmd2::PartModel>("floor")) {
         if (auto material = part->find_matmesh_by_material_id("base")->material; material) {
             if (auto uniform = material->get_uniform<gfx::UniformVec4>("uTint")) {
                 uniform->set_value({ (float) time, (float) time, (float) time, 1.0 });
@@ -354,7 +349,7 @@ void CpexApp::on_loop_render(double dtMillis) {
     }
 
     // Cube
-    if (auto part = model->find_part_by_id<mdl::zmd2::PartModel>("cube")) {
+    if (auto part = model->find_part_by_id<gfx::zmd2::PartModel>("cube")) {
         if (auto material = part->find_matmesh_by_material_id("cube1")->material; material) {
             if (auto uniform = material->get_uniform<gfx::UniformMat4>("uMatModel")) {
                 auto tfCube = gfx::Transform(
@@ -371,7 +366,9 @@ void CpexApp::on_loop_render(double dtMillis) {
 
     model->submit(texManager);
 
-    mdlTest->submit(texManager);
+    if (mdlTest) {
+        mdlTest->submit(texManager);
+    }
 
     // model2->submit(texManager);
     // assert(false);

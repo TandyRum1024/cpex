@@ -68,8 +68,8 @@ namespace gfx {
         /** Returns an uniform with given name and type. `nullptr` if not found or wrong type. */
         template <typename T>
         std::shared_ptr<T> get_uniform(const std::string name);
-        /** Returns an iterable for accessing the uniformset. */
-        const std::vector<std::shared_ptr<Uniform>>& get_uniforms();
+        /** Returns span to (immutable) internal uniform arrays. */
+        std::span<const std::shared_ptr<Uniform>> get_uniforms();
 
         /** Returns whether or not if this material has its properties changed and must be re-processed. */
         bool get_merge_required() const;

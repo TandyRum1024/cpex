@@ -9,7 +9,7 @@ using namespace gfx;
 
 // delegate to internal uniform vectors
 
-const std::vector<std::shared_ptr<Uniform>>& UniformSet::get_uniforms() const {
+std::span<const std::shared_ptr<Uniform>> UniformSet::get_uniforms() const {
     return uniforms;
 }
 

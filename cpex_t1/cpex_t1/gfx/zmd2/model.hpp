@@ -1,44 +1,24 @@
 /**
- * gfx_zmd2::zmd2_model - `.zmd2` model loading & wrapper for this projects graphics library.
+ * gfx::zmd2::model - `.zmd2` model loading & wrapper for this projects graphics library.
  * ZIK@MMXXVI
  */
 
-#ifndef __ZMD2_MDL_GUARD
-#define __ZMD2_MDL_GUARD
-
-// Debug
-#define ZMD2_DEBUG_TRACE false
-#define ZMD2_DEBUG_TRACE_FUNC(level, ...) if (ZMD2_DEBUG_TRACE) { zcl::logger("ZMD2")->level(__VA_ARGS__); }
-
-// Fallback asset IDs
-#define ZMD2_ASSET_BASE_MATERIAL "__zmd2_base"
-#define ZMD2_ASSET_BASE_MATERIAL_SHADER "shd_z3d_zmd2_morph_skinned"
-#define ZMD2_ASSET_FALLBACK_TEXTURE "__fallback"
-#define ZMD2_ASSET_FALLBACK_TEXTURE_PATH "checker.png"
-
-// Known uniform names
-#define ZMD2_UNIFORM_NAME_BASE_TEXTURE "uAlbedo"
-
-// JSON deserialization helpers
-// in form of `src.at("<name>").get_to(val.<name>);`
-#define __ZMD2_TO_JSON_V(src, val, name) src.at(#name).get_to(val.name)
-#define __ZMD2_TO_JSON_NULL(src, val, name) json_get_to(src, #name, val.name)
+#ifndef __GFX_ZMD2_MDL_GUARD
+#define __GFX_ZMD2_MDL_GUARD
 
 #include <variant>
-#include <sstream>
-#include <istream>
 #include <string>
 #include <memory>
 #include <vector>
-#include <filesystem>
 #include <map>
 
-// LIBRARIES //
+#include <gfx/zmd2/config.hpp>
 #include <gfx/transform.hpp>
 #include <gfx/texture.hpp>
 #include <gfx/material.hpp>
 #include <gfx/vb.hpp>
-#include <zen/asset_manager.hpp>
+
+// LIBRARIES //
 #include <zmd2/types.hpp>
 
 // EXTERNAL LIBRARIES //
@@ -51,10 +31,22 @@
 // ----------------------------
 // EXTERNAL LIBRARIES //
 
+// Debug
+#define ZMD2_DEBUG_TRACE_FUNC(level, ...) if (ZMD2_DEBUG_TRACE) { zcl::logger("ZMD2")->level(__VA_ARGS__); }
+
+// JSON deserialization helpers
+// in form of `src.at("<name>").get_to(val.<name>);`
+#define __ZMD2_TO_JSON_V(src, val, name) src.at(#name).get_to(val.name)
+#define __ZMD2_TO_JSON_NULL(src, val, name) json_get_to(src, #name, val.name)
+
 using json = nlohmann::json;
 
-namespace mdl {
+namespace gfx {
     namespace zmd2 {
+        // Default vertex formats
+        const extern std::shared_ptr<gfx::VertFormat> ZMD2_VERT_FORMAT_MESH;
+        const extern std::shared_ptr<gfx::VertFormat> ZMD2_VERT_FORMAT_MESH_MORPH_SKINNED;
+
         /** Material parameter: backface culling mode. */
         enum ZMD2_CULL {
             ZMD2_CULL_NOCULLING,        // cull_noculling
@@ -111,35 +103,8 @@ namespace mdl {
         };
 
         // (forward decls)
-
+        
         class Model;
-
-        // Default vertex formats
-        const extern std::shared_ptr<gfx::VertFormat> ZMD2_VERT_FORMAT_MESH;
-        const extern std::shared_ptr<gfx::VertFormat> ZMD2_VERT_FORMAT_MESH_MORPH_SKINNED;
-        // Table to convert model type to vertex format.
-        const extern std::unordered_map<::zmd2::MODEL_TYPE, std::shared_ptr<gfx::VertFormat>> ZMD2_FORMAT_BY_MODEL_TBL;
-        // Table to convert primitive type to OpenGL primitive mode.
-        const extern std::unordered_map<::zmd2::PRIM_TYPE, GLenum> ZMD2_GL_PRIM_BY_PRIM_TBL;
-        // Table to convert texture format to OpenGL BASE INTERNAL texture format.
-        const extern std::unordered_map<ZMD2_TEX_FORMAT, GLenum> ZMD2_TEX_FORMAT_TO_GL_TEX_INTERNAL_FORMAT_TBL;
-        // Table to convert texture format to OpenGL PIXEL DATA texture format.
-        const extern std::unordered_map<ZMD2_TEX_FORMAT, GLenum> ZMD2_TEX_FORMAT_TO_GL_TEX_FORMAT_TBL;
-
-        /** Run this on init */
-        void init(zen::AssetManager &manager, const std::filesystem::path &assetPath);
-
-        /** Returns OpenGL primitive mode from given primitive type. `0` if not found. */
-        GLenum find_gl_prim_by_prim_type(const ::zmd2::PRIM_TYPE &type);
-
-        /** Returns vertex format from given model type. `nullptr` if not found. */
-        std::shared_ptr<gfx::VertFormat> find_vert_format_by_model_type(const ::zmd2::MODEL_TYPE &type);
-
-        /** Returns OpenGL texture format from given texture format. `GL_RGBA8` if not found. */
-        GLenum find_gl_tex_base_format_by_tex_format(const ZMD2_TEX_FORMAT &type);
-
-        /** Returns OpenGL INTERNAL texture format from given texture format. `GL_RGBA8` if not found. */
-        GLenum find_gl_tex_data_format_by_tex_format(const ZMD2_TEX_FORMAT &type);
         
         /** ZMD2: Pair of material index with vertices data for mesh. */
         struct MaterialAndMeshPair {
@@ -224,6 +189,9 @@ namespace mdl {
 
             /** Find and return MaterialAndMeshPair for given material ID. */
             std::shared_ptr<MaterialAndMeshPair> find_matmesh_by_material_id(const std::string &materialId) const;
+
+            /** Link material references */
+            void link_materials(const std::vector<std::shared_ptr<Material>> &modelMaterials);
 
             void update_refs(Model *mdl);
         };
@@ -340,7 +308,7 @@ namespace mdl {
 
             std::string to_string() const;
             /** Converts loaded data into actual material */
-            gfx::Material to_material(zen::AssetManager &manager) const;
+            gfx::Material to_material() const;
         };
 
         /** ZMD2 Metadata: Embedded texture info. */
@@ -355,7 +323,7 @@ namespace mdl {
 
             std::string to_string() const;
             /** Converts loaded data into actual texture */
-            gfx::Texture to_texture(const std::span<uint8_t> &bytes) const;
+            gfx::Texture to_texture(std::span<const uint8_t> bytes) const;
         };
 
         /** ZMD2: Model. */
@@ -382,7 +350,9 @@ namespace mdl {
             std::vector<MetaEmbeddedTexture> embeddedTextures;
 
             // Internal cache
-            std::vector<std::shared_ptr<gfx::Material>> materials;
+            std::vector<std::shared_ptr<gfx::Material>> linkedMaterials;
+            std::unordered_map<std::string, std::shared_ptr<gfx::Texture>> linkedTexturesById;
+
             std::unordered_map<std::string, std::shared_ptr<Part>> partsById;
             std::unordered_map<std::string, std::shared_ptr<Bone>> bonesById;
         
@@ -391,17 +361,15 @@ namespace mdl {
             Model(::zmd2::Model *src);
             Model(std::string id);
 
-            void load_and_find_embedded_assets(zen::AssetManager &manager, const std::shared_ptr<gfx::Material> &fallbackMaterial = nullptr, const std::shared_ptr<gfx::Texture> &fallbackTexture = nullptr);
-
-            void update_refs();
-
-            // void add_material(const std::shared_ptr<gfx::Material> &material);
+            void update_refs_and_link_assets(const std::shared_ptr<gfx::Material> &fallbackMaterial = nullptr);
 
             void add_part(const std::shared_ptr<Part> &part);
 
             void add_bone(const std::shared_ptr<Bone> &bone);
 
-            void link_material(const std::string materialId, const std::shared_ptr<gfx::Material> &material);
+            void link_material(const int idx, const std::shared_ptr<gfx::Material> &material);
+
+            void link_texture(const std::string &textureId, const std::shared_ptr<gfx::Texture> &texture);
 
             /** Find and return part for given ID. */
             template <typename T>
@@ -410,17 +378,32 @@ namespace mdl {
             /** Find and return bone for given ID. */
             std::shared_ptr<Bone> find_bone_by_id(const std::string &id) const;
 
+            /** Find and return linked material for given ID. */
+            std::shared_ptr<gfx::Material> find_linked_material_by_id(const std::string &id) const;
+
+            /** Find and return linked texture for given ID. */
+            std::shared_ptr<gfx::Texture> find_linked_texture_by_id(const std::string &id) const;
+
             /** Returns span to (immutable) internal bones list that can be iterated and etc. */
             std::span<const std::shared_ptr<Bone>> all_bones() const;
 
             /** Returns span to (immutable) internal parts list that can be iterated and etc. */
             std::span<const std::shared_ptr<Part>> all_parts() const;
 
+            /** Returns span to (immutable) internal material names list that can be iterated and etc. */
+            std::span<const std::string> all_material_ids() const;
+
             /** Returns span to (immutable) internal morph names list that can be iterated and etc. */
             std::span<const std::string> all_morph_names() const;
 
-            /** Returns span to (immutable) internal materials list that can be iterated and etc. */
-            std::span<const std::shared_ptr<gfx::Material>> all_materials() const;
+            /** Returns span to (immutable) internal embedded materials list that can be iterated and etc. */
+            std::span<const MetaEmbeddedMaterial> all_embedded_materials() const;
+
+            /** Returns span to (immutable) internal embedded textures list that can be iterated and etc. */
+            std::span<const MetaEmbeddedTexture> all_embedded_textures() const;
+
+            /** Returns span to (immutable) internal array of bytes containing extra daa that can be iterated and etc. */
+            std::span<const uint8_t> get_extra_bytes() const;
 
             /** Submit all meshgroups to GPU. */
             void submit(gfx::TextureManager &texManager) const;

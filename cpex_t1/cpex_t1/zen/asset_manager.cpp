@@ -4,12 +4,10 @@
  */
 
 #include <memory>
-#include <ifstream>
-
-#include <zen/asset_manager.hpp>
+#include <fstream>
 
 // LIBRARIES //
-#include <gfx/texture.hpp>
+#include <zen/asset_manager.hpp>
 #include <zmd2/zmd2.hpp>
 
 using namespace zen;
@@ -122,7 +120,7 @@ void AssetManager::add_material(const std::string &relPath, const std::shared_pt
     loadedMaterials[relPath] = data;
 }
 
-std::shared_ptr<mdl::zmd2::Model> AssetManager::get_model_zmd2(const std::string &relPath) { 
+std::shared_ptr<gfx::zmd2::Model> AssetManager::get_model_zmd2(const std::string &relPath) { 
     if (auto cache = loadedModelsZmd2.find(relPath); cache != loadedModelsZmd2.end()) {
         // Cache hit
         return cache->second;
@@ -131,21 +129,64 @@ std::shared_ptr<mdl::zmd2::Model> AssetManager::get_model_zmd2(const std::string
     return nullptr;
 }
 
-std::shared_ptr<mdl::zmd2::Model> AssetManager::load_model_zmd2(const std::string relPath, bool forceReload = false) { 
-    if (auto mdl = get_model_zmd2(relPath); !forceReload && shd) {
+std::shared_ptr<gfx::zmd2::Model> AssetManager::load_model_zmd2(const std::string relPath, bool forceReload, const std::string &fallbackMaterialId, const std::string &fallbackTextureId) { 
+    if (auto mdl = get_model_zmd2(relPath); !forceReload && mdl) {
         return mdl;
     }
 
-    auto mdlPtr = std::shared_ptr<mdl::zmd2::Model>(nullptr);
+    auto mdlPtr = std::shared_ptr<gfx::zmd2::Model>(nullptr);
 
     try {
         if (auto file = std::ifstream(basePath/ relPath, std::ios_base::binary); file) {
-            auto mdl = zmd2::load_model_from(relPath, relPath);
-            auto mdlConverted = mdl::zmd2::Model(mdl);
+            auto fallbackMat = get_material(fallbackMaterialId);
+            auto fallbackTex = get_texture(fallbackTextureId);
 
-            mdlConverted.load_and_find_embedded_assets(assetManager, matBase, texChecker);
-            mdlConverted.update_refs();
-            mdlPtr = std::make_shared<mdl::zmd2::Model>(mdlConverted);
+            assert(fallbackMat != nullptr && fallbackTex != nullptr && "Fallback assets does not exist!");
+
+            auto mdl = zmd2::load_model_from(relPath, file);
+            auto mdlConverted = gfx::zmd2::Model(&mdl);
+            auto extraBytes = mdlConverted.get_extra_bytes();
+
+            // Load embedded assets
+            // (texture)
+            for (auto&& tex: mdlConverted.all_embedded_textures()) {
+                auto texConverted = tex.to_texture(extraBytes);
+                auto texConvertedPtr = std::make_shared<gfx::Texture>(std::move(texConverted));
+
+                add_texture(tex.name, texConvertedPtr);
+                mdlConverted.link_texture(tex.name, texConvertedPtr);
+            }
+            // (material)
+            for (auto&& mat: mdlConverted.all_embedded_materials()) {
+                auto matConverted = mat.to_material();
+
+                // (replace / link textures for samplers)
+                for (auto&& uniform: matConverted.get_uniforms()) {
+                    if (auto samplerUniform = std::dynamic_pointer_cast<gfx::UniformSampler>(uniform); samplerUniform && samplerUniform->get_value()) {
+                        auto texId = samplerUniform->get_value()->get_id();
+                        auto assetTex = get_texture(texId);
+
+                        if (!assetTex) {
+                            assetTex = fallbackTex;
+                        }
+
+                        samplerUniform->set_value(assetTex);
+                    }
+                }
+
+                auto matConvertedPtr = std::make_shared<gfx::Material>(matConverted);
+
+                add_material(mat.name, matConvertedPtr);
+            }
+            for (auto i = 0; i < mdlConverted.all_material_ids().size(); i++) {
+                auto matId = mdlConverted.all_material_ids()[i];
+                auto assetMat = get_material(matId);
+
+                mdlConverted.link_material(i, assetMat);
+            }
+
+            mdlConverted.update_refs_and_link_assets(fallbackMat);
+            mdlPtr = std::make_shared<gfx::zmd2::Model>(mdlConverted);
             loadedModelsZmd2[relPath] = mdlPtr;
         }
         else {
@@ -160,6 +201,6 @@ std::shared_ptr<mdl::zmd2::Model> AssetManager::load_model_zmd2(const std::strin
     return mdlPtr;
 }
 
-void AssetManager::add_model_zmd2(const std::string &relPath, const std::shared_ptr<mdl::zmd2::Model> &data) { 
+void AssetManager::add_model_zmd2(const std::string &relPath, const std::shared_ptr<gfx::zmd2::Model> &data) { 
     loadedModelsZmd2[relPath] = data;
 }

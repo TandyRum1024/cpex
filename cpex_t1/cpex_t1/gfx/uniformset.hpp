@@ -49,8 +49,8 @@ namespace gfx {
         template <typename T>
         std::shared_ptr<T> get_uniform(const std::string name) const;
         
-        /** Returns uniform at certain position. */
-        const std::vector<std::shared_ptr<Uniform>>& get_uniforms() const;
+        /** Returns span of uniforms. */
+        std::span<const std::shared_ptr<Uniform>> get_uniforms() const;
         /** Returns an iterator to the beginning. */
         std::vector<std::shared_ptr<Uniform>>::const_iterator begin();
         /** Returns an iterator to the end. */

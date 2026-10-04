@@ -15,9 +15,10 @@
 #include <gfx/shader.hpp>
 #include <gfx/vb.hpp>
 #include <gfx/vert.hpp>
+#include <gfx/zmd2/model.hpp>
+#include <gfx/zmd2/loader.hpp>
 #include <zcl/zcl.hpp>
 #include <zen/asset_manager.hpp>
-#include <zmd2_model.hpp>
 
 // EXTERNAL LIBRARIES //
 // ----------------------------
@@ -33,13 +34,11 @@
 // ----------------------------
 // EXTERNAL LIBRARIES //
 
-using Zmd2 = mdl::zmd2::Model;
-
 /** App for CPEX - T1 */
 class CpexApp: public zap::OpenGlApp {
     // Scene
-    std::shared_ptr<Zmd2> model;
-    // std::shared_ptr<gfx::zmd2mdl::Model> model2;
+    std::shared_ptr<gfx::zmd2::Model> model;
+    // std::shared_ptr<gfx::zmd2::Model> modelTest;
 
     double time;
 
