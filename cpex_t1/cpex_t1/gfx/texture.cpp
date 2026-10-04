@@ -35,7 +35,9 @@ Texture::Texture(std::string name, GLenum texTarget):
     texId(0),
     texTarget(texTarget),
     texUnit(GL_TEXTURE0),
-    fmtInternal(GL_RGBA8)
+    fmtInternal(GL_RGBA8),
+    wid(0),
+    hei(0)
     {
     // zcl::logger("TEX")->info("TEXTURE {} CREATED", id);
 }
@@ -50,7 +52,9 @@ Texture::Texture(Texture &&other):
     texId(std::exchange(other.texId, 0)),
     texTarget(std::exchange(other.texTarget, 0)),
     texUnit(std::exchange(other.texUnit, 0)),
-    fmtInternal(std::exchange(other.fmtInternal, 0)) {}
+    fmtInternal(std::exchange(other.fmtInternal, 0)),
+    wid(std::exchange(other.wid, 0.0)),
+    hei(std::exchange(other.hei, 0.0)) {}
 
 Texture& Texture::operator=(Texture &&other) {
     // zcl::logger("TEX")->info("TEXTURE {}<-{} MOVED", id, other.id);
@@ -65,6 +69,8 @@ Texture& Texture::operator=(Texture &&other) {
     std::swap(texTarget, other.texTarget);
     std::swap(texUnit, other.texUnit);
     std::swap(fmtInternal, other.fmtInternal);
+    std::swap(wid, other.wid);
+    std::swap(hei, other.hei);
     // other.free_resources(); // will be automatically called @ destructor
 
     return *this;
@@ -76,6 +82,10 @@ GLuint Texture::get_gl_texture_id() const {
 
 std::string Texture::get_id() const {
     return id;
+}
+
+GLint Texture::get_fmt_internal() const {
+    return fmtInternal;
 }
 
 void Texture::free_resources() {
@@ -110,6 +120,9 @@ void Texture::load_from_buffer_2d(const void* pixels, int wid, int hei, GLenum d
     #endif
 
     glGenerateMipmap(texTarget);
+
+    this->wid = wid;
+    this->hei = hei;
 }
 
 void Texture::set_format(GLint internalFormat) {
@@ -133,6 +146,14 @@ GLenum Texture::get_bound_unit() const {
 
 GLenum Texture::get_target() const {
     return texTarget;
+}
+
+double Texture::get_width() const {
+    return wid;
+}
+
+double Texture::get_height() const {
+    return hei;
 }
 
 int TextureManager::SLOTS_MAX = 0;

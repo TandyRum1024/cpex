@@ -15,5 +15,8 @@ void main() {
 	//vec4 final = texture(uAlbedo, vUv) * texture(uAmbientOcclusion, vUv);
 
     vec4 final = texture(uAlbedo, vUv);
+    //final = vec4(1.0);
+    final = mix(final, vec4(0.5), 0.5);
+
     FragColor = final;
 }

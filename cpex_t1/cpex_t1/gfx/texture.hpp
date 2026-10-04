@@ -34,6 +34,8 @@ namespace gfx {
         
         // Format
         GLint fmtInternal;
+        double wid;
+        double hei;
         
     public:
         Texture();
@@ -56,6 +58,15 @@ namespace gfx {
 
         /** Returns (internal) ID. */
         std::string get_id() const;
+
+        /** Returns internal format. */
+        GLint get_fmt_internal() const;
+
+        /** Returns texture width & height. */
+        double get_width() const;
+
+        /** Returns texture width & height. */
+        double get_height() const;
 
         /** Frees OpenGL resources. */
         void free_resources();

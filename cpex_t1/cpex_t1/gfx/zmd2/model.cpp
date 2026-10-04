@@ -446,6 +446,7 @@ void Model::update_refs_and_link_assets(const std::shared_ptr<gfx::Material> &fa
         partsById[part->id] = part;
         part->update_refs(this);
 
+        // (part specific setups)
         switch (part->type) {
             case ::zmd2::PART_TYPE_MODEL:
                 if (auto partModel = std::static_pointer_cast<PartModel>(part)) {

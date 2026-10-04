@@ -53,6 +53,8 @@ namespace gfx {
         void apply_material(TextureManager &texManager);
         /** Links shader to this material. */
         void set_shader(std::shared_ptr<Shader> shd);
+        /** Links parent to this material. */
+        void set_parent(const std::weak_ptr<Material> &parent);
         /** Adds an uniform. */
         template <typename T>
         void add_uniforms(T &&uniform);
@@ -67,9 +69,9 @@ namespace gfx {
         void add_uniforms_ptr(std::shared_ptr<U> &uniformPtr, std::shared_ptr<T>&... uniformPtrArgs);
         /** Returns an uniform with given name and type. `nullptr` if not found or wrong type. */
         template <typename T>
-        std::shared_ptr<T> get_uniform(const std::string name);
+        std::shared_ptr<T> find_uniform_by_name(const std::string name, bool includeMerged = true);
         /** Returns span to (immutable) internal uniform arrays. */
-        std::span<const std::shared_ptr<Uniform>> get_uniforms();
+        std::span<const std::shared_ptr<Uniform>> get_uniforms(bool includeMerged = true);
 
         /** Returns whether or not if this material has its properties changed and must be re-processed. */
         bool get_merge_required() const;
@@ -79,6 +81,9 @@ namespace gfx {
 
     /** Returns a new material "inherited" from this material. */
     std::shared_ptr<Material> material_make_inherited(std::shared_ptr<Material> parent, const std::string &childId);
+
+    /** Sets given material as "inherited" from another material. */
+    void material_set_inherited(std::shared_ptr<Material> parent, std::shared_ptr<Material> child);
 
     // DEFINITIONS (INCLUSION MODEL FOR TEMPLATES!) //
 
@@ -107,9 +112,11 @@ namespace gfx {
     }
 
     template <typename T>
-    std::shared_ptr<T> Material::get_uniform(const std::string name) {
-        process_merge();
-        return mergedUniforms.get_uniform<T>(name);
+    std::shared_ptr<T> Material::find_uniform_by_name(const std::string name, bool includeMerged) {
+        if (includeMerged) {
+            process_merge();
+        }
+        return includeMerged ? mergedUniforms.get_uniform<T>(name) : uniforms.get_uniform<T>(name);
     }
 
     // DEFINITIONS (INCLUSION MODEL FOR TEMPLATES!) //

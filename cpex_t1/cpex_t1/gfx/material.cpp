@@ -20,9 +20,11 @@ const std::string Material::get_id() const {
     return id;
 }
 
-std::span<const std::shared_ptr<Uniform>> Material::get_uniforms() {
-    process_merge();
-    return mergedUniforms.get_uniforms();
+std::span<const std::shared_ptr<Uniform>> Material::get_uniforms(bool includeMerged) {
+    if (includeMerged) {
+        process_merge();
+    }
+    return includeMerged ? mergedUniforms.get_uniforms() : uniforms.get_uniforms();
 }
 
 bool Material::get_merge_required() const {
@@ -99,6 +101,10 @@ void Material::set_shader(std::shared_ptr<Shader> shd) {
     }
 }
 
+void Material::set_parent(const std::weak_ptr<Material> &parent) {
+    this->parent = parent;
+}
+
 void Material::add_child(const std::shared_ptr<Material> &child) {
     children.push_back(child);
 }
@@ -132,4 +138,9 @@ std::shared_ptr<Material> gfx::material_make_inherited(std::shared_ptr<Material>
     auto child = std::make_shared<Material>(Material(childId, parent));
     parent->add_child(child);
     return child;
+}
+
+void gfx::material_set_inherited(std::shared_ptr<Material> parent, std::shared_ptr<Material> child) {
+    child->set_parent(parent);
+    parent->add_child(child);
 }
