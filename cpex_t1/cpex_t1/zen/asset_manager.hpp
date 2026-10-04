@@ -57,8 +57,14 @@ namespace zen {
         void add_material(const std::string &relPath, const std::shared_ptr<gfx::Material> &data);
 
         std::shared_ptr<gfx::zmd2::Model> get_model_zmd2(const std::string &relPath);
-        std::shared_ptr<gfx::zmd2::Model> load_model_zmd2(const std::string relPath, bool forceReload = false, const std::string &fallbackMaterialId = ZMD2_ASSET_BASE_MATERIAL, const std::string &fallbackTextureId = ZMD2_ASSET_FALLBACK_TEXTURE);
+        std::shared_ptr<gfx::zmd2::Model> load_model_zmd2(const std::string relPath, bool forceReload = false, const std::string &baseMaterialId = ZMD2_ASSET_BASE_MATERIAL, const std::string &fallbackMaterialId = ZMD2_ASSET_BASE_MATERIAL, const std::string &fallbackTextureId = ZMD2_ASSET_FALLBACK_TEXTURE, const std::string &fallbackShaderId = ZMD2_ASSET_BASE_MATERIAL_SHADER);
         void add_model_zmd2(const std::string &relPath, const std::shared_ptr<gfx::zmd2::Model> &data);
+
+        /** Returns span to (immutable) internal loaded textures list that can be iterated and etc. */
+        const std::unordered_map<std::string, std::shared_ptr<gfx::Texture>> all_loaded_textures() const;
+
+        /** Returns span to (immutable) internal loaded materials list that can be iterated and etc. */
+        // std::span<const std::shared_ptr<gfx::Materials>> all_loaded_textures() const;
     };
 }
 

@@ -15,6 +15,7 @@
 
 // LIBRARIES //
 #include <gfx/math.hpp>
+#include <gfx/utils.hpp>
 #include <zmd2/zmd2.hpp>
 
 // EXTERNAL LIBRARIES //
@@ -330,19 +331,19 @@ void CpexApp::on_loop_render(double dtMillis) {
     
     // Floor
     if (auto part = model->find_part_by_id<gfx::zmd2::PartModel>("floor")) {
-        if (auto material = part->find_matmesh_by_material_id("base")->material; material) {
-            if (auto uniform = material->get_uniform<gfx::UniformVec4>("uTint")) {
+        if (auto material = part->find_matmesh_by_material_id("base")->material) {
+            if (auto uniform = material->find_uniform_by_name<gfx::UniformVec4>("uTint")) {
                 uniform->set_value({ (float) time, (float) time, (float) time, 1.0 });
             }
-            if (auto uniform = material->get_uniform<gfx::UniformMat4>("uMatModel")) {
+            if (auto uniform = material->find_uniform_by_name<gfx::UniformMat4>("uMatModel")) {
                 auto tf = this->tf.to_mat4();
     
                 uniform->set_value(tf);
             }
-            if (auto uniform = material->get_uniform<gfx::UniformMat4>("uMatView")) {
+            if (auto uniform = material->find_uniform_by_name<gfx::UniformMat4>("uMatView")) {
                 uniform->set_value(matView);
             }
-            if (auto uniform = material->get_uniform<gfx::UniformMat4>("uMatProjection")) {
+            if (auto uniform = material->find_uniform_by_name<gfx::UniformMat4>("uMatProjection")) {
                 uniform->set_value(matProj);
             }
         }
@@ -350,10 +351,10 @@ void CpexApp::on_loop_render(double dtMillis) {
 
     // Cube
     if (auto part = model->find_part_by_id<gfx::zmd2::PartModel>("cube")) {
-        if (auto material = part->find_matmesh_by_material_id("cube1")->material; material) {
-            if (auto uniform = material->get_uniform<gfx::UniformMat4>("uMatModel")) {
+        if (auto material = part->find_matmesh_by_material_id("cube1")->material) {
+            if (auto uniform = material->find_uniform_by_name<gfx::UniformMat4>("uMatModel")) {
                 auto tfCube = gfx::Transform(
-                    glm::vec3(0, 0, 0.5),
+                    glm::vec3(1.0, 0, 0.5),
                     glm::vec3(glm::radians(45.0), 0, time * -1.25 * glm::pi<double>()),
                     glm::vec3(0.5)
                 );
@@ -365,6 +366,28 @@ void CpexApp::on_loop_render(double dtMillis) {
     }
 
     model->submit(texManager);
+
+    // Apply matrices
+    // (TODO: figure out a system for global matrices like this)
+    if (auto material = assetManager.get_material(ZMD2_ASSET_BASE_MATERIAL)) {
+        if (auto uniform = material->find_uniform_by_name<gfx::UniformMat4>("uMatView")) {
+            uniform->set_value(matView);
+        }
+        if (auto uniform = material->find_uniform_by_name<gfx::UniformMat4>("uMatProjection")) {
+            uniform->set_value(matProj);
+        }
+        if (auto uniform = material->find_uniform_by_name<gfx::UniformMat4>("uMatModel")) {
+            auto tf = gfx::Transform(
+                glm::vec3(0.0),
+                // glm::vec3(glm::radians(45.0), 0, time * -1.25 * glm::pi<double>()),
+                glm::vec3(0.0),
+                glm::vec3(0.5)
+            );
+            auto mat = tf.to_mat4();
+
+            uniform->set_value(mat);
+        }
+    }
 
     if (mdlTest) {
         mdlTest->submit(texManager);
@@ -435,8 +458,33 @@ void CpexApp::on_loop_debug_ui(double dtMillis) {
 
     ImGui::SetNextWindowSize(ImVec2(256, 256), ImGuiCond_Once);
     ImGui::SetNextWindowPos(ImVec2(windowWid - 256, 0), ImGuiCond_Always);
-    if (ImGui::Begin("Models", nullptr, 0)) {
+    if (ImGui::Begin("Data", nullptr, 0)) {
+        if (ImGui::BeginTabBar("Assets")) {
+            if (ImGui::BeginTabItem("tex")) {
 
+                ImGui::PushStyleVar(ImGuiStyleVar_ImageBorderSize, std::max(1.0f, ImGui::GetStyle().ImageBorderSize));
+                for (auto&& [texId, tex]: assetManager.all_loaded_textures()) {
+                    auto texFormat = gfx::get_name_from_gl_tex_format(tex->get_fmt_internal());
+                    auto title = fmt::format("{} ({})", texId, (texFormat.size() > 0) ? texFormat : "<UNKNOWN>");
+
+                    if (ImGui::CollapsingHeader(title.data())) {
+                        auto texWid = std::max(tex->get_width(), 1.0);
+                        auto texHei = std::max(tex->get_height(), 1.0);
+                        auto scale = std::min(ImGui::GetContentRegionAvail().x / texWid, 256 / texHei);
+
+                        ImGui::ImageWithBg(tex->get_gl_texture_id(), ImVec2(texWid * scale, texHei * scale), ImVec2(0, 1), ImVec2(1, 0), ImVec4(0.5, 0.5, 0.5, 0.25));
+                    }
+                }
+                ImGui::PopStyleVar();
+
+                ImGui::EndTabItem();
+            }
+            if (ImGui::BeginTabItem("mdl")) {
+                
+                ImGui::EndTabItem();
+            }
+            ImGui::EndTabBar();
+        }
     }
     ImGui::End();
     

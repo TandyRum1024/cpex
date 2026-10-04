@@ -7,6 +7,7 @@
 #include <fstream>
 
 // LIBRARIES //
+#include <gfx/material.hpp>
 #include <zen/asset_manager.hpp>
 #include <zmd2/zmd2.hpp>
 
@@ -54,9 +55,16 @@ std::shared_ptr<gfx::Texture> AssetManager::load_texture(const std::string &relP
         return tex;
     }
 
+    auto texPath = basePath / relPath;
     auto tex = gfx::Texture(relPath, GL_TEXTURE_2D);
 
-    gfx::texhelper::texture_load_from_file_2d(tex, basePath / relPath);
+    if (std::filesystem::is_directory(texPath) || !std::filesystem::exists(texPath)) {
+        zcl::logger("ASSET")->error("TEXTURE DOES NOT EXIST! (path: `{}`)", texPath.string());
+        throw std::runtime_error(fmt::format("TEXTURE DOES NOT EXIST! (path: `{}`)", texPath.string()));
+    }
+    // zcl::logger("ASSET")->info("LOAD TEXTURE FROM `{}`", texPath.string());
+
+    gfx::texhelper::texture_load_from_file_2d(tex, texPath);
 
     auto texPtr = std::make_shared<gfx::Texture>(std::move(tex));
 
@@ -65,6 +73,7 @@ std::shared_ptr<gfx::Texture> AssetManager::load_texture(const std::string &relP
 }
 
 void AssetManager::add_texture(const std::string &relPath, const std::shared_ptr<gfx::Texture> &data) {
+    // zcl::logger("ASSET")->info("ADD TEXTURE `{}`", relPath);
     loadedTextures[relPath] = data;
 }
 
@@ -129,7 +138,7 @@ std::shared_ptr<gfx::zmd2::Model> AssetManager::get_model_zmd2(const std::string
     return nullptr;
 }
 
-std::shared_ptr<gfx::zmd2::Model> AssetManager::load_model_zmd2(const std::string relPath, bool forceReload, const std::string &fallbackMaterialId, const std::string &fallbackTextureId) { 
+std::shared_ptr<gfx::zmd2::Model> AssetManager::load_model_zmd2(const std::string relPath, bool forceReload, const std::string &baseMaterialId, const std::string &fallbackMaterialId, const std::string &fallbackTextureId, const std::string &fallbackShaderId) { 
     if (auto mdl = get_model_zmd2(relPath); !forceReload && mdl) {
         return mdl;
     }
@@ -138,10 +147,12 @@ std::shared_ptr<gfx::zmd2::Model> AssetManager::load_model_zmd2(const std::strin
 
     try {
         if (auto file = std::ifstream(basePath/ relPath, std::ios_base::binary); file) {
-            auto fallbackMat = get_material(fallbackMaterialId);
-            auto fallbackTex = get_texture(fallbackTextureId);
+            auto matBase = get_material(baseMaterialId);
+            auto matFallback = get_material(fallbackMaterialId);
+            auto texFallback = load_texture(fallbackTextureId);
+            auto shdFallback = load_shader(fallbackShaderId);
 
-            assert(fallbackMat != nullptr && fallbackTex != nullptr && "Fallback assets does not exist!");
+            assert(matFallback != nullptr && texFallback != nullptr && "Fallback assets does not exist!");
 
             auto mdl = zmd2::load_model_from(relPath, file);
             auto mdlConverted = gfx::zmd2::Model(&mdl);
@@ -158,23 +169,46 @@ std::shared_ptr<gfx::zmd2::Model> AssetManager::load_model_zmd2(const std::strin
             }
             // (material)
             for (auto&& mat: mdlConverted.all_embedded_materials()) {
-                auto matConverted = mat.to_material();
+                // auto matConverted = mat.to_material();
+                auto matConvertedPtr = std::make_shared<gfx::Material>(mat.to_material());
+                auto shaderId = mat.shader;
+                auto baseTexId = mat.baseTexture;
+
+                auto assetShd = load_shader(shaderId);
+                std::shared_ptr<gfx::Texture> assetBaseTex;
+                try {
+                    assetBaseTex = load_texture(baseTexId);
+                }
+                catch (std::exception e) {
+                    assetBaseTex = texFallback;
+                }
+
+                if (!assetShd) {
+                    assetShd = shdFallback;
+                }
+                gfx::material_set_inherited(matBase, matConvertedPtr);
+                matConvertedPtr->set_shader(assetShd);
 
                 // (replace / link textures for samplers)
-                for (auto&& uniform: matConverted.get_uniforms()) {
+                for (auto&& uniform: matConvertedPtr->get_uniforms(false)) {
                     if (auto samplerUniform = std::dynamic_pointer_cast<gfx::UniformSampler>(uniform); samplerUniform && samplerUniform->get_value()) {
                         auto texId = samplerUniform->get_value()->get_id();
                         auto assetTex = get_texture(texId);
 
                         if (!assetTex) {
-                            assetTex = fallbackTex;
+                            assetTex = texFallback;
                         }
 
                         samplerUniform->set_value(assetTex);
                     }
                 }
 
-                auto matConvertedPtr = std::make_shared<gfx::Material>(matConverted);
+                // Add base texture uniform if there isn't any
+                if (auto uniformBaseTex = matConvertedPtr->find_uniform_by_name<gfx::UniformSampler>(ZMD2_UNIFORM_NAME_BASE_TEXTURE, false); !uniformBaseTex) {
+                    matConvertedPtr->add_uniforms(
+                        gfx::UniformSampler(ZMD2_UNIFORM_NAME_BASE_TEXTURE, assetBaseTex)
+                    );
+                }
 
                 add_material(mat.name, matConvertedPtr);
             }
@@ -185,7 +219,7 @@ std::shared_ptr<gfx::zmd2::Model> AssetManager::load_model_zmd2(const std::strin
                 mdlConverted.link_material(i, assetMat);
             }
 
-            mdlConverted.update_refs_and_link_assets(fallbackMat);
+            mdlConverted.update_refs_and_link_assets(matFallback);
             mdlPtr = std::make_shared<gfx::zmd2::Model>(mdlConverted);
             loadedModelsZmd2[relPath] = mdlPtr;
         }
@@ -203,4 +237,8 @@ std::shared_ptr<gfx::zmd2::Model> AssetManager::load_model_zmd2(const std::strin
 
 void AssetManager::add_model_zmd2(const std::string &relPath, const std::shared_ptr<gfx::zmd2::Model> &data) { 
     loadedModelsZmd2[relPath] = data;
+}
+
+const std::unordered_map<std::string, std::shared_ptr<gfx::Texture>> AssetManager::all_loaded_textures() const {
+    return loadedTextures;
 }
