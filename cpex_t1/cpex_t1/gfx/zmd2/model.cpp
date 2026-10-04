@@ -7,10 +7,12 @@
 #include <algorithm>
 #include <stdexcept>
 #include <sstream>
+#include <fstream>
 #include <bit>
 
 #include <gfx/zmd2/model.hpp>
 #include <gfx/zmd2/utils.hpp>
+#include <gfx/utils.hpp>
 
 // LIBRARIES //
 #include <zcl/zcl.hpp>
@@ -295,7 +297,7 @@ gfx::Texture MetaEmbeddedTexture::to_texture(std::span<const uint8_t> bytes) con
     auto internalFmt = find_gl_tex_base_format_by_tex_format(format);
     auto dataFmt = find_gl_tex_data_format_by_tex_format(format);
 
-    // ZMD2_DEBUG_TRACE_FUNC(info, "TEX {} ({}x{})", name, width, height);
+    ZMD2_DEBUG_TRACE_FUNC(info, "TEX {} (size: {}x{}, internal fmt: {}, data fmt: {}, {} bytes from {})", name, width, height, get_name_from_gl_tex_format(internalFmt), get_name_from_gl_tex_format(dataFmt), blobSize, blobOffset);
     newTex.set_format(internalFmt);
     newTex.load_from_buffer_2d(blobSpan.data(), width, height, dataFmt, GL_UNSIGNED_BYTE);
 
@@ -306,7 +308,7 @@ Model::Model(::zmd2::Model *src):
     id(src->id),
     bounds(&src->bounds),
     materialIds(src->materialNames),
-    extraBytes(src->extraBytes), // hopefully this will be optimized by compiler into bulk copy...
+    //extraBytes(src->extraBytes), // hopefully this will be optimized by compiler into bulk copy...
     morphNames(src->morphNames) {
         bones.resize(src->bones.size());
         parts.resize(src->parts.size());
@@ -376,53 +378,15 @@ Model::Model(::zmd2::Model *src):
 
         // Prepare textures linking
         linkedMaterials.resize(materialIds.size());
+        
+        // Extras
+        extraBytes.resize(src->extraBytes.size());
+        std::memcpy(extraBytes.data(), src->extraBytes.data(), src->extraBytes.size());
+        ZMD2_DEBUG_TRACE_FUNC(info, "MODEL {}: EXTRA {} BYTES", id, extraBytes.size());
     }
 
 Model::Model(std::string id):
     id(id) {}
-
-// void Model::load_and_find_embedded_assets(zen::AssetManager &manager, const std::shared_ptr<gfx::Material> &fallbackMaterial, const std::shared_ptr<gfx::Texture> &fallbackTexture) {
-//     // Add embedded assets if not existing
-//     for (auto&& texInfo: embeddedTextures) {
-//         if (manager.get_texture(texInfo.name)) {
-//             continue;
-//         }
-
-//         // ZMD2_DEBUG_TRACE_FUNC(error, "MODEL {}: EMBEDDED TEX {} ({}x{})", id, texInfo.name, texInfo.width, texInfo.height);
-//         auto newTex = texInfo.to_texture(extraBytes);
-//         auto newTexPath = newTex.get_id();
-//         // ZMD2_DEBUG_TRACE_FUNC(error, "\t(EMBEDDED TEX {} FIN)", texInfo.name);
-//         manager.add_texture(newTexPath, std::make_shared<gfx::Texture>(std::move(newTex)));
-//     }
-
-//     for (auto&& matInfo: embeddedMaterials) {
-//         if (manager.get_material(matInfo.name)) {
-//             continue;
-//         }
-
-//         auto newMat = matInfo.to_material(manager);
-
-//         manager.add_material(newMat.get_id(), std::make_shared<gfx::Material>(std::move(newMat)));
-//     }
-
-//     // Link assets
-//     materials.reserve(materialIds.size());
-//     for (auto&& matId: materialIds) {
-//         auto mat = manager.get_material(matId);
-
-//         if (!mat) {
-//             if (fallbackMaterial) {
-//                 materials.push_back(fallbackMaterial);
-//             }
-//             else {
-//                 materials.push_back(manager.get_material(ZMD2_ASSET_BASE_MATERIAL));
-//             }
-//             continue;
-//         }
-
-//         materials.push_back(mat);
-//     }
-// }
 
 void Model::update_refs_and_link_assets(const std::shared_ptr<gfx::Material> &fallbackMaterial) {
     // Build list of materials

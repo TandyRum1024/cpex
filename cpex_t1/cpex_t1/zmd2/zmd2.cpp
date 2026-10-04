@@ -138,7 +138,7 @@ Model zmd2::load_model_from(const std::string &id, std::istream &in, std::stream
     // Extra bytes / blob
     auto blobBytes = std::vector<uint8_t>(header.dirExtraLen);
 
-    bytes.read(reinterpret_cast<char*>(blobBytes.data()), header.dirExtraOff);
+    bytes.read(reinterpret_cast<char*>(blobBytes.data()), header.dirExtraLen);
 
     // Assemble the model now
     auto model = Model {

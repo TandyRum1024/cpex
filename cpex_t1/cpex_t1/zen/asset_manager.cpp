@@ -173,9 +173,9 @@ std::shared_ptr<gfx::zmd2::Model> AssetManager::load_model_zmd2(const std::strin
                 auto matConvertedPtr = std::make_shared<gfx::Material>(mat.to_material());
                 auto shaderId = mat.shader;
                 auto baseTexId = mat.baseTexture;
-
                 auto assetShd = load_shader(shaderId);
                 std::shared_ptr<gfx::Texture> assetBaseTex;
+
                 try {
                     assetBaseTex = load_texture(baseTexId);
                 }

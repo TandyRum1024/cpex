@@ -132,7 +132,7 @@ void CpexApp::on_setup() {
     assetManager.add_material(matCube1->get_id(), matCube1);
     assetManager.add_material(matCube2->get_id(), matCube2);
 
-    assetManager.load_model_zmd2("mdl_char.zmd2");
+    assetManager.load_model_zmd2("mdl_mixamo_test.zmd2");
     /*
     if (auto file = std::ifstream(assetPath / "mdl_char.zmd2", std::ios_base::binary); file) {
         auto time = std::chrono::steady_clock::now();
@@ -324,7 +324,7 @@ void CpexApp::on_loop_render(double dtMillis) {
     auto matProj = glm::perspectiveFov(90.0, (double)windowWid, (double)windowHei, 0.001, 1024.0);
     auto matView = glm::lookAt(camPos, glm::vec3(0.0), glm::vec3(0.0, 0.0, 1.0));
 
-    auto mdlTest = assetManager.load_model_zmd2("mdl_char.zmd2");
+    auto mdlTest = assetManager.load_model_zmd2("mdl_mixamo_test.zmd2");
     
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     texManager.clear();
@@ -381,7 +381,7 @@ void CpexApp::on_loop_render(double dtMillis) {
                 glm::vec3(0.0),
                 // glm::vec3(glm::radians(45.0), 0, time * -1.25 * glm::pi<double>()),
                 glm::vec3(0.0),
-                glm::vec3(0.5)
+                glm::vec3(0.75)
             );
             auto mat = tf.to_mat4();
 
@@ -472,7 +472,7 @@ void CpexApp::on_loop_debug_ui(double dtMillis) {
                         auto texHei = std::max(tex->get_height(), 1.0);
                         auto scale = std::min(ImGui::GetContentRegionAvail().x / texWid, 256 / texHei);
 
-                        ImGui::ImageWithBg(tex->get_gl_texture_id(), ImVec2(texWid * scale, texHei * scale), ImVec2(0, 1), ImVec2(1, 0), ImVec4(0.5, 0.5, 0.5, 0.25));
+                        ImGui::ImageWithBg(tex->get_gl_texture_id(), ImVec2(texWid * scale, texHei * scale), ImVec2(0, 0), ImVec2(1, 1), ImVec4(0.5, 0.5, 0.5, 0.25));
                     }
                 }
                 ImGui::PopStyleVar();
