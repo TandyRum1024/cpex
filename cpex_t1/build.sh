@@ -48,7 +48,7 @@ do
             BUILD_SKIP_CONF=1
         ;;
         -norun )
-            BUILD_RUN=1
+            BUILD_RUN=0
         ;;
         -clean )
             BUILD_CLEAN=1
