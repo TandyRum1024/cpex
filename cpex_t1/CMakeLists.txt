@@ -2,20 +2,32 @@
 # Written with duct tape, hope and dreams
 # ZIK@MMXXVI
 cmake_minimum_required(VERSION 3.26.0)
+
+# https://cmake.org/cmake/help/book/mastering-cmake/chapter/CMake%20Cache.html
+# https://cmake.org/cmake/help/latest/command/set.html#command:set
+if (CMAKE_VERSION VERSION_GREATER_EQUAL "4.2.0")
+    set(CACHE{BIN_DIR} TYPE PATH HELP "Output binary directory" VALUE ${CMAKE_SOURCE_DIR}/out/bin)
+else()
+    set(BIN_DIR ${CMAKE_SOURCE_DIR}/out/bin CACHE PATH "Output binary directory")
+endif()
+
+# if (LINUX)
+#     set(CMAKE_CXX_COMPILER g++)
+# endif()
 project(
     cpex_t1
     VERSION 0.1.0
     DESCRIPTION "CPP EXPERIMENTS: TOY #1"
-    LANGUAGES CXX
+    LANGUAGES C CXX
 )
 
-# Set C++ standards
+# Set C++ standards & version
 set(CMAKE_CXX_STANDARD 20)
 
 # Set output directory
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/out/bin)
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/out/bin)
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/out/bin)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${BIN_DIR})
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${BIN_DIR})
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${BIN_DIR})
 
 # Using `FetchContent` for better external library handling! wow...
 # https://www.foonathan.net/2022/06/cmake-fetchcontent/
@@ -231,7 +243,8 @@ find_package(ZLIB)
 
 if(ZLIB_FOUND)
     set(VER_ZLIB ZLIB_VERSION)
-    target_link_libraries(${PROJECT_NAME} PUBLIC ZLIB::ZLIB)
+    list(APPEND EXT_LIBS ZLIB::ZLIB)
+    #target_link_libraries(${PROJECT_NAME} PUBLIC ZLIB::ZLIB)
 else()
     set(VER_ZLIB "v1.3.2")
     FetchContent_Declare(

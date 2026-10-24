@@ -21,7 +21,7 @@ namespace zcl {
             byteistream& operator>>(T &value);
 
             /** Fetches string until null terminator. Internally uses `std::getline()`! */
-            template <>
+            // template <>
             byteistream& operator>>(std::string &value); // defined in cpp
         };
 

@@ -59,7 +59,7 @@ Model zmd2::load_model_from(const std::string &id, std::istream &in, std::stream
 
     if (header.isCompressed) {
         inflatedStreamBuf = std::make_shared<zcl::zlib::inflated_streambuf>(zcl::zlib::inflated_streambuf(in.rdbuf(), in.tellg(), end));
-        bytes.set_rdbuf(&(*inflatedStreamBuf));
+        bytes.rdbuf(&(*inflatedStreamBuf));
     }
 
     // Read offsets and sizes for each directories (u32 each)

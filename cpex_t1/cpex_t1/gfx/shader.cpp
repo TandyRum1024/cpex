@@ -120,7 +120,7 @@ void Shader::set_shader(const std::string &src, GLenum type) {
     if (!compileRes) {
         char msg[512];
         glGetShaderInfoLog(shader, 512, NULL, msg);
-        throw std::runtime_error("Failed to compile vertex shader:\n"s + msg);
+        throw std::runtime_error(fmt::format("Failed to compile shader `{}`:\n{}", name, msg));
     }
 }
 
@@ -153,18 +153,19 @@ void Shader::link_program() {
         }
     }
     glLinkProgram(shaderProgram);
+    glValidateProgram(shaderProgram);
     // (sanity check)
     glGetProgramiv(shaderProgram, GL_LINK_STATUS, &compileRes);
     if (!compileRes) {
         char msg[512];
         glGetProgramInfoLog(shaderProgram, 512, NULL, msg);
-        throw std::runtime_error("Failed to link shader program:\n"s + msg);
+        throw std::runtime_error(fmt::format("Failed to link shader program `{}`:\n{}", name, msg));
     }
     glGetProgramiv(shaderProgram, GL_VALIDATE_STATUS, &compileRes);
     if (!compileRes) {
         char msg[512];
         glGetProgramInfoLog(shaderProgram, 512, NULL, msg);
-        throw std::runtime_error("Shader program not available!\n"s + msg);
+        throw std::runtime_error(fmt::format("Shader program `{}` not available!:\n{}", name, msg));
     }
 
     _logger->debug("...Linking shader program for `{}` done!", name);

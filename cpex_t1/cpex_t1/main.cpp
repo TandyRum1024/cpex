@@ -41,14 +41,14 @@ int main() {
                 logger->error("(NO EXCEPTION DATA WAS FOUND!)");
             }
         }
-        catch (json::parse_error e) {
+        catch (json::parse_error& e) {
             logger->error(fmt::format("JSON parse error {} (at {})", e.what(), e.byte));
         }
-        catch (json::exception e) {
+        catch (json::exception& e) {
             logger->error(fmt::format("JSON error: {}", e.what()));
         }
-        catch (std::exception e) {
-            logger->error(fmt::format("exception: {}", e.what()));
+        catch (std::exception& e) {
+            logger->error(fmt::format("std::exception: {}", e.what()));
         }
         catch (...) {
             logger->error("FATAL EXCEPTION HAS OCCURED! AND NOW THE APP WILL TERMINATE. BYE");

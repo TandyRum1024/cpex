@@ -4,6 +4,8 @@
  */
 
 #define DEBUG_INIT_AND_QUIT false
+//#define MODEL_NAME "mdl_char.zmd2"
+#define MODEL_NAME "mdl_mixamo_test.zmd2"
 
 #include <iostream>
 #include <fstream>
@@ -132,7 +134,7 @@ void CpexApp::on_setup() {
     assetManager.add_material(matCube1->get_id(), matCube1);
     assetManager.add_material(matCube2->get_id(), matCube2);
 
-    assetManager.load_model_zmd2("mdl_mixamo_test.zmd2");
+    assetManager.load_model_zmd2(MODEL_NAME);
     /*
     if (auto file = std::ifstream(assetPath / "mdl_char.zmd2", std::ios_base::binary); file) {
         auto time = std::chrono::steady_clock::now();
@@ -322,9 +324,9 @@ void CpexApp::on_loop_render(double dtMillis) {
         1
     );
     auto matProj = glm::perspectiveFov(90.0, (double)windowWid, (double)windowHei, 0.001, 1024.0);
-    auto matView = glm::lookAt(camPos, glm::vec3(0.0), glm::vec3(0.0, 0.0, 1.0));
+    auto matView = glm::lookAt(camPos, glm::vec3(0.0, 0.0, 0.25), glm::vec3(0.0, 0.0, 1.0));
 
-    auto mdlTest = assetManager.load_model_zmd2("mdl_mixamo_test.zmd2");
+    auto mdlTest = assetManager.load_model_zmd2(MODEL_NAME);
     
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     texManager.clear();
@@ -381,7 +383,7 @@ void CpexApp::on_loop_render(double dtMillis) {
                 glm::vec3(0.0),
                 // glm::vec3(glm::radians(45.0), 0, time * -1.25 * glm::pi<double>()),
                 glm::vec3(0.0),
-                glm::vec3(0.75)
+                glm::vec3(0.6)
             );
             auto mat = tf.to_mat4();
 
@@ -426,7 +428,7 @@ void CpexApp::on_loop_debug_ui(double dtMillis) {
 
     // ImGui
     //ImGui::ShowDemoWindow(); // Show demo window! :)
-    ImGui::SetNextWindowSize(ImVec2(256, 256), ImGuiCond_Once);
+    ImGui::SetNextWindowSize(ImVec2(400, 256), ImGuiCond_Once);
     ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_Always);
     if (ImGui::Begin("Scene", nullptr, 0)) {
         auto& repo = zcl::trace::StopwatchRepository::get_instance();
@@ -456,7 +458,7 @@ void CpexApp::on_loop_debug_ui(double dtMillis) {
     }
     ImGui::End();
 
-    ImGui::SetNextWindowSize(ImVec2(256, 256), ImGuiCond_Once);
+    ImGui::SetNextWindowSize(ImVec2(400, 256), ImGuiCond_Once);
     ImGui::SetNextWindowPos(ImVec2(windowWid - 256, 0), ImGuiCond_Always);
     if (ImGui::Begin("Data", nullptr, 0)) {
         if (ImGui::BeginTabBar("Assets")) {

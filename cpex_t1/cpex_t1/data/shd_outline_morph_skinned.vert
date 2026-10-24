@@ -1,4 +1,4 @@
-#version 450 core
+#version 430 core
 /*
 	Shader for .ZMD2 skinned & morphing mesh
 */

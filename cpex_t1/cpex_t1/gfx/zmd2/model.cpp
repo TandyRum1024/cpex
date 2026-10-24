@@ -234,7 +234,7 @@ gfx::Material MetaEmbeddedMaterial::to_material() const {
             overloads {
                 [&newMat, &newMatName](MetaUniformSampler val) {
                     newMat.add_uniforms(gfx::UniformSampler(
-                            val.name, std::make_shared<gfx::Texture>(newMatName), (val.samplerTexfilter ? GL_LINEAR : GL_NEAREST), (val.samplerTexrepeat ? GL_REPEAT : GL_CLAMP_TO_EDGE)
+                            val.name, std::make_shared<gfx::Texture>(val.value), (val.samplerTexfilter ? GL_LINEAR : GL_NEAREST), (val.samplerTexrepeat ? GL_REPEAT : GL_CLAMP_TO_EDGE)
                         )
                     );
                 },
@@ -499,6 +499,15 @@ void Model::submit(gfx::TextureManager &texManager) const {
     for (auto&& part: parts) {
         // (Only draw mesh models for now)
         if (auto partModel = std::static_pointer_cast<PartModel>(part)) {
+            if (
+                partModel->id.compare("boingler.eye.007") == 0
+                || partModel->id.compare("boingler.eye.009") == 0
+                || partModel->id.compare("boingler.mouth.008") == 0
+                || partModel->id.compare("boingler.mouth.009") == 0
+            ) {
+                continue;
+            }
+
             for (auto&& matMesh: partModel->matMeshes) {
                 auto material = matMesh->material;
                 auto mesh = matMesh->mesh;

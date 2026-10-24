@@ -196,6 +196,7 @@ std::shared_ptr<gfx::zmd2::Model> AssetManager::load_model_zmd2(const std::strin
                         auto assetTex = get_texture(texId);
 
                         if (!assetTex) {
+                            zcl::logger("ASSET")->error("{} (MATERIAL `{}`): FAILED TO LOAD SAMPLER `{}` DEFAULT TEXTURE (`{}`), USING FALLBACK...", mdl.id, mat.name, uniform->get_name(), texId);
                             assetTex = texFallback;
                         }
 

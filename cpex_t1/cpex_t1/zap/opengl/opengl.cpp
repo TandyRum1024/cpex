@@ -140,9 +140,11 @@ void OpenGlApp::boot() {
     _logger->info("GLFW: Activating debug context...");
     glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, isGlDebug);
 
-    _logger->info("GLFW: Creating window...");
+    _logger->info(fmt::format("GLFW: Creating window (title: {})...", windowTitle));
+    // if (GLFW_VERSION_MAJOR < 4 || (GLFW_VERSION_MAJOR == 4 && GLFW_VERSION_MINOR < 5)) {
+    // }
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     // https://sourceforge.net/p/predef/wiki/OperatingSystems/
     #if (defined(__APPLE__) && defined(__MACH__)) || defined(Macintosh) || defined(macintosh)
@@ -151,8 +153,17 @@ void OpenGlApp::boot() {
 
     window = glfwCreateWindow(windowWid, windowHei, windowTitle.c_str(), NULL, NULL);
     if (!window) {
+        _logger->info("GLFW: Failed to create window, bailing out...");
+
+        const char* errStr;
+
+        glfwGetError(&errStr);
         glfwTerminate();
-        throw std::runtime_error("[GLFW] CREATING WINDOW FAILED!");
+        
+        throw std::runtime_error(fmt::format("[GLFW] CREATING WINDOW FAILED ({})!", errStr));
+    }
+    else {
+        _logger->info("GLFW: Created window...");
     }
     glfwMakeContextCurrent(window);
 
@@ -160,6 +171,7 @@ void OpenGlApp::boot() {
     // Pass this instance to user pointer & abuse(?) it to call callbacks
     glfwSetWindowUserPointer(window, this);
 
+    _logger->info("GLAD: Loading GL...");
     auto version = gladLoadGL(glfwGetProcAddress);
     if (version == 0) {
         glfwTerminate();

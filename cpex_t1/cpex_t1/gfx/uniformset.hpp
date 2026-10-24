@@ -112,7 +112,7 @@ namespace gfx {
     template <typename U, typename...T>
     void UniformSet::add_uniforms_ptr(std::shared_ptr<U> &uniformPtr, std::shared_ptr<T>&... uniformPtrArgs) {
         add_uniforms_ptr(uniformPtr);
-        add_uniforms_ptr(uniformPtrArgs);
+        add_uniforms_ptr(uniformPtrArgs...);
     }
 
     template <typename T>
