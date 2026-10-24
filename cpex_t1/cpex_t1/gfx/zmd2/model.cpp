@@ -170,6 +170,20 @@ PartModel::PartModel(std::string id):
     modelPrim(::zmd2::PRIM_TYPE_TRIANGLE_LIST),
     modelPrimGl(find_gl_prim_by_prim_type(modelPrim)) {}
 
+PartModel::~PartModel() {
+    free_resources();
+}
+
+void PartModel::free_resources() {
+    for (auto&& matMesh: matMeshes) {
+        matMesh->mesh->free_resources();
+    }
+
+    matMeshes.clear();
+    matMeshesByMaterialId.clear();
+    materials.clear();
+}
+
 std::shared_ptr<MaterialAndMeshPair> PartModel::reserve_matmesh(const std::string &materialId, std::shared_ptr<gfx::Material> &material) {
     auto foundMatMesh = matMeshesByMaterialId.find(materialId);
 
@@ -387,6 +401,80 @@ Model::Model(::zmd2::Model *src):
 
 Model::Model(std::string id):
     id(id) {}
+
+Model::~Model() {
+    free_resources();
+}
+
+Model::Model(Model &&other):
+    id(std::exchange(other.id, 0)),
+    bounds(std::move(other.bounds)),
+    bones(std::move(other.bones)),
+    parts(std::move(other.parts)),
+    materialIds(std::move(other.materialIds)),
+    morphNames(std::move(other.morphNames)),
+    extraBytes(std::move(other.extraBytes)),
+    embeddedMaterials(std::move(other.embeddedMaterials)),
+    embeddedTextures(std::move(other.embeddedTextures)),
+    linkedMaterials(std::move(other.linkedMaterials)),
+    linkedTexturesById(std::move(other.linkedTexturesById)),
+    partsById(std::move(other.partsById)),
+    bonesById(std::move(other.bonesById)) {
+
+    }
+
+Model& Model::operator=(Model &&other) {
+    if (this == &other) {
+        // Self assignment, no need to move
+        return *this;
+    }
+
+    std::swap(id, other.id);
+    std::swap(bounds, other.bounds);
+    std::swap(bones, other.bones);
+    std::swap(parts, other.parts);
+    std::swap(materialIds, other.materialIds);
+    std::swap(morphNames, other.morphNames);
+    std::swap(extraBytes, other.extraBytes);
+    std::swap(embeddedMaterials, other.embeddedMaterials);
+    std::swap(embeddedTextures, other.embeddedTextures);
+    std::swap(linkedMaterials, other.linkedMaterials);
+    std::swap(linkedTexturesById, other.linkedTexturesById);
+    std::swap(partsById, other.partsById);
+    std::swap(bonesById, other.bonesById);
+
+    return *this;
+}
+
+void Model::free_resources() {
+    std::for_each(parts.begin(), parts.end(), [this](std::shared_ptr<Part> part){
+        // (part specific setups)
+        switch (part->type) {
+            case ::zmd2::PART_TYPE_MODEL:
+                if (auto partModel = std::static_pointer_cast<PartModel>(part)) {
+                    ZMD2_DEBUG_TRACE_FUNC(info, "FREE MODEL {} PART {}", this->id, partModel->id);
+                    partModel->free_resources();
+                }
+                break;
+        }
+    });
+
+    linkedMaterials.clear();
+    partsById.clear();
+    bonesById.clear();
+    linkedTexturesById.clear();
+    bones.clear();
+    parts.clear();
+    materialIds.clear();
+    morphNames.clear();
+    extraBytes.clear();
+    embeddedMaterials.clear();
+    embeddedTextures.clear();
+    linkedMaterials.clear();
+    linkedTexturesById.clear();
+    partsById.clear();
+    bonesById.clear();
+}
 
 void Model::update_refs_and_link_assets(const std::shared_ptr<gfx::Material> &fallbackMaterial) {
     // Build list of materials

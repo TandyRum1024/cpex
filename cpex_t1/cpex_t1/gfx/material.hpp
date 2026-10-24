@@ -43,6 +43,9 @@ namespace gfx {
         Material() = delete;
         Material(const std::string &id);
         Material(const std::string &id, const std::weak_ptr<Material> &parent);
+        ~Material();
+
+        void free_resources();
 
         /** Returns id of this material. */
         const std::string get_id() const;

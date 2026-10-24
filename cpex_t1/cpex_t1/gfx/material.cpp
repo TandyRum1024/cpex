@@ -16,6 +16,27 @@ Material::Material(const std::string &id, const std::weak_ptr<Material> &parent)
     parent(parent),
     isMergeRequired(true) {}
 
+Material::~Material() {
+    free_resources();
+}
+
+void Material::free_resources() {
+    uniforms.clear();
+    mergedUniforms.clear();
+    mergedUniformSamplers.clear();
+
+    if (shd) {
+        shd->free_resources();
+    }
+    if (mergedShd) {
+        mergedShd->free_resources();
+    }
+
+    for (auto&& child: children) {
+        child->free_resources();
+    }
+}
+
 const std::string Material::get_id() const {
     return id;
 }

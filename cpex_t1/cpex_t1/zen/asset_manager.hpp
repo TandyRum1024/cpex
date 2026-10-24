@@ -31,6 +31,7 @@ namespace zen {
     public:
         AssetManager();
         AssetManager(const std::filesystem::path &basePath);
+        ~AssetManager();
         // We do NOT want to accidentally copy the asset manager along its loaded assets for a very obvious reasons
         // So we intentionally delete the copy ops and recommend the move ops
 
@@ -41,6 +42,7 @@ namespace zen {
         AssetManager& operator=(const AssetManager &other) = delete;
 
         void set_base_path(const std::filesystem::path &basePath);
+        void free_resources();
 
         // Now for bunch of asset loading / fetching functions
 

@@ -289,12 +289,16 @@ void CpexApp::on_setup() {
 }
 
 void CpexApp::on_free_resource() {
-    _logger->debug("Freeing resources...");
+    _logger->info("Freeing resources...");
     free_imgui();
 }
 
 void CpexApp::on_shutdown() {
-    _logger->debug("App shutdown...");
+    _logger->info("App shutdown...");
+
+    texManager.clear();
+    assetManager.free_resources();
+    model->free_resources();
 }
 
 void CpexApp::on_loop_update(double dtMillis) {

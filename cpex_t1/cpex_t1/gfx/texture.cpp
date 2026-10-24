@@ -232,12 +232,11 @@ void TextureManager::unbind_texture(unsigned int slot) {
 
 void TextureManager::clear() {
     for (auto&& entry: slotsAllocated) {
-        if (auto texture = entry.second.texture.lock()) {
+        if (auto&& texture = entry.second.texture.lock(); texture) {
             texture->unbind();
         }
     }
-
-    // zcl::logger("TEX")->info("clear");
+    // zcl::logger("TEX")->info("texture clear end");
 
     currentSlotIdx = 0;
     slotsAllocated.clear();
@@ -265,4 +264,6 @@ void texhelper::texture_load_from_file_2d(Texture& tex, std::filesystem::path fi
 
     tex.set_format(format);
     tex.load_from_buffer_2d(pixels, wid, hei, pixelsFormat, GL_UNSIGNED_BYTE);
+
+    stbi_image_free(pixels);
 }

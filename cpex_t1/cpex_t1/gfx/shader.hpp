@@ -58,6 +58,8 @@ namespace gfx {
         Shader(Shader &&other);
         Shader& operator=(Shader &&other);
 
+        void free_resources();
+
         /** Loads vertex/fragment/etc shader from given file path. */
         void load_shader_from(std::filesystem::path filePath, GLenum type);
         /** Sets vertex/fragment/etc shdaer from given string source code. */

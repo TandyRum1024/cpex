@@ -22,7 +22,12 @@ AssetManager::AssetManager(const std::filesystem::path &basePath):
 AssetManager::AssetManager(AssetManager &&other):
     loadedTextures(std::move(other.loadedTextures)),
     loadedShaders(std::move(other.loadedShaders)),
-    loadedMaterials(std::move(other.loadedMaterials)) {}
+    loadedMaterials(std::move(other.loadedMaterials)),
+    loadedModelsZmd2(std::move(other.loadedModelsZmd2)) {}
+
+AssetManager::~AssetManager() {
+    free_resources();
+}
 
 AssetManager& AssetManager::operator=(AssetManager &&other) {
     if (this == &other) {
@@ -33,12 +38,33 @@ AssetManager& AssetManager::operator=(AssetManager &&other) {
     loadedTextures = std::move(other.loadedTextures);
     loadedShaders = std::move(other.loadedShaders);
     loadedMaterials = std::move(other.loadedMaterials);
+    loadedModelsZmd2 = std::move(other.loadedModelsZmd2);
 
     return *this;
 }
 
 void AssetManager::set_base_path(const std::filesystem::path &basePath) {
     this->basePath = basePath;
+}
+
+void AssetManager::free_resources() {
+    for (auto&& res: loadedModelsZmd2) {
+        res.second->free_resources();
+    }
+    for (auto&& res: loadedTextures) {
+        res.second->free_resources();
+    }
+    for (auto&& res: loadedShaders) {
+        res.second->free_resources();
+    }
+    for (auto&& res: loadedMaterials) {
+        res.second->free_resources();
+    }
+
+    loadedTextures.clear();
+    loadedShaders.clear();
+    loadedMaterials.clear();
+    loadedModelsZmd2.clear();
 }
 
 std::shared_ptr<gfx::Texture> AssetManager::get_texture(const std::string &relPath) {
@@ -221,7 +247,7 @@ std::shared_ptr<gfx::zmd2::Model> AssetManager::load_model_zmd2(const std::strin
             }
 
             mdlConverted.update_refs_and_link_assets(matFallback);
-            mdlPtr = std::make_shared<gfx::zmd2::Model>(mdlConverted);
+            mdlPtr = std::make_shared<gfx::zmd2::Model>(std::move(mdlConverted));
             loadedModelsZmd2[relPath] = mdlPtr;
         }
         else {

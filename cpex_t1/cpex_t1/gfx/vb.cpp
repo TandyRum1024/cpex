@@ -157,6 +157,10 @@ void Vb::release_resources() {
     format = nullptr;
 }
 
+void Vb::free_resources() {
+    release_resources();
+}
+
 void Vb::bind() {
     // Setup VAO
     if (!vao) {

@@ -102,6 +102,8 @@ namespace gfx {
         Vb(Vb &&other);
         Vb& operator=(Vb &&other);
 
+        void free_resources();
+
         /** Binds the VAO. */
         void bind();
         /** Sets vertex format. */

@@ -183,6 +183,9 @@ namespace gfx {
             /** Helper constructor. */
             PartModel(::zmd2::PartModelData *src);
             PartModel(std::string id);
+            ~PartModel();
+
+            void free_resources();
 
             /** Reserve and return a new MaterialAndMeshPair for given material ID. */
             std::shared_ptr<MaterialAndMeshPair> reserve_matmesh(const std::string &materialId, std::shared_ptr<gfx::Material> &material);
@@ -360,6 +363,17 @@ namespace gfx {
             // Helper constructor.
             Model(::zmd2::Model *src);
             Model(std::string id);
+            ~Model();
+
+            // Disable default copy ops!
+            Model(const Model &other) = delete;
+            Model& operator=(const Model &other) = delete;
+
+            // Only implement move ops for now
+            Model(Model &&other);
+            Model& operator=(Model &&other);
+
+            void free_resources();
 
             void update_refs_and_link_assets(const std::shared_ptr<gfx::Material> &fallbackMaterial = nullptr);
 
