@@ -136,8 +136,11 @@ void Texture::bind(GLenum unit) {
 }
 
 void Texture::unbind() {
-    glActiveTexture(texUnit);
-    glBindTexture(texTarget, 0);
+    if (texUnit) {
+        glActiveTexture(texUnit);
+        glBindTexture(texTarget, 0);
+        texUnit = 0;
+    }
 }
 
 GLenum Texture::get_bound_unit() const {
